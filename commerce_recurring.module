@@ -1,1 +1,66 @@
 <?php
+//$Id$
+
+/**
+ * Implements hook_field_info().
+ */
+function commerce_recurring_field_info() {
+  return array(
+    'commerce_recurring' => array(
+      'label'             => t('Recurring'),
+      'description'       => t('Add recurring setting to a product type.'),
+      'default_widget'    => 'options_select',
+      'default_formatter' => 'text_default',
+    )
+  );
+}
+
+/**
+ * Implements hook_field_schema().
+ */
+function commerce_recurring_field_schema($field) {
+  $columns = array(
+    'frequency' => array(
+      'type'     => 'varchar',
+      'length' => 1024,
+      'not null' => TRUE),
+  );
+  return array(
+    'columns' => $columns,
+  );
+}
+
+
+/**
+ * Implements hook_field_validate().
+ *
+ * Possible error codes:
+ */
+function commerce_recurring_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  return TRUE;
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function commerce_recurring_field_is_empty($item, $field) {
+  return empty($item['frequency']) && (string) $item['frequency'] !== '';
+}
+
+/**
+ * Implements hook_field_widget_info_alter().
+ */
+function commerce_recurring_field_widget_info_alter(&$info) {
+  $info['options_select']['field types'][] = 'commerce_recurring';
+}
+
+/**
+ * Implements hook_options_list().
+ */
+function commerce_recurring_options_list($field) {
+  return commerce_recurring_frequencies_list();
+}
+
+function commerce_recurring_frequencies_list() {
+  return array (t ('Monthly'));
+}
