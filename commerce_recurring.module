@@ -32,15 +32,6 @@ function commerce_recurring_field_schema($field) {
 
 
 /**
- * Implements hook_field_validate().
- *
- * Possible error codes:
- */
-function commerce_recurring_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
-  return TRUE;
-}
-
-/**
  * Implements hook_field_is_empty().
  */
 function commerce_recurring_field_is_empty($item, $field) {
@@ -62,5 +53,5 @@ function commerce_recurring_options_list($field) {
 }
 
 function commerce_recurring_frequencies_list() {
-  return array (t ('Monthly'));
+  return array ('Monthly' => t ('Monthly'));
 }

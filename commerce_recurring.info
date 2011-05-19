@@ -1,5 +1,7 @@
 name = Recurring
 description = Ability to add a recurring field to a product type and trigger events for users who bought such products
 package = Commerce
+dependencies[] = field
+;dependencies[] = options
 dependencies[] = rules
 core = 7.x
