@@ -1,0 +1,26 @@
+<?php
+
+function commerce_recurring_schema() {
+  $schema['commerce_recurring_last_trigger'] = array(
+    'description' => 'Track registrations for workshops.',
+    'fields' => array(
+      'line_item_id' => array(
+        'description' => 'Reference to line item.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'not null' => TRUE
+      ),
+      'time' => array(
+        'description' => 'The unix timestamp of the last trigger.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('line_item_id'),
+  );
+
+  return $schema;
+}

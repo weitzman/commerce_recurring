@@ -55,3 +55,48 @@ function commerce_recurring_options_list($field) {
 function commerce_recurring_frequencies_list() {
   return array ('Monthly' => t ('Monthly'));
 }
+
+
+/**
+ * Implements hook_cron().
+ * At cron time, check if there are recurring products in orders which have
+ * been checked out, and if it is time to trigger the recurring event for that
+ * product.
+ */
+function commerce_recurring_cron() {
+  $now = time();
+
+  // Perhaps better to use Rules scheduler?
+
+  // First add new line items to commerce_recurring_last_trigger
+
+  // Next for all line items, call the trigger
+  // Must end with processed.
+  //rules_invoke_all('commerce_checkout_complete', $order);
+}
+
+
+/**
+ * Record that line item has been triggered
+ */
+function commerce_recurring_save ($line_item_id) {
+  $res = db_update ('commerce_recurring_last_trigger')
+    ->fields (array ('time' => time()))
+    ->condition ('line_item_id', $line_item_id)
+    ->execute();
+  if (!$res)
+    $res = db_insert ('commerce_recurring_last_trigger')
+      ->fields (array ('line_item_id' => $line_item_id, 'time' => time()))
+      ->execute();
+}
+
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_recurring_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_recurring') . '/includes/views',
+  );
+}
