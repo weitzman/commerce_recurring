@@ -4,9 +4,9 @@
     "REQUIRES" : [ "rules", "rules_scheduler", "commerce_recurring" ],
     "DO" : [
       { "schedule" : {
-          "component" : "rules_subscription_payments",
+          "component" : "rules_recurring_payments_example_",
           "date" : "+1 hour",
-          "identifier" : "Monthly subscription payments"
+          "identifier" : "Recurring payments"
         }
       },
       { "commerce_recurring_process_recurring" : {
