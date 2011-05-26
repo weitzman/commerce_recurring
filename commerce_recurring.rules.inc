@@ -88,25 +88,39 @@ function commerce_recurring_rules_action_info() {
 
 
 /**
- * Rules action: loop over all items in view
+ * Rules action: loop over all items in view.
  */
 function commerce_recurring_process_view($view_name) {
   $line_items = array ();
   $rows = views_get_view_result ($view_name, NULL, 'Monthly');
   foreach ($rows as $row) {
-    $last_trigger_time = $row->commerce_recurring_last_trigger_time ? $row->commerce_recurring_last_trigger_time : $row->commerce_order_commerce_line_item_changed;
-    // Only include line items for which one or more invoices have to
-    // be generated.
-    $d = getdate();
-    $current_year = $d['year'];
-    $current_month = $d['mon'];
-    $d = getdate($last_trigger_time);
-    $last_trigger_year = $d['year'];
-    $last_trigger_month = $d['mon'];
-    $last_trigger_month = 4;
-    if ($last_trigger_year != $current_year || $last_trigger_month != $current_month) {
-      $line_item = commerce_line_item_load ($row->line_item_id);
-      $line_items[] = $line_item;
+
+    // Filter out line items that have been created as part of the
+    // recurring process. Can't do this in Views, bugger, so things will get
+    // slower and slower.
+    $original_line_item = $row->line_item_id == $row->commerce_recurring_last_trigger_line_item_id || $row->commerce_recurring_last_trigger_time == null;
+
+    if ($original_line_item) {
+
+      $last_trigger_time = $row->commerce_recurring_last_trigger_time ? $row->commerce_recurring_last_trigger_time : $row->commerce_order_commerce_line_item_created;
+      // Only include line items for which on order has to
+      // be generated.
+      $thirty_one_days = 31 * 24 * 3600;
+      $now = time();
+      $d = getdate($now);
+      $current_year = $d['year'];
+      $current_month = $d['mon'];
+      $current_day = $d['mday'];
+      $last_day_of_the_month = intval (date('t'), $now);
+      $d = getdate($last_trigger_time);
+      $last_trigger_year = $d['year'];
+      $last_trigger_month = $d['mon'];
+      $last_trigger_day = $d['mday'];
+      $to_trigger = ($now - $last_trigger_time > $thirty_one_days) || (($last_trigger_year != $current_year || $last_trigger_month != $current_month) && ($current_day == $last_day_of_the_month || $current_day <= $last_trigger_day));
+      if ($to_trigger) {
+        $line_item = commerce_line_item_load ($row->line_item_id);
+        $line_items[] = $line_item;
+      }
     }
   }
   return array('line_items_to_trigger' => $line_items);
@@ -118,40 +132,51 @@ function commerce_recurring_process_view($view_name) {
  * the new order. Assumes type is product...
  */
 function commerce_recurring_create_recurring_order($line_item) {
-  // We'll create an order (invoice) for every missing month, including the
-  // current of day of the month is past the day of the original order.
+  // If cron hasn't been run for a while, we technically could create
+  // multiple orders for every missing subscription period. But that
+  // wouldn't be so far on the customer as he suddenly could be hit with a
+  // very large bill. So we create just in order, and that for the last
+  // month.
 
   // Get the original order
   $first_order = commerce_order_load ($line_item->order_id);
 
+  // We'll just double check the calculation if an order should be
+  // generated, based on the most accurate data in case there was a problem
+  // with the view, and it simply returned every line item in the system.
   $last_trigger_time = db_query ('select time from {commerce_recurring_last_trigger} where line_item_id = :line_item_id', array ('line_item_id' => $line_item->line_item_id))->fetchField();
-  $last_order_time = $last_trigger_time ? $last_trigger_time : $first_order->changed;
+  $last_trigger_time = $last_trigger_time ? $last_trigger_time : $first_order->created;
 
-  $d = getdate();
+  $thirty_one_days = 31 * 24 * 3600;
+  $now = time();
+  $d = getdate($now);
   $current_year = $d['year'];
   $current_month = $d['mon'];
   $current_day = $d['mday'];
+  $last_day_of_the_month = intval (date('t'), $now);
 
-  $d = getdate($last_order_time);
-  $last_order_year = $d['year'];
-  $last_order_month = $d['mon'];
-  $last_order_day = $d['mday'];
+  $d = getdate($last_trigger_time);
+  $last_trigger_year = $d['year'];
+  $last_trigger_month = $d['mon'];
+  $last_trigger_day = $d['mday'];
 
-  for ($year = $last_order_year; $year <= $current_year; $year++) {
-    $start_month = $year == $last_order_year ? $last_order_month : 1;
-    $end_month = $year == $current_year ? $current_month : 12;
-    for ($month = $start_month; $month <= $end_month; $month++) {
-      $new_order = _do_commerce_recurring_create_recurring_order ($line_item, $first_order, $year, $month, $last_order_day);
-
-      // The next step in the checkout would be something like token
-      // billing or sending an email
-
-      // And although we could create here multiple invoices if
-      // somehow cron hasn't been running, it's probably not a good idea to do
-      // that, especially with token billing.
-      return array ('new_order' => $new_order);
+  $to_trigger = ($now - $last_trigger_time > $thirty_one_days) || (($last_trigger_year != $current_year || $last_trigger_month != $current_month) && ($current_day == $last_day_of_the_month || $current_day <= $last_trigger_day));
+  if ($to_trigger) {
+    $year = $current_year;
+    $month = $current_month;
+    if ($current_month == 1) {
+      $year--;
+      $month = 12;
     }
+    $new_order = _do_commerce_recurring_create_recurring_order ($line_item, $first_order, $year, $month, $last_trigger_day);
+
+    // The next step in the checkout would be something like token
+    // billing or sending an email
+
+    return array ('new_order' => $new_order);
   }
+  else
+    return array();
 }
 
 
