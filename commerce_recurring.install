@@ -9,7 +9,6 @@ function commerce_recurring_schema() {
         'type' => 'int',
         'unsigned' => TRUE,
         'not null' => TRUE,
-        'not null' => TRUE
       ),
       'time' => array(
         'description' => 'The unix timestamp of the last trigger.',
