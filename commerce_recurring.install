@@ -124,7 +124,7 @@ function _commerce_recurring_installed_fields() {
         'repeat' => 0,
         'timezone_db' => 'UTC',
         'todate' => '',
-        'tz_handling' => 'site',
+        'tz_handling' => 'none',
       ),
     ),
     'commerce_recurring_payment_due' => array(
@@ -143,7 +143,7 @@ function _commerce_recurring_installed_fields() {
         'repeat' => 0,
         'timezone_db' => 'UTC',
         'todate' => '',
-        'tz_handling' => 'site',
+        'tz_handling' => 'none',
       ),
     ),
   );
@@ -198,6 +198,7 @@ function _commerce_recurring_installed_instances() {
         'settings' => array(
           'increment' => '15',
           'input_format' => 'm/d/Y',
+          'default_value' => 'blank',
           'input_format_custom' => '',
           'label_position' => 'above',
           'repeat_collapsed' => 0,
@@ -230,6 +231,7 @@ function _commerce_recurring_installed_instances() {
       'widget'      => array(
         'settings' => array(
           'increment' => '15',
+          'default_value' => 'blank',
           'input_format' => 'm/d/Y',
           'input_format_custom' => '',
           'label_position' => 'above',
