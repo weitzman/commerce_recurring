@@ -5,20 +5,68 @@
  */
 
 /**
+ * Implements hook_rules_condition_info().
+ */
+function commerce_recurring_rules_condition_info() {
+  $conditions = array();
+
+  $conditions['commerce_recurring_rules_order_is_master'] = array(
+    'label' => t('Order is recurring set master'),
+    'parameter' => array(
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Order'),
+        'description' => t('The order in question.'),
+      ),
+    ),
+    'group' => t('Commerce Order'),
+  );
+  
+  $conditions['commerce_recurring_rules_order_contains_recurring'] = array(
+    'label' => t('Order contains a recurring product'),
+    'parameter' => array(
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Order'),
+        'description' => t('The order in question.'),
+      ),
+    ),
+    'group' => t('Commerce Order'),
+  );
+  return $conditions;
+}
+
+/**
  * Implements hook_rules_event_info().
  */
 function commerce_recurring_rules_event_info() {
   $events = array();
+  // So that we can use the entity_rules_events_variables() helper function.
+  module_load_include('inc', 'entity', 'entity.rules');
 
-  $events['commerce_recurring_processing_completed'] = array(
-    'label' => t('Recurring action(s) on line item completed successfully'),
+
+  $events['commerce_recurring_rules_event_new_order'] = array(
+    'label' => t('A new recurring order is created'),
     'variables' => array(
-      'line_item' => array(
-        'type' => 'commerce_line_item',
-        'label' => t('Line item'),
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Created order', array(), array('context' => 'a drupal commerce order')),
       ),
-     ),
+    ),
     'group' => t('Commerce Recurring'),
+    'access' => 'commerce_order_rules_access'
+  );
+  
+  $variables = array_merge(
+    entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a drupal commerce order')), TRUE, TRUE),
+    entity_rules_events_variables('commerce_payment_transaction', t('Last completed transaction'), TRUE)
+  );
+  
+  $events['commerce_recurring_rules_event_new_payment'] = array(
+    'label' => t('A new recurring order payment created'),
+    'variables' => $variables,
+    'group' => t('Commerce Recurring'),
+    'access' => 'commerce_payment_rules_access'
   );
 
   return $events;
@@ -32,203 +80,173 @@ function commerce_recurring_rules_action_info() {
   $actions = array();
 
   $actions['commerce_recurring_process_recurring'] = array(
-    'label' => t('Trigger applicable recurring line items'),
+    'label' => t('Generate new recurring orders'),
     'parameter' => array(
-      'view' => array('type' => 'text', 'label' => t('View name')),
-    ),
-    'provides' => array(
-      'line_items_to_trigger' => array(
-        'type' => 'list<commerce_line_item>',
-        'label' => t('Line items'),
-        'description' => t('All line items that must be triggered'),
-      ),
-    ),
-    'group' => t('Commerce Recurring'),
-    'base' => 'commerce_recurring_process_view',
-    /*
-    'callbacks' => array(
-      'execute' => 'commerce_recurring_process_view',
-    ),
-    */
-  );
-  $actions['commerce_recurring_create_recurring_order'] = array(
-    'label' => t('Create a new order for the recurring item'),
-    'parameter' => array(
-      'line_item' => array(
-        'type' => 'commerce_line_item',
-        'label' => t('Line item'),
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Master order'),
       ),
     ),
     'provides' => array(
-      'new_order' => array(
-        'type' => 'commerce_order', // What we actually provide is the view row, not sure how to deal with that
-        'label' => t('New order'),
-        'description' => t('Newly created order'),
+      'recurring_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('New Order'),
+        'description' => t('The new repeat of the order'),
       ),
     ),
     'group' => t('Commerce Recurring'),
-    'base' => 'commerce_recurring_create_recurring_order',
   );
-  $actions['commerce_recurring_triggered'] = array(
-    'label' => t('Line item triggered'),
-    'parameter' => array(
-      'line_item' => array(
-        'type' => 'commerce_line_item',
-        'label' => t('Line item'),
+  
+  $actions['commerce_recurring_load_recurring'] = array(
+    'label' => t('Load recurring orders'),
+    'parameters' => array(),
+    'provides' => array(
+      'orders' => array(
+        'type' => 'list<commerce_order>',
+        'label' => t('Recurring Orders'),
+        'description' => t('Recurring orders'),
       ),
     ),
     'group' => t('Commerce Recurring'),
-    'callbacks' => array(
-      'execute' => 'commerce_recurring_triggered',
-    ),
   );
 
   return $actions;
 }
 
+/**
+ * Rules action: create a new order duplicting the given line item on
+ * the new order.
+ *
+ * @param $master_order object
+ *   The master order object (first in the sequence)
+ * @param $line_items array
+ *   array of line items on the order
+ */
+function commerce_recurring_process_recurring($master_order) {
+  // Create a new order
+  $recurring_order = commerce_order_new($master_order->uid, 'pending', 'recurring_order');
+
+  $recurring_order->commerce_customer_billing = $master_order->commerce_customer_billing;
+  // Save it so it gets an order ID and return the full object.
+  $recurring_order = commerce_order_save ($recurring_order);
+
+  // Wrap the order for easy access to field data.
+  $recurring_order_wrapper = entity_metadata_wrapper('commerce_order', $recurring_order);
+
+  foreach ($line_items as $line_item) {
+    // Load and validate the specified product ID.
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+    $product_id = $line_item_wrapper->commerce_product->value();
+    $product = commerce_product_load($product_id);
+    $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
+    if ($product->type != 'recurring') {
+      // We don't need this item
+      continue;
+    }
+    $interval = $product_wrapper->commerce_recurring_interval->value();
+    $interval_label = interval_format_interval($interval);
+    
+    // Create the new product line item.
+    $new_line_item = commerce_product_line_item_new ($product, $line_item->quantity, $recurring_order->order_id);
+    $new_line_item->line_item_label = t('Recurring !old_label (charged every !interval)',
+                                        array ('!old_label' => $new_line_item->line_item_label,
+                                               '!interval' => $interval_label));
+  
+    // Process the unit price through Rules so it reflects the user's actual
+    // purchase price.
+    rules_invoke_event('commerce_product_calculate_sell_price', $new_line_item);
+  
+    // Save the line item now so we get its ID.
+    $new_line_item = commerce_line_item_save($new_line_item);
+  
+    // Add it to the order's line item reference value.
+    $recurring_order_wrapper->commerce_line_items[] = $new_line_item;
+  }
+  
+  // Set the parent order
+  $recurring_order->commerce_recurring_parent_order[LANGUAGE_NONE][0]['order_id'] = $master_order->order_id;
+  // Set the payment due date
+  $payment_interval = variable_get('commerce_recurring_payment_interval', 3);
+  
+  $payment_dt = new DateObject('now');
+  if ($payment_interval) {
+    $payment_dt->modify("+$payment_interval days");
+  }
+  $recurring_order->commerce_recurring_payment_due[LANGUAGE_NONE][0]['value'] = $payment_dt->format('U');
+
+  // Save the updated order.
+  commerce_order_save($recurring_order);
+  
+  // Invoke rules event to notify others that the new order has been created
+  rules_invoke_all('commerce_recurring_rules_event_new_order', $recurring_order);
+  
+  // Wrap the master order for easy access to field data.
+  $master_order_wrapper = entity_metadata_wrapper('commerce_order', $master_order);
+  
+  // Get the due date
+  $due_date = $master_order_wrapper->commerce_recurring_next_due->value();
+  
+  // Create an object
+  $due_date_obj = new DateObject($due_date['value'], date_default_timezone(), 'U');
+  
+  // Apply the inteval
+  if ($interval && interval_apply_interval($due_date_obj, $interval)) {
+    // Update the parent next due
+    $master_order->commerce_recurring_next_due[LANGUAGE_NONE][0]['value'] = $due_date_obj->format('U');
+    // Save the parent
+    commerce_order_save($master_order);
+  }  
+
+  return array ('recurring_order' => $recurring_order);
+}
 
 /**
- * Rules action: loop over all items in view.
+ * Condition callback: checks to see if a recurring product exists on an order
  */
-function commerce_recurring_process_view($view_name) {
-  $line_items = array ();
-  $rows = views_get_view_result ($view_name, NULL, 'Monthly');
-  foreach ($rows as $row) {
+function commerce_recurring_rules_order_contains_recurring($order) {
+  // If we actually received a valid order...
+  if (!empty($order)) {
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
-    // Filter out line items that have been created as part of the
-    // recurring process. Can't do this in Views, bugger, so things will get
-    // slower and slower.
-    $original_line_item = $row->line_item_id == $row->commerce_recurring_last_trigger_line_item_id || $row->commerce_recurring_last_trigger_time == null;
-
-    if ($original_line_item) {
-
-      $last_trigger_time = $row->commerce_recurring_last_trigger_time ? $row->commerce_recurring_last_trigger_time : $row->commerce_order_commerce_line_item_created;
-      // Only include line items for which on order has to
-      // be generated.
-      $thirty_one_days = 31 * 24 * 3600;
-      $now = time();
-      $d = getdate($now);
-      $current_year = $d['year'];
-      $current_month = $d['mon'];
-      $current_day = $d['mday'];
-      $last_day_of_the_month = intval (date('t'), $now);
-      $d = getdate($last_trigger_time);
-      $last_trigger_year = $d['year'];
-      $last_trigger_month = $d['mon'];
-      $last_trigger_day = $d['mday'];
-      $to_trigger = ($now - $last_trigger_time > $thirty_one_days) || (($last_trigger_year != $current_year || $last_trigger_month != $current_month) && ($current_day == $last_day_of_the_month || $current_day <= $last_trigger_day));
-      if ($to_trigger) {
-        $line_item = commerce_line_item_load ($row->line_item_id);
-        $line_items[] = $line_item;
+    // Populate the array of the quantities of the products on the order.
+    foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+      if ($line_item_wrapper->type->value() == 'recurring') {
+        return TRUE;
       }
     }
   }
-  return array('line_items_to_trigger' => $line_items);
+  return FALSE;
 }
 
-
 /**
- * Rules action: create a new order duplicting the given line item on
- * the new order. Assumes type is product...
+ * Condition callback: checks to see if a recurring product exists on an order
  */
-function commerce_recurring_create_recurring_order($line_item) {
-  // If cron hasn't been run for a while, we technically could create
-  // multiple orders for every missing subscription period. But that
-  // wouldn't be so far on the customer as he suddenly could be hit with a
-  // very large bill. So we create just in order, and that for the last
-  // month.
+function commerce_recurring_rules_order_is_master($order) {
+  // If we actually received a valid order...
+  if (!empty($order)) {
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
-  // Get the original order
-  $first_order = commerce_order_load ($line_item->order_id);
-
-  // We'll just double check the calculation if an order should be
-  // generated, based on the most accurate data in case there was a problem
-  // with the view, and it simply returned every line item in the system.
-  $last_trigger_time = db_query ('select time from {commerce_recurring_last_trigger} where line_item_id = :line_item_id', array ('line_item_id' => $line_item->line_item_id))->fetchField();
-  $last_trigger_time = $last_trigger_time ? $last_trigger_time : $first_order->created;
-
-  $thirty_one_days = 31 * 24 * 3600;
-  $now = time();
-  $d = getdate($now);
-  $current_year = $d['year'];
-  $current_month = $d['mon'];
-  $current_day = $d['mday'];
-  $last_day_of_the_month = intval (date('t'), $now);
-
-  $d = getdate($last_trigger_time);
-  $last_trigger_year = $d['year'];
-  $last_trigger_month = $d['mon'];
-  $last_trigger_day = $d['mday'];
-
-  $to_trigger = ($now - $last_trigger_time > $thirty_one_days) || (($last_trigger_year != $current_year || $last_trigger_month != $current_month) && ($current_day == $last_day_of_the_month || $current_day <= $last_trigger_day));
-  if ($to_trigger) {
-    $year = $current_year;
-    $month = $current_month;
-    if ($current_month == 1) {
-      $year--;
-      $month = 12;
+    $next_due = $order->wrapper->commerce_recurring_next_due->value();
+    if (!empty($next_due)) {
+      return TRUE;
     }
-    $new_order = _do_commerce_recurring_create_recurring_order ($line_item, $first_order, $year, $month, $last_trigger_day);
-
-    // The next step in the checkout would be something like token
-    // billing or sending an email
-
-    return array ('new_order' => $new_order);
   }
-  else
-    return array();
-}
-
-
-function _do_commerce_recurring_create_recurring_order ($line_item, $first_order, $year, $month, $day) {
-  // We basically follows the steps in commerce_cart_product_add(),
-  // but we cannot use that function as it assumes a user has only one
-  // order, and it would break the system if that particular user was just
-  // shopping and we're creating another order here...
-
-  $order_date =  mktime (0, 0, 0, $month, $day, $year);
-
-  // Create the new order with the customer's uid
-  $new_order = commerce_order_new ($first_order->uid);
-  $new_order->commerce_customer_billing = $first_order->commerce_customer_billing;
-  // Save it so it gets an order ID and return the full object.
-  $new_order = commerce_order_save ($new_order);
-
-  // Wrap the order for easy access to field data.
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $new_order);
-
-  // Load and validate the specified product ID.
-  $product_id = $line_item->commerce_product['und'][0]['product_id'];
-  $product = commerce_product_load($product_id);
-
-  // Create the new product line item.
-  $new_line_item = commerce_product_line_item_new ($product, $line_item->quantity, $new_order->order_id);
-  $new_line_item->line_item_label = t('Recurring !old_label for !month', array ('!old_label' => $new_line_item->line_item_label, '!month' => date ('F', $order_date)));
-
-  // Process the unit price through Rules so it reflects the user's actual
-  // purchase price.
-  rules_invoke_event('commerce_product_calculate_sell_price', $new_line_item);
-
-  // Save the line item now so we get its ID.
-  $new_line_item = commerce_line_item_save($new_line_item);
-
-  // Add it to the order's line item reference value.
-  $order_wrapper->commerce_line_items[] = $new_line_item;
-
-  // TODO: order should be marked as recurring so we don't include it next time!!, perhaps not make this a product type line item?
-
-  // Save the updated order.
-  commerce_order_save($new_order);
-
-  // Make enabled payment methods available
-  rules_invoke_all('commerce_payment_methods', $new_order);
-
-  return $new_order;
+  return FALSE;
 }
 
 /**
- * Rules action: all action(s) on line item completed succesfully
- */
-function commerce_recurring_triggered($line_item) {
-  commerce_recurring_save ($line_item->line_item_id);
+ * Rules action callback: Load orders
+*/
+function commerce_recurring_load_recurring() {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'commerce_order');
+  $query->entityCondition('bundle', 'commerce_order');
+  $now = new DateObject('now');
+  $query->fieldCondition('commerce_recurring_next_due', 'value', $now->format('U'), '<=');
+  $query->range(0, variable_get('commerce_recurring_batch_process', 20));
+  $results = $query->execute();
+  if (!empty($results['commerce_order'])) {
+    return array('recurring_orders' => commerce_order_load_multiple(array_keys($results['commerce_order'])));
+  }
+  return array('recurring_orders' => array());
 }

@@ -1,81 +1,44 @@
 <?php
-//$Id$
+/**
+ * @file commerce_recurring.module
+ * Provides recurring framework for Drupal Commerce
+ */
 
 /**
- * Implements hook_field_info().
- */
-function commerce_recurring_field_info() {
+ * Implements hook_menu().
+*/
+function commerce_recurring_menu() {
+  $items = array();
+  $items['admin/commerce/config/recurring'] = array(
+    'title' => 'Recurring Orders',
+    'file' => 'commerce_recurring.admin.inc',
+    'access arguments' => array('administer commerce recurring'),
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_recurring_admin_form')
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission()
+*/
+function commerce_recurring_permission() {
   return array(
-    'commerce_recurring' => array(
-      'label'             => t('Recurring'),
-      'description'       => t('Add recurring setting to a product type.'),
-      'default_widget'    => 'options_select',
-      'default_formatter' => 'text_default',
+    'administer commerce recurring' => array(
+      'title' => t('Administer Commerce Recurring')
     )
   );
 }
 
 /**
- * Implements hook_field_schema().
+ * Implements hook_help().
  */
-function commerce_recurring_field_schema($field) {
-  $columns = array(
-    'frequency' => array(
-      'type'     => 'varchar',
-      'length' => 1024,
-      'not null' => TRUE),
-  );
-  return array(
-    'columns' => $columns,
-  );
-}
-
-
-/**
- * Implements hook_field_is_empty().
- */
-function commerce_recurring_field_is_empty($item, $field) {
-  return empty($item['frequency']) && (string) $item['frequency'] !== '';
-}
-
-/**
- * Implements hook_field_widget_info_alter().
- */
-function commerce_recurring_field_widget_info_alter(&$info) {
-  $info['options_select']['field types'][] = 'commerce_recurring';
-}
-
-/**
- * Implements hook_options_list().
- */
-function commerce_recurring_options_list($field) {
-  return commerce_recurring_frequencies_list();
-}
-
-function commerce_recurring_frequencies_list() {
-  return array ('Monthly' => t ('Monthly'));
-}
-
-/**
- * Record that line item has been triggered
- */
-function commerce_recurring_save ($line_item_id) {
-  $res = db_update ('commerce_recurring_last_trigger')
-    ->fields (array ('time' => time()))
-    ->condition ('line_item_id', $line_item_id)
-    ->execute();
-  if (!$res)
-    $res = db_insert ('commerce_recurring_last_trigger')
-      ->fields (array ('line_item_id' => $line_item_id, 'time' => time()))
-      ->execute();
-}
-
-
-/**
- * Implements hook_commerce_line_item_delete().
- */
-function commerce_recurring_commerce_line_item_delete ($line_item) {
-  db_delete ('commerce_recurring_last_trigger')->condition ('line_item_id', $line_item->line_item_id)->execute();
+function commerce_recurring_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#commerce_recurring':
+      return t("Provides recurring payment options for Drupal Commerce");
+  }
 }
 
 /**
@@ -85,5 +48,15 @@ function commerce_recurring_views_api() {
   return array(
     'api' => 3,
     'path' => drupal_get_path('module', 'commerce_recurring') . '/includes/views',
+  );
+}
+
+
+/**
+ * Implements hook_entity_info_alter()
+*/
+function commerce_recurring_entity_info_alter() {
+  $entity_info['commerce_order']['bundles']['recurring_order'] = array(
+    'label' => t('Recurring Order', array(), array('context' => 'a recurring drupal commerce order')),
   );
 }

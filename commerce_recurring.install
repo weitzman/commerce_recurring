@@ -1,25 +1,259 @@
 <?php
+/*
+ * @file commerce_recurring.install
+ * Provides install hooks for the module
+ * @copyright Copyright(c) 2011 Rowlands Group
+ * @license GPL v3 http://www.fsf.org/licensing/licenses/gpl.html
+ * @author Lee Rowlands leerowlands at rowlandsgroup dot com
+ * 
+ */
 
+/**
+ * Implements hook_schema().
+ * /
 function commerce_recurring_schema() {
-  $schema['commerce_recurring_last_trigger'] = array(
-    'description' => 'Track registrations for workshops.',
-    'fields' => array(
-      'line_item_id' => array(
-        'description' => 'Reference to line item.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-      ),
-      'time' => array(
-        'description' => 'The unix timestamp of the last trigger.',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
+
+}
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_recurring_uninstall() {
+  // Loop over each of the fields defined by this module and delete
+  // all instances of the field, their data, and the field itself.
+  foreach (array_keys(_commerce_recurring_installed_fields()) as $field) {
+    field_delete_field($field);
+  }
+
+  // Purge all field infromation
+  field_purge_batch(1000);
+}
+
+/**
+ * Implements hook_install().
+ */
+function commerce_recurring_install() {
+  // Create the recurring product type.
+  $product_type = commerce_product_ui_product_type_new();
+
+  $product_type['type'] = 'recurring';
+  $product_type['name'] = t('Recurring product');
+  $product_type['description'] = t('A recurring purchase product type.');
+  $product_type['is_new'] = TRUE;
+
+  commerce_product_ui_product_type_save($product_type, FALSE);
+  commerce_price_create_instance('commerce_price', 'commerce_product', 'recurring', t('Price'), 0, 'calculated_sell_price');
+  
+  // If a field type we know should exist isn't found, clear the Field cache.
+  if (!field_info_field_types('commerce_order_reference') ||
+    !field_info_field_types('interval') ||
+    !field_info_field_types('datestamp')) {
+    field_cache_clear();
+  }
+  
+  // Make sure our entity info exists
+  entity_info_cache_clear();
+
+  // Create our fields
+  foreach (_commerce_recurring_installed_fields() as $field_name => $field_detail) {
+    // Look for existing field.
+    $field = field_info_field($field_name);
+  
+    if (empty($field)) {
+      $field = field_create_field($field_detail);
+    }
+  }
+
+  // And their instances
+  foreach (_commerce_recurring_installed_instances() as $field_name => $instance_detail) {
+    // Look for existing instance.
+    $instance = field_info_instance($instance_detail['entity_type'], $instance_detail['bundle'], $field_name, $type);
+  
+    if (empty($instance)) {
+      field_create_instance($instance_detail);
+    }
+  }
+}
+
+/**
+ * Returns a structured array defining the fields created by this module.
+ * 
+ * @return
+ *  An associative array specifying the fields we wish to add to our
+ *  entities
+ *
+ */
+function _commerce_recurring_installed_fields() {
+  $t = get_t();
+  return array(
+    'commerce_recurring_interval' => array(
+      'field_name' => 'commerce_recurring_interval',
+      'cardinality' => 1,
+      'type'        => 'interval',
+      'settings'    => array(
+        'allowed_periods' => array(
+          'day' => 'day',
+          'week' => 'week',
+          'month' => 'month'
+        ),
       ),
     ),
-    'primary key' => array('line_item_id'),
+    'commerce_recurring_parent_order' => array(
+      'field_name' => 'commerce_recurring_parent_order',
+      'cardinality' => 1,
+      'type'        => 'commerce_order_reference',
+      'settings'    => array(
+        'referenceable_types' => array('commerce_order' => $t('Order')),
+        'field_injection' => FALSE
+      ),
+    ),
+    'commerce_recurring_next_due' => array(
+      'field_name' => 'commerce_recurring_next_due',
+      'cardinality' => 1,
+      'type'        => 'datestamp',
+      'settings'    => array(
+        'granularity' => array(
+          'day' => 'day',
+          'hour' => 0,
+          'minute' => 0,
+          'month' => 'month',
+          'second' => 0,
+          'year' => 'year',
+        ),
+        'repeat' => 0,
+        'timezone_db' => 'UTC',
+        'todate' => '',
+        'tz_handling' => 'site',
+      ),
+    ),
+    'commerce_recurring_payment_due' => array(
+      'field_name' => 'commerce_recurring_payment_due',
+      'cardinality' => 1,
+      'type'        => 'datestamp',
+      'settings'    => array(
+        'granularity' => array(
+          'day' => 'day',
+          'hour' => 0,
+          'minute' => 0,
+          'month' => 'month',
+          'second' => 0,
+          'year' => 'year',
+        ),
+        'repeat' => 0,
+        'timezone_db' => 'UTC',
+        'todate' => '',
+        'tz_handling' => 'site',
+      ),
+    ),
   );
+}
 
-  return $schema;
+/**
+ * Returns a structured array defining the instances for this module
+ *
+ * @return
+ *  An associative array specifying the instances we wish to add to our entities
+ *
+ */
+function _commerce_recurring_installed_instances() {
+  $t = get_t();
+  return array(
+    'commerce_recurring_interval' => array(
+      'entity_type' => 'commerce_product',
+      'bundle' => 'recurring',
+      'field_name' => 'commerce_recurring_interval',
+      'label'       => $t('Billing interval'),
+      'widget'      => array(
+        'type'    => 'interval_default',
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'interval_default',
+        ),
+      ),
+    ),
+    'commerce_recurring_parent_order' => array(
+      'entity_type' => 'commerce_order',
+      'bundle' => 'recurring_order',
+      'field_name' => 'commerce_recurring_parent_order',
+      'label'       => $t('Parent Order.'),
+      'widget'      => array(
+        'type'    => 'options_select',
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'commerce_order_reference_link',
+        ),
+      ),
+    ),
+    'commerce_recurring_payment_due' => array(
+      'entity_type' => 'commerce_order',
+      'bundle' => 'recurring_order',
+      'field_name' => 'commerce_recurring_payment_due',
+      'label'       => $t('Payment Due.'),
+      'widget'      => array(
+        'settings' => array(
+          'increment' => '15',
+          'input_format' => 'm/d/Y',
+          'input_format_custom' => '',
+          'label_position' => 'above',
+          'repeat_collapsed' => 0,
+          'text_parts' => array(),
+          'year_range' => '-3:+3',
+        ),
+        'type' => 'date_popup',
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'module' => 'date',
+          'settings' => array(
+            'format_type' => 'long',
+            'fromto' => 'both',
+            'multiple_from' => '',
+            'multiple_number' => '',
+            'multiple_to' => '',
+            'show_repeat_rule' => 'show',
+          ),
+          'type' => 'date_default',
+        ),
+      ),
+    ),
+    'commerce_recurring_next_due' => array(
+      'entity_type' => 'commerce_order',
+      'bundle' => 'commerce_order',
+      'field_name' => 'commerce_recurring_next_due',
+      'label'       => $t('Next Invoice.'),
+      'widget'      => array(
+        'settings' => array(
+          'increment' => '15',
+          'input_format' => 'm/d/Y',
+          'input_format_custom' => '',
+          'label_position' => 'above',
+          'repeat_collapsed' => 0,
+          'text_parts' => array(),
+          'year_range' => '-3:+3',
+        ),
+        'type' => 'date_popup',
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'module' => 'date',
+          'settings' => array(
+            'format_type' => 'long',
+            'fromto' => 'both',
+            'multiple_from' => '',
+            'multiple_number' => '',
+            'multiple_to' => '',
+            'show_repeat_rule' => 'show',
+          ),
+          'type' => 'date_default',
+        ),
+      ),
+    )
+  );
 }
