@@ -69,6 +69,18 @@ function commerce_recurring_rules_event_info() {
     'access' => 'commerce_payment_rules_access'
   );
 
+  $events['commerce_recurring_rules_event_initialise_order'] = array(
+    'label' => t('An order is initialised as a recurring set master'),
+    'variables' => array(
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Created order', array(), array('context' => 'a drupal commerce order')),
+      ),
+    ),
+    'group' => t('Commerce Recurring'),
+    'access' => 'commerce_order_rules_access'
+  );
+  
   return $events;
 }
 
@@ -99,12 +111,24 @@ function commerce_recurring_rules_action_info() {
   
   $actions['commerce_recurring_load_recurring'] = array(
     'label' => t('Load recurring orders'),
-    'parameters' => array(),
+    'parameter' => array(),
     'provides' => array(
       'orders' => array(
         'type' => 'list<commerce_order>',
         'label' => t('Recurring Orders'),
         'description' => t('Recurring orders'),
+      ),
+    ),
+    'group' => t('Commerce Recurring'),
+  );
+  
+  $actions['commerce_recurring_initialise_recurring'] = array(
+    'label' => t('Mark an order as a recurring master'),
+    'parameter' => array(
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Order'),
+        'description' => t('The master order'),
       ),
     ),
     'group' => t('Commerce Recurring'),
@@ -201,6 +225,43 @@ function commerce_recurring_process_recurring($master_order) {
 }
 
 /**
+ * Rules action: mark an order as a recurring master
+ *
+ * @param $order object
+ *   The order object
+ */
+function commerce_recurring_initialise_recurring($order) {
+  // Wrap the order for easy access to field data.
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  $interval = FALSE;
+  foreach ($order_wrapper->commerce_line_items as $line_item) {
+    // Load and validate the specified product ID.
+    $product = $line_item->commerce_product->value();
+
+    if ($product->type != 'recurring') {
+      // We don't need this item
+      continue;
+    }
+    // We've got an interval
+    $interval = $product->commerce_recurring_interval->value();
+    break;
+  }
+  
+  if ($interval) {
+    $due_dt = new DateObject('now');
+    interval_apply_interval($due_dt, $interval);
+    $order->commerce_recurring_next_due[LANGUAGE_NONE][0]['value'] = $due_dt->format('U');
+  }
+
+  // Save the updated order.
+  commerce_order_save($order);
+  
+  // Invoke rules event to notify others that the new order has been created
+  rules_invoke_all('commerce_recurring_rules_event_initialise_order', $order);
+}
+
+/**
  * Condition callback: checks to see if a recurring product exists on an order
  */
 function commerce_recurring_rules_order_contains_recurring($order) {
@@ -210,7 +271,8 @@ function commerce_recurring_rules_order_contains_recurring($order) {
 
     // Populate the array of the quantities of the products on the order.
     foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-      if ($line_item_wrapper->type->value() == 'recurring') {
+      $product = $line_item_wrapper->commerce_product->value();
+      if ($product->type == 'recurring') {
         return TRUE;
       }
     }

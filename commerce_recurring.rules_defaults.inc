@@ -49,5 +49,22 @@ function commerce_recurring_default_rules_configuration() {
       ]
     }
   }');
+  $items['commerce_recurring_initialise_order_master'] = entity_import('rules_config', '{ "commerce_recurring_initialise_order_master" : {
+      "LABEL" : "Set First Repeat date of Recurring Order",
+      "PLUGIN" : "reaction rule",
+      "TAGS" : [ "Commerce Recurring" ],
+      "REQUIRES" : [ "commerce_recurring", "rules", "commerce_checkout" ],
+      "ON" : [ "commerce_checkout_complete" ],
+      "IF" : [
+        { "commerce_recurring_rules_order_contains_recurring" : { "commerce_order" : [ "commerce_order" ] } }
+      ],
+      "DO" : [
+        { "commerce_recurring_initialise_recurring" : {
+            "USING" : { "commerce_order" : [ "commerce_order" ] }
+          }
+        }
+      ]
+    }
+  }');
   return $items;
 }
