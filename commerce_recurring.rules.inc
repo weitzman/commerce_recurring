@@ -205,7 +205,7 @@ function commerce_recurring_process_recurring($master_order) {
   $due_date = $master_order_wrapper->commerce_recurring_next_due->value();
   
   // Create an object
-  $due_date_obj = new DateObject($due_date['value'], date_default_timezone(), 'U');
+  $due_date_obj = new DateObject($due_date, date_default_timezone(), 'U');
   
   // Apply the inteval
   if ($interval && interval_apply_interval($due_date_obj, $interval)) {
