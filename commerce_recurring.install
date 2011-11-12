@@ -74,6 +74,9 @@ function commerce_recurring_install() {
       field_create_instance($instance_detail);
     }
   }
+  
+  // Setup our order type
+  commerce_order_configure_order_type('recurring_order');
 }
 
 /**
