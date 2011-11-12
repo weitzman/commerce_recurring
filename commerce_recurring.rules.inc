@@ -238,27 +238,30 @@ function commerce_recurring_initialise_recurring($order) {
   foreach ($order_wrapper->commerce_line_items as $line_item) {
     // Load and validate the specified product ID.
     $product = $line_item->commerce_product->value();
-
+    
     if ($product->type != 'recurring') {
       // We don't need this item
       continue;
     }
     // We've got an interval
-    $interval = $product->commerce_recurring_interval->value();
+    $interval = field_get_items('commerce_product', $product, 'commerce_recurring_interval');
     break;
   }
   
-  if ($interval) {
+  if (!empty($interval)) {
     $due_dt = new DateObject('now');
-    interval_apply_interval($due_dt, $interval);
+    interval_apply_interval($due_dt, $interval[0]);    
     $order->commerce_recurring_next_due[LANGUAGE_NONE][0]['value'] = $due_dt->format('U');
+    // Save the updated order.
+    commerce_order_save($order);
+    
+    // Invoke rules event to notify others that the new order has been created
+    rules_invoke_all('commerce_recurring_rules_event_initialise_order', $order);
+    
+    // Log it
+    watchdog('Commerce Recurring', 'Initialised order @id as new recurring master.', array('@id' => $order->order_id), WATCHDOG_NOTICE);
   }
-
-  // Save the updated order.
-  commerce_order_save($order);
   
-  // Invoke rules event to notify others that the new order has been created
-  rules_invoke_all('commerce_recurring_rules_event_initialise_order', $order);
 }
 
 /**
