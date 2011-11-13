@@ -12,6 +12,7 @@ function commerce_recurring_menu() {
   $items['admin/commerce/config/recurring'] = array(
     'title' => 'Recurring Orders',
     'file' => 'commerce_recurring.admin.inc',
+    'description' => 'Configure recurring order settings',
     'access arguments' => array('administer commerce recurring'),
     'type' => MENU_NORMAL_ITEM,
     'page callback' => 'drupal_get_form',
