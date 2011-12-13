@@ -28,6 +28,9 @@ function commerce_recurring_uninstall() {
 
   // Purge all field infromation
   field_purge_batch(1000);
+  
+  // Remove the product type
+  commerce_product_ui_product_type_delete('recurring', FALSE);
 }
 
 /**
@@ -68,7 +71,7 @@ function commerce_recurring_install() {
   // And their instances
   foreach (_commerce_recurring_installed_instances() as $field_name => $instance_detail) {
     // Look for existing instance.
-    $instance = field_info_instance($instance_detail['entity_type'], $instance_detail['bundle'], $field_name, $type);
+    $instance = field_info_instance($instance_detail['entity_type'], $field_name, $instance_detail['bundle']);
   
     if (empty($instance)) {
       field_create_instance($instance_detail);
@@ -149,6 +152,14 @@ function _commerce_recurring_installed_fields() {
         'tz_handling' => 'none',
       ),
     ),
+    'commerce_recurring_payment' => array(
+      'field_name' => 'commerce_recurring_payment',
+      'cardinality' => 1,
+      'type'        => 'list_boolean',
+      'settings'    => array(
+        'allowed_values' => array(0 => $t('Unprocessed'), 1 => $t('Processed'))
+      ),
+    ),
   );
 }
 
@@ -174,6 +185,21 @@ function _commerce_recurring_installed_instances() {
         'default' => array(
           'label' => 'hidden',
           'type' => 'interval_default',
+        ),
+      ),
+    ),
+    'commerce_recurring_payment' => array(
+      'entity_type' => 'commerce_order',
+      'bundle' => 'recurring_order',
+      'field_name' => 'commerce_recurring_payment',
+      'label'       => $t('Payment Processed'),
+      'widget'      => array(
+        'type'    => 'options_select',
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'hidden',
+          'type' => 'list_default',
         ),
       ),
     ),
@@ -261,4 +287,42 @@ function _commerce_recurring_installed_instances() {
       ),
     )
   );
+}
+
+/**
+ * Implements hook_update_N
+ * Adds the payment status field to the recurring order
+*/
+function commerce_recurring_update_7001() {
+  // Get the field details
+  $field_name = 'commerce_recurring_payment';
+  $field = field_info_field($field_name);
+  $field_details = _commerce_recurring_installed_fields();
+  $field_detail = $field_details[$field_name];
+  
+  if (empty($field)) {
+    $field = field_create_field($field_detail);
+  }
+
+  $instance_details = _commerce_recurring_installed_instances();
+  $instance_detail = $instance_details[$field_name];
+  // Look for existing instance.
+  $instance = field_info_instance($instance_detail['entity_type'], $field_name, $instance_detail['bundle']);
+  
+  if (empty($instance)) {
+    field_create_instance($instance_detail);
+  }
+  
+  // We also make sure commerce_cardonfile is enabled
+  include_once './includes/install.inc';
+
+  //Refresh module list
+  module_list(TRUE);
+  module_rebuild_cache();
+  
+  //Enable aggregator
+  module_enable(array('commerce_cardonfile'));
+  drupal_install_modules(array('commerce_cardonfile'));  
+  
+  return t('Added payment status field to the recurring order type. If you have existing recurring orders, please set their payment processing status to unprocessed.');
 }

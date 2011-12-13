@@ -122,6 +122,30 @@ function commerce_recurring_rules_action_info() {
     'group' => t('Commerce Recurring'),
   );
   
+  $actions['commerce_recurring_load_payments_due'] = array(
+    'label' => t('Load recurring orders with due payments'),
+    'parameter' => array(),
+    'provides' => array(
+      'orders' => array(
+        'type' => 'list<commerce_order>',
+        'label' => t('Recurring Orders'),
+        'description' => t('Due recurring orders'),
+      ),
+    ),
+    'group' => t('Commerce Recurring'),
+  );
+  
+  $actions['commerce_recurring_process_payment'] = array(
+    'label' => t('Process payments against recurring orders'),
+    'parameter' => array(
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Due order'),
+      ),
+    ),
+    'group' => t('Commerce Recurring'),
+  );
+  
   $actions['commerce_recurring_initialise_recurring'] = array(
     'label' => t('Mark an order as a recurring master'),
     'parameter' => array(
@@ -194,6 +218,8 @@ function commerce_recurring_process_recurring($master_order) {
     $payment_dt->modify("+$payment_interval days");
   }
   $recurring_order->commerce_recurring_payment_due[LANGUAGE_NONE][0]['value'] = $payment_dt->format('U');
+  // Mark as unprocessed
+  $recurring_order->commerce_recurring_payment[LANGUAGE_NONE][0]['value'] = 0;
 
   // Save the updated order.
   commerce_order_save($recurring_order);
@@ -310,4 +336,91 @@ function commerce_recurring_load_recurring() {
     return array('orders' => commerce_order_load_multiple(array_keys($results['commerce_order'])));
   }
   return array('orders' => array());
+}
+
+/**
+ * Rules action callback: Load orders
+*/
+function commerce_recurring_load_payments_due() {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'commerce_order');
+  $query->entityCondition('bundle', 'recurring_order');
+  $now = new DateObject('now');
+  $query->fieldCondition('commerce_recurring_payment_due', 'value', $now->format('U'), '<=');
+  $query->fieldCondition('commerce_recurring_payment', 'value', 0, '=');
+  $query->range(0, variable_get('commerce_recurring_batch_process', 20));
+  $results = $query->execute();
+  if (!empty($results['commerce_order'])) {
+    return array('orders' => commerce_order_load_multiple(array_keys($results['commerce_order'])));
+  }
+  return array('orders' => array());
+}
+
+/**
+ * Rules callback to process a payment against an order
+ * @param $order object
+ *   The Commerce Order Object
+ *
+*/
+function commerce_recurring_process_payment($order) {
+  $wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $parent_order = $wrapper->commerce_recurring_parent_order->value();
+  if ($parent_order && !empty($parent_order->order_id) &&
+      ($last_payment_transaction_id = commerce_recurring_fetch_last_payment_transaction_id($parent_order->order_id))) {
+    // We load the payment details and process it here
+    $last_payment_transaction = commerce_payment_transaction_load($last_payment_transaction_id);
+    // Get the payment instance and method
+    $instance_id = $parent_order->data['payment_method'];
+    $payment_method = commerce_payment_method_instance_load($instance_id);
+    if (!empty($payment_method['cardonfile']['charge callback']) &&
+        ($function = $payment_method['cardonfile']['charge callback']) &&
+        function_exists($payment_method['cardonfile']['charge callback'])) {
+      $result = $function($order, $parent_order);
+      if (!$result) {
+        watchdog('commerce_recurring', "Error occured whilst processing recurring transaction payment for order @order_id's - the payment method @method commerce card on file charge callback reported an error.",
+             array('@order_id' => $order->order_id,
+                   '@method' => $payment_method['short_title']), WATCHDOG_ERROR);
+      }
+      else {
+        watchdog('commerce_recurring', "Processed recurring transaction payment for order @order_id's - using @method payment method - return code: @return.",
+             array('@order_id' => $order->order_id,
+                   '@return' => $result,
+                   '@method' => $payment_method['short_title']), WATCHDOG_INFO);
+        // Now we mark the order as payment processed so it does not load again.
+        $wrapper->commerce_recurring_payment = 1;
+        $wrapper->save();
+      }
+    }
+    else {
+      watchdog('commerce_recurring', "Could not fetch process recurring transaction for order @order_id's - the payment method @method does not provide a valid commerce card on file charge callback.",
+             array('@order_id' => $order->order_id,
+                   '@method' => $payment_method['short_title']), WATCHDOG_ERROR);
+    }
+  }
+  else {
+    watchdog('commerce_recurring', "Could not fetch payment transaction for order @order_id's parent order.",
+             array('@order_id' => $order->order_id), WATCHDOG_ERROR);
+    return;
+  }
+}
+
+/**
+ * Util to fetch the last payment transaction made against an order
+ * @param $order_id int
+ *   The order id
+ *
+ * @return object
+ *   commerce_payment_transaction
+*/
+function commerce_recurring_fetch_last_payment_transaction_id($order_id) {
+  $query = db_select("commerce_payment_transaction", 'cpt');
+  $query->fields('cpt', array('transaction_id'));
+  $query->range(0, 1);
+  $query->condition('cpt.order_id', $order_id);
+  $query->orderBy('cpt.created', 'DESC');
+  $result = $query->execute();
+  foreach ($result as $row) {
+    return $row->transaction_id;
+  }
+  return FALSE;
 }
