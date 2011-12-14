@@ -66,5 +66,24 @@ function commerce_recurring_default_rules_configuration() {
       ]
     }
   }');
+  
+  $items['commerce_recurring_trigger_payments'] = entity_import('rules_config', '{ "commerce_recurring_trigger_payments" : {
+      "LABEL" : "Trigger Payments against recurring orders",
+      "PLUGIN" : "reaction rule",
+      "REQUIRES" : [ "commerce_recurring", "rules" ],
+      "ON" : [ "cron" ],
+      "DO" : [
+        { "commerce_recurring_load_payments_due" : { "PROVIDE" : { "orders" : { "orders" : "Recurring Orders" } } } },
+        { "LOOP" : {
+            "USING" : { "list" : [ "orders" ] },
+            "ITEM" : { "order" : "Current Order" },
+            "DO" : [
+              { "commerce_recurring_process_payment" : { "commerce_order" : [ "order" ] } }
+            ]
+          }
+        }
+      ]
+    }
+  }');
   return $items;
 }
