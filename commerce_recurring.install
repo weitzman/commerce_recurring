@@ -320,9 +320,8 @@ function commerce_recurring_update_7001() {
   module_list(TRUE);
   system_rebuild_module_data();
   
-  //Enable aggregator
+  //Enable card on file
   module_enable(array('commerce_cardonfile'));
-  drupal_install_modules(array('commerce_cardonfile'));  
   
   return t('Added payment status field to the recurring order type. If you have existing recurring orders, please set their payment processing status to unprocessed.');
 }
