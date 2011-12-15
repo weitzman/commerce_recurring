@@ -318,7 +318,7 @@ function commerce_recurring_update_7001() {
 
   //Refresh module list
   module_list(TRUE);
-  module_rebuild_cache();
+  system_rebuild_module_data();
   
   //Enable aggregator
   module_enable(array('commerce_cardonfile'));
