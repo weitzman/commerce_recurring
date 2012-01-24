@@ -57,6 +57,18 @@ function commerce_recurring_rules_event_info() {
     'access' => 'commerce_order_rules_access'
   );
   
+  $events['commerce_recurring_rules_event_failed_payment'] = array(
+    'label' => t('A payment fails for a recurring order'),
+    'variables' => array(
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Processed order', array(), array('context' => 'a drupal commerce order')),
+      ),
+    ),
+    'group' => t('Commerce Recurring'),
+    'access' => 'commerce_order_rules_access'
+  );
+  
   $variables = array_merge(
     entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a drupal commerce order')), TRUE, TRUE),
     entity_rules_events_variables('commerce_payment_transaction', t('Last completed transaction'), TRUE)
@@ -380,6 +392,9 @@ function commerce_recurring_process_payment($order) {
         watchdog('commerce_recurring', "Error occured whilst processing recurring transaction payment for order @order_id's - the payment method @method commerce card on file charge callback reported an error.",
              array('@order_id' => $order->order_id,
                    '@method' => $payment_method['short_title']), WATCHDOG_ERROR);
+        module_invoke_all('commerce_recurring_failed_payment', $order);
+        // Invoke the product prepare event with the shopping cart order.
+        rules_invoke_all('commerce_recurring_rules_event_failed_payment', $order);
       }
       else {
         watchdog('commerce_recurring', "Processed recurring transaction payment for order @order_id's - using @method payment method - return code: @return.",
