@@ -97,13 +97,6 @@ function _commerce_recurring_installed_fields() {
       'field_name' => 'commerce_recurring_interval',
       'cardinality' => 1,
       'type'        => 'interval',
-      'settings'    => array(
-        'allowed_periods' => array(
-          'day' => 'day',
-          'week' => 'week',
-          'month' => 'month'
-        ),
-      ),
     ),
     'commerce_recurring_parent_order' => array(
       'field_name' => 'commerce_recurring_parent_order',
@@ -185,6 +178,13 @@ function _commerce_recurring_installed_instances() {
         'default' => array(
           'label' => 'hidden',
           'type' => 'interval_default',
+        ),
+      ),
+      'settings' => array(
+        'allowed_periods' => array(
+          'day' => 'day',
+          'week' => 'week',
+          'month' => 'month'
         ),
       ),
     ),
