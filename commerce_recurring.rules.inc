@@ -21,7 +21,7 @@ function commerce_recurring_rules_condition_info() {
     ),
     'group' => t('Commerce Order'),
   );
-  
+
   $conditions['commerce_recurring_rules_order_contains_recurring'] = array(
     'label' => t('Order contains a recurring product'),
     'parameter' => array(
@@ -56,7 +56,7 @@ function commerce_recurring_rules_event_info() {
     'group' => t('Commerce Recurring'),
     'access' => 'commerce_order_rules_access'
   );
-  
+
   $events['commerce_recurring_rules_event_failed_payment'] = array(
     'label' => t('A payment fails for a recurring order'),
     'variables' => array(
@@ -68,12 +68,12 @@ function commerce_recurring_rules_event_info() {
     'group' => t('Commerce Recurring'),
     'access' => 'commerce_order_rules_access'
   );
-  
+
   $variables = array_merge(
     entity_rules_events_variables('commerce_order', t('Order', array(), array('context' => 'a drupal commerce order')), TRUE, TRUE),
     entity_rules_events_variables('commerce_payment_transaction', t('Last completed transaction'), TRUE)
   );
-  
+
   $events['commerce_recurring_rules_event_new_payment'] = array(
     'label' => t('A new recurring order payment created'),
     'variables' => $variables,
@@ -92,7 +92,7 @@ function commerce_recurring_rules_event_info() {
     'group' => t('Commerce Recurring'),
     'access' => 'commerce_order_rules_access'
   );
-  
+
   return $events;
 }
 
@@ -120,7 +120,7 @@ function commerce_recurring_rules_action_info() {
     ),
     'group' => t('Commerce Recurring'),
   );
-  
+
   $actions['commerce_recurring_load_recurring'] = array(
     'label' => t('Load recurring orders'),
     'parameter' => array(),
@@ -133,7 +133,7 @@ function commerce_recurring_rules_action_info() {
     ),
     'group' => t('Commerce Recurring'),
   );
-  
+
   $actions['commerce_recurring_load_payments_due'] = array(
     'label' => t('Load recurring orders with due payments'),
     'parameter' => array(),
@@ -146,7 +146,7 @@ function commerce_recurring_rules_action_info() {
     ),
     'group' => t('Commerce Recurring'),
   );
-  
+
   $actions['commerce_recurring_process_payment'] = array(
     'label' => t('Process payments against recurring orders'),
     'parameter' => array(
@@ -157,7 +157,7 @@ function commerce_recurring_rules_action_info() {
     ),
     'group' => t('Commerce Recurring'),
   );
-  
+
   $actions['commerce_recurring_initialise_recurring'] = array(
     'label' => t('Mark an order as a recurring master'),
     'parameter' => array(
@@ -206,25 +206,27 @@ function commerce_recurring_process_recurring($master_order) {
     // Get first value
     $interval = $interval[0];
     $interval_label = interval_format_interval($interval);
-    
+
     // Create the new product line item.
-    $new_line_item = commerce_product_line_item_new ($product, $line_item_wrapper->quantity->value(), $recurring_order->order_id);
+    $new_line_item = commerce_product_line_item_new(
+      $product, $line_item_wrapper->quantity->value(), $recurring_order->order_id, array(), $line_item_wrapper->type->value());
+
     $new_line_item->line_item_label = t('Recurring !old_label (charged every !interval)',
                                         array ('!old_label' => $new_line_item->line_item_label,
                                                '!interval' => $interval_label));
-  
+
     // Save the line item now so we get its ID.
     commerce_line_item_save($new_line_item);
-  
+
     // Add it to the order's line item reference value.
     $recurring_order_wrapper->commerce_line_items[] = $new_line_item;
   }
-  
+
   // Set the parent order
   $recurring_order->commerce_recurring_parent_order[LANGUAGE_NONE][0]['order_id'] = $master_order->order_id;
   // Set the payment due date
   $payment_interval = variable_get('commerce_recurring_payment_interval', 3);
-  
+
   $payment_dt = new DateObject('now');
   if ($payment_interval) {
     $payment_dt->modify("+$payment_interval days");
@@ -235,23 +237,23 @@ function commerce_recurring_process_recurring($master_order) {
 
   // Save the updated order.
   commerce_order_save($recurring_order);
-  
+
   // Invoke rules event to notify others that the new order has been created
   rules_invoke_all('commerce_recurring_rules_event_new_order', $recurring_order);
-  
+
   // Get the due date
   $due_date = $master_order_wrapper->commerce_recurring_next_due->value();
-  
+
   // Create an object
   $due_date_obj = new DateObject($due_date, date_default_timezone(), 'U');
-  
+
   // Apply the inteval
   if ($interval && interval_apply_interval($due_date_obj, $interval)) {
     // Update the parent next due
     $master_order->commerce_recurring_next_due[LANGUAGE_NONE][0]['value'] = $due_date_obj->format('U');
     // Save the parent
     commerce_order_save($master_order);
-  }  
+  }
   watchdog('Commerce Recurring', 'Generated new recurring order @new_id as child of recurring master @master_id.',
            array('@master_id' => $master_order->order_id, '@new_id' => $recurring_order->order_id), WATCHDOG_NOTICE);
 
@@ -272,7 +274,7 @@ function commerce_recurring_initialise_recurring($order) {
   foreach ($order_wrapper->commerce_line_items as $line_item) {
     // Load and validate the specified product ID.
     $product = $line_item->commerce_product->value();
-    
+
     if ($product->type != 'recurring') {
       // We don't need this item
       continue;
@@ -281,21 +283,21 @@ function commerce_recurring_initialise_recurring($order) {
     $interval = field_get_items('commerce_product', $product, 'commerce_recurring_interval');
     break;
   }
-  
+
   if (!empty($interval)) {
     $due_dt = new DateObject('now');
-    interval_apply_interval($due_dt, $interval[0]);    
+    interval_apply_interval($due_dt, $interval[0]);
     $order->commerce_recurring_next_due[LANGUAGE_NONE][0]['value'] = $due_dt->format('U');
     // Save the updated order.
     commerce_order_save($order);
-    
+
     // Invoke rules event to notify others that the new order has been created
     rules_invoke_all('commerce_recurring_rules_event_initialise_order', $order);
-    
+
     // Log it
     watchdog('Commerce Recurring', 'Initialised order @id as new recurring master.', array('@id' => $order->order_id), WATCHDOG_NOTICE);
   }
-  
+
 }
 
 /**
