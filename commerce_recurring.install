@@ -1,327 +1,117 @@
 <?php
-/*
- * @file commerce_recurring.install
- * Provides install hooks for the module
- * @copyright Copyright(c) 2011 Rowlands Group
- * @license GPL v3 http://www.fsf.org/licensing/licenses/gpl.html
- * @author Lee Rowlands leerowlands at rowlandsgroup dot com
- * 
+
+/**
+ * @file
  */
+
 
 /**
  * Implements hook_schema().
- * /
-function commerce_recurring_schema() {
-
-}
-
-
-/**
- * Implements hook_uninstall().
  */
-function commerce_recurring_uninstall() {
-  // Loop over each of the fields defined by this module and delete
-  // all instances of the field, their data, and the field itself.
-  foreach (array_keys(_commerce_recurring_installed_fields()) as $field) {
-    field_delete_field($field);
-  }
+function commerce_recurring_schema() {
+  $schema = array();
 
-  // Purge all field infromation
-  field_purge_batch(1000);
-  
-  // Remove the product type
-  commerce_product_ui_product_type_delete('recurring', FALSE);
+  $schema['commerce_recurring'] = array(
+    'description' => 'The base table for commerce recurring entities.',
+    'fields' => array(
+      'commerce_recurring_id' => array(
+        'description' => 'The primary identifier for a recurring entity, used internally only.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'description' => 'The type (bundle) of this recurring entity.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that owns the recurring entity.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => 'Boolean indicating whether or not the recurring entity is active.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'start_date' => array(
+        'description' => 'The Unix timestamp when the recurring entity was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'due_date' => array(
+        'description' => 'The Unix timestamp when the recurring entity has is next due date.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'end_date' => array(
+        'description' => 'The Unix timestamp when the recurring entity ends being active.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data.',
+      ),
+    ),
+    'primary key' => array('commerce_recurring_id'),
+    'indexes' => array(
+      'commerce_recurring_type' => array('type'),
+      'uid' => array('uid'),
+    ),
+    'foreign keys' => array(
+      'creator' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+  );
+
+  return $schema;
 }
-
 /**
  * Implements hook_install().
  */
 function commerce_recurring_install() {
   // Create the recurring product type.
-  $product_type = commerce_product_ui_product_type_new();
-
-  $product_type['type'] = 'recurring';
-  $product_type['name'] = t('Recurring product');
-  $product_type['description'] = t('A recurring purchase product type.');
-  $product_type['is_new'] = TRUE;
+  $product_type = array(
+    'type' => 'recurring',
+    'name' => t('Recurring product'),
+    'description' => t('A recurring purchase product type'),
+    'help' => '',
+    'revision' => 1,
+    'is_new' => TRUE,
+  );
 
   commerce_product_ui_product_type_save($product_type, FALSE);
-  commerce_price_create_instance('commerce_price', 'commerce_product', 'recurring', t('Price'), 0, 'calculated_sell_price');
-  
-  // If a field type we know should exist isn't found, clear the Field cache.
-  if (!field_info_field_types('commerce_order_reference') ||
-    !field_info_field_types('interval') ||
-    !field_info_field_types('datestamp')) {
-    field_cache_clear();
-  }
-  
-  // Make sure our entity info exists
-  entity_info_cache_clear();
-
-  // Create our fields
-  foreach (_commerce_recurring_installed_fields() as $field_name => $field_detail) {
-    // Look for existing field.
-    $field = field_info_field($field_name);
-  
-    if (empty($field)) {
-      $field = field_create_field($field_detail);
-    }
-  }
-
-  // And their instances
-  foreach (_commerce_recurring_installed_instances() as $field_name => $instance_detail) {
-    // Look for existing instance.
-    $instance = field_info_instance($instance_detail['entity_type'], $field_name, $instance_detail['bundle']);
-  
-    if (empty($instance)) {
-      field_create_instance($instance_detail);
-    }
-  }
-  
-  // Setup our order type
-  commerce_order_configure_order_type('recurring_order');
 }
 
 /**
- * Returns a structured array defining the fields created by this module.
- * 
- * @return
- *  An associative array specifying the fields we wish to add to our
- *  entities
- *
+ * Implements hook_uninstall().
  */
-function _commerce_recurring_installed_fields() {
-  $t = get_t();
-  return array(
-    'commerce_recurring_interval' => array(
-      'field_name' => 'commerce_recurring_interval',
-      'cardinality' => 1,
-      'type'        => 'interval',
-    ),
-    'commerce_recurring_parent_order' => array(
-      'field_name' => 'commerce_recurring_parent_order',
-      'cardinality' => 1,
-      'type'        => 'commerce_order_reference',
-      'settings'    => array(
-        'referenceable_types' => array('commerce_order' => $t('Order')),
-        'field_injection' => FALSE
-      ),
-    ),
-    'commerce_recurring_next_due' => array(
-      'field_name' => 'commerce_recurring_next_due',
-      'cardinality' => 1,
-      'type'        => 'datestamp',
-      'settings'    => array(
-        'granularity' => array(
-          'day' => 'day',
-          'hour' => 0,
-          'minute' => 0,
-          'month' => 'month',
-          'second' => 0,
-          'year' => 'year',
-        ),
-        'repeat' => 0,
-        'timezone_db' => 'UTC',
-        'todate' => '',
-        'tz_handling' => 'none',
-      ),
-    ),
-    'commerce_recurring_payment_due' => array(
-      'field_name' => 'commerce_recurring_payment_due',
-      'cardinality' => 1,
-      'type'        => 'datestamp',
-      'settings'    => array(
-        'granularity' => array(
-          'day' => 'day',
-          'hour' => 0,
-          'minute' => 0,
-          'month' => 'month',
-          'second' => 0,
-          'year' => 'year',
-        ),
-        'repeat' => 0,
-        'timezone_db' => 'UTC',
-        'todate' => '',
-        'tz_handling' => 'none',
-      ),
-    ),
-    'commerce_recurring_payment' => array(
-      'field_name' => 'commerce_recurring_payment',
-      'cardinality' => 1,
-      'type'        => 'list_boolean',
-      'settings'    => array(
-        'allowed_values' => array(0 => $t('Unprocessed'), 1 => $t('Processed'))
-      ),
-    ),
-  );
-}
-
-/**
- * Returns a structured array defining the instances for this module
- *
- * @return
- *  An associative array specifying the instances we wish to add to our entities
- *
- */
-function _commerce_recurring_installed_instances() {
-  $t = get_t();
-  return array(
-    'commerce_recurring_interval' => array(
-      'entity_type' => 'commerce_product',
-      'bundle' => 'recurring',
-      'field_name' => 'commerce_recurring_interval',
-      'label'       => $t('Billing interval'),
-      'widget'      => array(
-        'type'    => 'interval_default',
-      ),
-      'display' => array(
-        'default' => array(
-          'label' => 'hidden',
-          'type' => 'interval_default',
-        ),
-      ),
-      'settings' => array(
-        'allowed_periods' => array(
-          'day' => 'day',
-          'week' => 'week',
-          'month' => 'month'
-        ),
-      ),
-    ),
-    'commerce_recurring_payment' => array(
-      'entity_type' => 'commerce_order',
-      'bundle' => 'recurring_order',
-      'field_name' => 'commerce_recurring_payment',
-      'label'       => $t('Payment Processed'),
-      'widget'      => array(
-        'type'    => 'options_select',
-      ),
-      'display' => array(
-        'default' => array(
-          'label' => 'hidden',
-          'type' => 'list_default',
-        ),
-      ),
-    ),
-    'commerce_recurring_parent_order' => array(
-      'entity_type' => 'commerce_order',
-      'bundle' => 'recurring_order',
-      'field_name' => 'commerce_recurring_parent_order',
-      'label'       => $t('Parent Order.'),
-      'widget'      => array(
-        'type'    => 'options_select',
-      ),
-      'display' => array(
-        'default' => array(
-          'label' => 'hidden',
-          'type' => 'commerce_order_reference_link',
-        ),
-      ),
-    ),
-    'commerce_recurring_payment_due' => array(
-      'entity_type' => 'commerce_order',
-      'bundle' => 'recurring_order',
-      'field_name' => 'commerce_recurring_payment_due',
-      'label'       => $t('Payment Due.'),
-      'widget'      => array(
-        'settings' => array(
-          'increment' => '15',
-          'input_format' => 'm/d/Y',
-          'default_value' => 'blank',
-          'input_format_custom' => '',
-          'label_position' => 'above',
-          'repeat_collapsed' => 0,
-          'text_parts' => array(),
-          'year_range' => '-3:+3',
-        ),
-        'type' => 'date_popup',
-      ),
-      'display' => array(
-        'default' => array(
-          'label' => 'above',
-          'module' => 'date',
-          'settings' => array(
-            'format_type' => 'long',
-            'fromto' => 'both',
-            'multiple_from' => '',
-            'multiple_number' => '',
-            'multiple_to' => '',
-            'show_repeat_rule' => 'show',
-          ),
-          'type' => 'date_default',
-        ),
-      ),
-    ),
-    'commerce_recurring_next_due' => array(
-      'entity_type' => 'commerce_order',
-      'bundle' => 'commerce_order',
-      'field_name' => 'commerce_recurring_next_due',
-      'label'       => $t('Next Invoice.'),
-      'widget'      => array(
-        'settings' => array(
-          'increment' => '15',
-          'default_value' => 'blank',
-          'input_format' => 'm/d/Y',
-          'input_format_custom' => '',
-          'label_position' => 'above',
-          'repeat_collapsed' => 0,
-          'text_parts' => array(),
-          'year_range' => '-3:+3',
-        ),
-        'type' => 'date_popup',
-      ),
-      'display' => array(
-        'default' => array(
-          'label' => 'above',
-          'module' => 'date',
-          'settings' => array(
-            'format_type' => 'long',
-            'fromto' => 'both',
-            'multiple_from' => '',
-            'multiple_number' => '',
-            'multiple_to' => '',
-            'show_repeat_rule' => 'show',
-          ),
-          'type' => 'date_default',
-        ),
-      ),
-    )
-  );
-}
-
-/**
- * Implements hook_update_N
- * Adds the payment status field to the recurring order
-*/
-function commerce_recurring_update_7001() {
-  // Get the field details
-  $field_name = 'commerce_recurring_payment';
-  $field = field_info_field($field_name);
-  $field_details = _commerce_recurring_installed_fields();
-  $field_detail = $field_details[$field_name];
-  
-  if (empty($field)) {
-    $field = field_create_field($field_detail);
+function commerce_recurring_uninstall() {
+  module_load_include('module', 'commerce');
+  // Delete recurring product type and field instances.
+  commerce_product_ui_product_type_delete('recurring');
+  commerce_delete_instances('commerce_product', 'recurring');
+  // Delete field instances from commerce recurring entity.
+  commerce_delete_instances('commerce_recurring');
+  // Delete all fields created by this module.
+  $fields = array('commerce_recurring_ini_price', 'commerce_recurring_rec_price', 'commerce_recurring_ini_period', 'commerce_recurring_rec_period',
+    'commerce_recurring_end_period', 'commerce_recurring_ref_product', 'commerce_recurring_order', 'commerce_recurring_fixed_price');
+  foreach($fields as $field_name) {
+    commerce_delete_field($field_name);
   }
-
-  $instance_details = _commerce_recurring_installed_instances();
-  $instance_detail = $instance_details[$field_name];
-  // Look for existing instance.
-  $instance = field_info_instance($instance_detail['entity_type'], $field_name, $instance_detail['bundle']);
-  
-  if (empty($instance)) {
-    field_create_instance($instance_detail);
-  }
-  
-  // We also make sure commerce_cardonfile is enabled
-  include_once './includes/install.inc';
-
-  //Refresh module list
-  module_list(TRUE);
-  system_rebuild_module_data();
-  
-  //Enable card on file
-  module_enable(array('commerce_cardonfile'));
-  
-  return t('Added payment status field to the recurring order type. If you have existing recurring orders, please set their payment processing status to unprocessed.');
 }

@@ -1,89 +1,88 @@
 <?php
-/*
- * @file commerce_recurring.rules_defaults.inc
- * Provides default rules configurations for commerce recurring
- * @copyright Copyright(c) 2011 Lee Rowlands
- * @license GPL v2 http://www.fsf.org/licensing/licenses/gpl.html
- * @author Lee Rowlands contact at rowlandsgroup dot com
- * 
- */
+
 /**
- * Implementation of hook_default_rules_configuration().
+ * @file
+ * Default rule configurations for Commerce recurring.
+ */
+
+/**
+ * Implements hook_default_rules_configuration().
  */
 function commerce_recurring_default_rules_configuration() {
-  $items = array();
-  $items['commerce_recurring_process_orders'] = entity_import('rules_config', '{ "commerce_recurring_process_orders" : {
-      "LABEL" : "Generate Recurring Orders",
-      "PLUGIN" : "reaction rule",
-      "TAGS" : [ "Commerce Recurring" ],
-      "REQUIRES" : [ "commerce_recurring", "rules" ],
-      "ON" : [ "cron" ],
-      "DO" : [
-        { "commerce_recurring_load_recurring" : { "PROVIDE" : { "orders" : { "orders" : "Recurring Orders" } } } },
-        { "LOOP" : {
-            "USING" : { "list" : [ "orders" ] },
-            "ITEM" : { "order" : "Order" },
-            "DO" : [
-              { "component_commerce_recurring_generate_orders" : { "order" : [ "order" ] } }
-            ]
-          }
-        }
-      ]
-    }
-  }');
-  $items['commerce_recurring_generate_orders'] = entity_import('rules_config', '{ "commerce_recurring_generate_orders" : {
-      "LABEL" : "Generate Recurring Order if Appropriate",
-      "PLUGIN" : "rule",
-      "REQUIRES" : [ "commerce_recurring" ],
-      "USES VARIABLES" : { "order" : { "label" : "Order", "type" : "commerce_order" } },
-      "IF" : [
-        { "commerce_recurring_rules_order_contains_recurring" : { "commerce_order" : [ "order" ] } },
-        { "commerce_recurring_rules_order_is_master" : { "commerce_order" : [ "order" ] } }
-      ],
-      "DO" : [
-        { "commerce_recurring_process_recurring" : {
-            "USING" : { "commerce_order" : [ "order" ] },
-            "PROVIDE" : { "recurring_order" : { "recurring_order" : "New Order" } }
-          }
-        }
-      ]
-    }
-  }');
-  $items['commerce_recurring_initialise_order_master'] = entity_import('rules_config', '{ "commerce_recurring_initialise_order_master" : {
-      "LABEL" : "Set First Repeat date of Recurring Order",
-      "PLUGIN" : "reaction rule",
-      "TAGS" : [ "Commerce Recurring" ],
-      "REQUIRES" : [ "commerce_recurring", "rules", "commerce_checkout" ],
-      "ON" : [ "commerce_checkout_complete" ],
-      "IF" : [
-        { "commerce_recurring_rules_order_contains_recurring" : { "commerce_order" : [ "commerce_order" ] } }
-      ],
-      "DO" : [
-        { "commerce_recurring_initialise_recurring" : {
-            "USING" : { "commerce_order" : [ "commerce_order" ] }
-          }
-        }
-      ]
-    }
-  }');
-  
-  $items['commerce_recurring_trigger_payments'] = entity_import('rules_config', '{ "commerce_recurring_trigger_payments" : {
-      "LABEL" : "Trigger Payments against recurring orders",
-      "PLUGIN" : "reaction rule",
-      "REQUIRES" : [ "commerce_recurring", "rules" ],
-      "ON" : [ "cron" ],
-      "DO" : [
-        { "commerce_recurring_load_payments_due" : { "PROVIDE" : { "orders" : { "orders" : "Recurring Orders" } } } },
-        { "LOOP" : {
-            "USING" : { "list" : [ "orders" ] },
-            "ITEM" : { "order" : "Current Order" },
-            "DO" : [
-              { "commerce_recurring_process_payment" : { "commerce_order" : [ "order" ] } }
-            ]
-          }
-        }
-      ]
-    }
-  }');
-  return $items;
+  $rules = array();
+
+  $rule = rules_reaction_rule();
+  $rule->label = t('Override price for recurring');
+  $rule->active = TRUE;
+  $rule
+    ->event('commerce_product_calculate_sell_price')
+    ->condition('entity_has_field', array(
+      'entity:select' => 'commerce-line-item',
+      'field' => 'commerce_product',
+    ))
+    ->condition('entity_has_field', array(
+      'entity:select' => 'commerce-line-item:commerce-product',
+      'field' => 'commerce_recurring_ini_price',
+    ))
+    ->condition('entity_has_field', array(
+      'entity:select' => 'commerce-line-item:commerce-product',
+      'field' => 'commerce_recurring_rec_price',
+    ))
+    ->action('commerce_recurring_set_price', array(
+      'commerce_line_item:select' => 'commerce-line-item',
+      'listing_price:select' => 'commerce-line-item:commerce_product:commerce-recurring-ini-price',
+      'initial_price:select' => 'commerce-line-item:commerce_product:commerce-recurring-ini-price',
+      'recurring_price:select' => 'commerce-line-item:commerce_product:commerce-recurring-rec-price',
+    ));
+
+  $rule->weight = -10;
+
+  $rules['commerce_recurring_override_price'] = $rule;
+
+  $rule = rules_reaction_rule();
+  $rule->label = t('Create a recurring entity when the order is completed');
+  $rule->active = TRUE;
+  $rule
+    ->event('commerce_payment_order_paid_in_full')
+    ->action('commerce_recurring_get_recurring_line_items', array(
+      'commerce_order:select' => 'commerce-order',
+      'provides' => array('commerce_line_items', 'commerce_line_item'),
+    ));
+
+  $loop = rules_loop(array(
+    'list:select' => 'commerce-line-items',
+    'item:var' => 'current_line_item',
+    'item:label' => t('Current line item'),
+  ))->action('commerce_recurring_generate_recurring_product', array(
+    'commerce_order:select' => 'commerce-order',
+    'commerce_line_item:select' => 'current-line-item',
+  ));
+  $rule->action($loop);
+
+  $rules['commerce_recurring_generate_recurring_product'] = $rule;
+
+  $rule = rules_reaction_rule();
+  $rule->label = t('Generate recurring orders on cron run');
+  $rule->active = TRUE;
+  $rule
+    ->event('cron')
+    ->action('commerce_recurring_get_due_items', array(
+      'number_items' => 5,
+      'timestamp:select' => 'site:current-date',
+      'provides' => array('commerce_recurring_entities', 'commerce_recurring_entity'),
+    ));
+
+  $loop = rules_loop(array(
+    'list:select' => 'commerce-recurring-entities',
+    'item:var' => 'current_recurring_entity',
+    'item:label' => t('Current recurring entity'),
+  ))->action('commerce_recurring_generate_order_from_recurring', array(
+    'commerce_recurring:select' => 'current-recurring-entity',
+    'timestamp:select' => 'site:current-date',
+  ));
+  $rule->action($loop);
+
+  $rules['commerce_recurring_cron_generate_orders'] = $rule;
+
+  return $rules;
 }

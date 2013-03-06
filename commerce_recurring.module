@@ -1,63 +1,448 @@
 <?php
+
 /**
- * @file commerce_recurring.module
- * Provides recurring framework for Drupal Commerce
+ * @file
  */
 
 /**
- * Implements hook_menu().
-*/
-function commerce_recurring_menu() {
-  $items = array();
-  $items['admin/commerce/config/recurring'] = array(
-    'title' => 'Recurring Orders',
-    'file' => 'commerce_recurring.admin.inc',
-    'description' => 'Configure recurring order settings',
-    'access arguments' => array('administer commerce recurring'),
-    'type' => MENU_NORMAL_ITEM,
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('commerce_recurring_admin_form')
-  );
-  return $items;
-}
-
-/**
- * Implements hook_permission()
-*/
-function commerce_recurring_permission() {
-  return array(
-    'administer commerce recurring' => array(
-      'title' => t('Administer Commerce Recurring')
-    )
-  );
-}
-
-/**
- * Implements hook_help().
+ * Implements hook_entity_info().
  */
-function commerce_recurring_help($path, $arg) {
-  switch ($path) {
-    case 'admin/help#commerce_recurring':
-      return t("Provides recurring payment options for Drupal Commerce");
+function commerce_recurring_entity_info() {
+  $return = array(
+    'commerce_recurring' => array(
+      'label' => t('Commerce recurring entity'),
+      'plural label' => t('Commerce recurring entities'),
+      'entity class' => 'Entity',
+      'controller class' => 'EntityAPIController',
+      'views controller class' => 'EntityDefaultViewsController',
+      'base table' => 'commerce_recurring',
+      'fieldable' => TRUE,
+      'entity keys' => array(
+        'id' => 'commerce_recurring_id',
+        'bundle' => 'type',
+      ),
+      'bundle keys' => array(
+        'bundle' => 'type',
+      ),
+      'bundles' => array(
+        'product' => array(
+          'label' => t('Commerce recurring product'),
+        ),
+        'order' => array(
+          'label' => t('Commerce recurring order'),
+        ),
+      ),
+      'view modes' => array(
+        'full' => array(
+          'label' => t('Admin display'),
+          'custom settings' => FALSE,
+        ),
+      ),
+      'module' => 'commerce_recurring',
+    ),
+  );
+
+  return $return;
+}
+
+/**
+ * Implements hook_enable().
+ */
+function commerce_recurring_enable() {
+  // Make sure we're in a non cached environment.
+  entity_info_cache_clear();
+  field_cache_clear();
+
+  // Create and configure the recurring product type fields.
+  commerce_recurring_configure_product_type();
+
+  // Create and configure the recurring entity.
+  commerce_recurring_configure_recurring_entity_type();
+}
+
+/**
+ * Ensures that the price and interval fields are created.
+ */
+function commerce_recurring_configure_product_type() {
+  // Create the price instances for the recurring product type.
+  commerce_recurring_price_create_instance('commerce_price', 'commerce_product', 'recurring', t('Price'), 0, 'calculated_sell_price');
+  // Set the formatter display as hidden by default for the additional price
+  // fields.
+  commerce_recurring_price_create_instance('commerce_recurring_ini_price', 'commerce_product', 'recurring', t('Initial price'), 0, 'calculated_sell_price', array('type' => 'hidden'));
+  commerce_recurring_price_create_instance('commerce_recurring_rec_price', 'commerce_product', 'recurring', t('Recurring price'), 0, 'calculated_sell_price', array('type' => 'hidden'));
+
+  // Create interval fields.
+  $fields = array(
+    'commerce_recurring_ini_period' => array(
+      'field_name' => 'commerce_recurring_ini_period',
+      'cardinality' => 1,
+      'type'        => 'interval',
+    ),
+    'commerce_recurring_rec_period' => array(
+      'field_name' => 'commerce_recurring_rec_period',
+      'cardinality' => 1,
+      'type'        => 'interval',
+    ),
+    'commerce_recurring_end_period' => array(
+      'field_name' => 'commerce_recurring_end_period',
+      'cardinality' => 1,
+      'type'        => 'interval',
+    ),
+  );
+
+  // Set instance settings for the interval fields.
+  $basic_interval_instance = array(
+    'entity_type' => 'commerce_product',
+    'bundle' => 'recurring',
+    'widget' => array(
+      'type' => 'interval_default',
+    ),
+    'display' => array(
+      'default' => array(
+        'label' => 'hidden',
+        'type' => 'interval_default',
+      ),
+    ),
+    'settings' => array(
+      'allowed_periods' => array(
+        'day' => 'day',
+        'week' => 'week',
+        'month' => 'month',
+        'year' => 'year',
+      ),
+    ),
+    'weight' => 0,
+  );
+  $instances = array(
+    'commerce_recurring_ini_period' => $basic_interval_instance,
+    'commerce_recurring_rec_period' => $basic_interval_instance,
+    'commerce_recurring_end_period' => $basic_interval_instance,
+  );
+  $instances['commerce_recurring_ini_period']['label'] = t('Initial period');
+  $instances['commerce_recurring_rec_period']['label'] = t('Recurring period');
+  $instances['commerce_recurring_end_period']['label'] = t('End period');
+
+  // Create fields & instances if necessary.
+  foreach($fields as $field_name => $field) {
+    $info_field = field_info_field($field_name);
+    $instance = field_info_instance('commerce_product', $field_name, 'recurring');
+
+    if (empty($info_field)) {
+      $field = field_create_field($field);
+    }
+
+    if (empty($instance)) {
+      $instance = $instances[$field_name];
+      $instance['field_name'] = $field_name;
+      field_create_instance($instance);
+    }
   }
 }
 
 /**
- * Implements hook_views_api().
+ * Ensures that the fields for the recurring entity are created.
  */
-function commerce_recurring_views_api() {
-  return array(
-    'api' => 3,
-    'path' => drupal_get_path('module', 'commerce_recurring') . '/includes/views',
+function commerce_recurring_configure_recurring_entity_type() {
+  // Product bundle.
+
+  // Create a price field to save the price of the product at the moment of
+  // the entity creation.
+  commerce_recurring_price_create_instance('commerce_recurring_fixed_price', 'commerce_recurring', 'product', t('Price'), 0, 'calculated_sell_price');
+
+  // Entity reference fields for relating the recurring entity to the product
+  // that is recurring and also with the orders.
+  $fields = array(
+    'commerce_recurring_ref_product' => array(
+      'field_name' => 'commerce_recurring_ref_product',
+      'type' => 'entityreference',
+      'cardinality' => 1,
+      'entity_types' => array('commerce_recurring'),
+      'module' => 'commerce_recurring',
+      'translatable' => FALSE,
+      'settings' => array(
+        'target_type' => 'commerce_product',
+        'handler' => 'base',
+        'handler_settings' => array(),
+      ),
+    ),
+    'commerce_recurring_order' => array(
+      'field_name' => 'commerce_recurring_order',
+      'type' => 'entityreference',
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+      'entity_types' => array('commerce_recurring'),
+      'module' => 'commerce_recurring',
+      'translatable' => FALSE,
+      'settings' => array(
+        'target_type' => 'commerce_order',
+        'handler' => 'base',
+        'handler_settings' => array(),
+      ),
+    ),
   );
+
+  // ER instances.
+  $basic_instance = array(
+    'entity_type' => 'commerce_recurring',
+    'bundle' => 'product',
+    'required' => TRUE,
+    'settings' => array(),
+    'display' => array(),
+    'widget' => array(
+      'type' => 'entityreference_autocomplete',
+      'module' => 'entityreference',
+    ),
+  );
+  $instances = array(
+    'commerce_recurring_ref_product' => $basic_instance,
+    'commerce_recurring_order' => $basic_instance,
+  );
+
+  $instances['commerce_recurring_ref_product']['label'] = t('Referenced product');
+  $instances['commerce_recurring_order']['label'] = t('Referenced orders');
+
+  // Create fields & instances if necessary.
+  foreach($fields as $field_name => $field) {
+    $info_field = field_info_field($field_name);
+    $instance = field_info_instance('commerce_recurring', $field_name, 'product');
+
+    if (empty($info_field)) {
+      $field = field_create_field($field);
+    }
+
+    if (empty($instance)) {
+      $instance = $instances[$field_name];
+      $instance['field_name'] = $field_name;
+      field_create_instance($instance);
+    }
+  }
+
+  // @TODO Order bundle.
 }
 
+/**
+ * Creates a instance of a price field on the specified bundle.
+ *
+ * @param $field_name
+ *   The name of the field; if it already exists, a new instance of the existing
+ *     field will be created. For fields governed by the Commerce modules, this
+ *     should begin with commerce_.
+ * @param $entity_type
+ *   The type of entity the field instance will be attached to.
+ * @param $bundle
+ *   The bundle name of the entity the field instance will be attached to.
+ * @param $label
+ *   The label of the field instance.
+ * @param $weight
+ *   The default weight of the field instance widget and display.
+ * @param $calculation
+ *   A string indicating the default value of the display formatter's calculation
+ *     setting.
+ * @param $display
+ *   An array of default display data used for the entity's current view modes.
+ */
+function commerce_recurring_price_create_instance($field_name, $entity_type, $bundle, $label, $weight = 0, $calculation = FALSE, $display = array(), $required = FALSE) {
+  // If a field type we know should exist isn't found, clear the Field cache.
+  if (!field_info_field_types('commerce_price')) {
+    field_cache_clear();
+  }
+
+  // Look for or add the specified price field to the requested entity bundle.
+  $field = field_info_field($field_name);
+  $instance = field_info_instance($entity_type, $field_name, $bundle);
+
+  if (empty($field)) {
+    $field = array(
+      'field_name' => $field_name,
+      'type' => 'commerce_price',
+      'cardinality' => 1,
+      'entity_types' => array($entity_type),
+      'translatable' => FALSE,
+    );
+    $field = field_create_field($field);
+  }
+
+  if (empty($instance)) {
+    $instance = array(
+      'field_name' => $field_name,
+      'entity_type' => $entity_type,
+      'bundle' => $bundle,
+
+      'label' => $label,
+      'required' => $required,
+      'settings' => array(),
+
+      // Because this widget is locked, we need it to use the full price widget
+      // since the currency option can't be adjusted at the moment.
+      'widget' => array(
+        'type' => 'commerce_price_full',
+        'weight' => $weight,
+        'settings' => array(
+          'currency_code' => 'default',
+        ),
+      ),
+
+      'display' => array(),
+    );
+
+    $entity_info = entity_get_info($entity_type);
+
+    // Spoof the default view mode and node teaser so its display type is set.
+    $entity_info['view modes'] += array(
+      'default' => array(),
+      'node_teaser' => array(),
+    );
+
+    foreach ($entity_info['view modes'] as $view_mode => $data) {
+      $instance['display'][$view_mode] = $display + array(
+        'label' => 'hidden',
+        'type' => 'commerce_price_formatted_amount',
+        'settings' => array(
+          'calculation' => $calculation,
+        ),
+        'weight' => $weight,
+      );
+    }
+
+    field_create_instance($instance);
+  }
+}
 
 /**
- * Implements hook_entity_info_alter()
-*/
-function commerce_recurring_entity_info_alter() {
-  $entity_info['commerce_order']['bundles']['recurring_order'] = array(
-    'label' => t('Recurring Order', array(), array('context' => 'a recurring drupal commerce order')),
+ * Returns an initialized Commerce Recurring entity.
+ *
+ * Initializes all the properties defined plus the two entity reference fields.
+ *  - product_id: Commerce product id, populates commerce_recurring_ref_product
+ *  - order_ids: Array of Commerce order ids, populates commerce_recurring_order
+ *
+ * @see commerce_recurring_entity_property_info()
+ * @see commerce_recurring_configure_recurring_entity_type()
+ *
+ */
+function commerce_recurring_new(array $values = array()) {
+  $values += array(
+    'commerce_recurring_id' => NULL,
+    'type' => isset($values['type']) ? $values['type'] : 'product',
+    'status' => 1,
+    'start_date' => '',
+    'due_date' => '',
+    'end_date' => '',
+    'uid' => '',
+    'data' => array(),
   );
+
+  // Retrieve the properties to get from fields.
+  if (isset($values['product_id'])) {
+    $values['commerce_recurring_ref_product'] =  array(
+      LANGUAGE_NONE => array(
+        0 => array(
+          'target_id' => $values['product_id'],
+          'taget_type' => 'commerce_product',
+        ),
+      ),
+    );
+    unset($values['product_id']);
+  }
+  if (isset($values['order_ids']) && is_array($values['order_ids'])) {
+    foreach($values['order_ids'] as $delta => $order_id) {
+      $values['commerce_recurring_order'] =  array(
+        LANGUAGE_NONE => array(
+          $delta => array(
+            'target_id' => $order_id,
+            'taget_type' => 'commerce_order',
+          ),
+        ),
+      );
+    }
+    unset($values['order_ids']);
+  }
+
+  return entity_create('commerce_recurring', $values);
+}
+
+/**
+ * Determine if a product has recurring properties.
+ *
+ * @param $product
+ *   Commerce product.
+ */
+function commerce_recurring_product_is_recurring($product) {
+  $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
+  // If the product is of type recurring, we don't need to look anything else.
+  if ($product_wrapper->type->value() == 'recurring') {
+    return TRUE;
+  }
+  // In case of other product types, they still might be recurring ones, check
+  // for the presence of any of the recurring fields.
+  $fields = array('commerce_recurring_ini_price', 'commerce_recurring_rec_price', 'commerce_recurring_ini_period', 'commerce_recurring_rec_period', 'commerce_recurring_end_period');
+  foreach ($fields as $field_name) {
+    if (!empty($product_wrapper->{$field_name})) {
+      return TRUE;
+    }
+  }
+
+  // @TODO: Add a hook to be able to set recurring product types otherwise.
+
+  return FALSE;
+}
+
+/**
+ * Return all the line items that contain a recurring product in an order
+ * context.
+ *
+ * @param $order
+ *   Commerce order.
+ *
+ * @return array of commerce line items that have recurring capabilities or
+ *   empty array if none of the products from the order is recurring.
+ */
+function commerce_recurring_order_load_recurring_line_items($order) {
+  $recurring_entities = &drupal_static(__FUNCTION__);
+  // If we actually received a valid order...
+  if (!empty($order) && !isset($recurring_entities)) {
+    $recurring_entities = array();
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+      if (in_array($line_item_wrapper->type->value(), commerce_product_line_item_types())) {
+        $product = $line_item_wrapper->commerce_product->value();
+        if (commerce_recurring_product_is_recurring($product)) {
+          $recurring_entities[$order->order_id][] = $line_item_wrapper->value();
+        }
+      }
+    }
+  }
+
+  return $recurring_entities;
+}
+
+/**
+ * Load all recurring entities in an order context.
+ *
+ * @param $order
+ *   Commerce order.
+ */
+function commerce_recurring_load_by_order($order) {
+  $return = array();
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'commerce_recurring')
+    ->propertyCondition('status', TRUE)
+    ->fieldCondition('commerce_recurring_order', 'target_id', $order->order_id);
+  $result = $query->execute();
+  if (!empty($result['commerce_recurring'])) {
+    foreach($result['commerce_recurring'] as $recurring) {
+      $return[] = entity_load_single('commerce_recurring', $recurring->commerce_recurring_id);
+    }
+  }
+  return $return;
+}
+
+/**
+ * Mark a recurring entity as inactive.
+ *
+ * @param $recurring_entity
+ *   A commerce recurring entity.
+ */
+function commerce_recurring_stop_recurring($recurring_entity) {
+  $recurring_entity->status = 0;
+  rules_invoke_event('commerce_recurring_stop_recurring', $recurring_entity);
+  entity_save('commerce_recurring', $recurring_entity);
 }
