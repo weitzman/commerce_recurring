@@ -204,12 +204,12 @@ function commerce_recurring_rules_set_price($line_item, $listing_price, $initial
     $product = $product_wrapper->value();
     // If the product is recurring we act.
     if (commerce_recurring_product_is_recurring($product)) {
+      if (!empty($line_item->order_id)) {
+        $order = commerce_order_load($line_item->order_id);
+      }
       if (!empty($line_item->data['recurring_entity'])) {
         $recurring_entity = entity_load_single('commerce_recurring', $line_item->data['recurring_entity']);
         $recurring_wrapper = entity_metadata_wrapper('commerce_recurring', $recurring_entity);
-        if (!empty($line_item->order_id)) {
-          $order = commerce_order_load($line_item->order_id);
-        }
         // Case: Recurring price.
         $recurring_orders = $recurring_wrapper->commerce_recurring_order->value();
         // Empty the price components to recalculate them.
@@ -244,8 +244,6 @@ function commerce_recurring_rules_set_price($line_item, $listing_price, $initial
         //@TODO: // Case: Initial price.
         //@TODO: Fix cart listing when displaying the cart with the product.
       }
-
-
 
       if (!empty($price)) {
         // Alter the base price to the current one.
@@ -401,17 +399,22 @@ function commerce_recurring_rules_generate_order_from_recurring($recurring_entit
   }
 
   // Generate a new order with that product.
-  $order = commerce_cart_order_new($recurring_wrapper->uid->value());
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-  $line_item = commerce_product_line_item_new($product_wrapper->value(), 1, $order->order_id);
+  $order = commerce_order_new($recurring_entity->uid, 'cart');
+  $order->log = t('Created from recurring entity.');
+  // Add the recurring entity id to the data array from the order to keep track.
+  $order->data['recurring_entity'] = $recurring_wrapper->commerce_recurring_id->value();
+  commerce_order_save($order);
+
+  $line_item = commerce_product_line_item_new($product_wrapper->value());
+  $line_item->order_id = $order->order_id;
   // We need to add a flag to the line item to be able to know that we're in a
   // recurring context in rules.
   $line_item->data['recurring_entity'] = $recurring_wrapper->commerce_recurring_id->value();
   rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
   commerce_line_item_save($line_item);
-  $order_wrapper->commerce_line_items[] = $line_item;
-  // Add the recurring entity id to the data array from the order to keep track.
-  $order->data['recurring_entity'] = $recurring_wrapper->commerce_recurring_id->value();
+  entity_get_controller('commerce_line_item')->resetCache(array($line_item->line_item_id));
+
+  $order->commerce_line_items[LANGUAGE_NONE][0]['line_item_id'] = $line_item->line_item_id;
   commerce_order_save($order);
 
   $recurring_wrapper->commerce_recurring_order[] = $order->order_id;
