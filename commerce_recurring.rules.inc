@@ -134,6 +134,12 @@ function commerce_recurring_rules_action_info() {
         'label' => t('Due date'),
       ),
     ),
+    'provides' => array(
+      'order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Commerce Order'),
+      ),
+    ),
     'group' => t('Commerce recurring'),
     'callbacks' => array(
       'execute' => 'commerce_recurring_rules_generate_order_from_recurring',
@@ -419,6 +425,7 @@ function commerce_recurring_rules_generate_order_from_recurring($recurring_entit
 
   $recurring_wrapper->commerce_recurring_order[] = $order->order_id;
   entity_save('commerce_recurring', $recurring_wrapper->value());
+  return array('order' => $order);
 }
 
 /**
