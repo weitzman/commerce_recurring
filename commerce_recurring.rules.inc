@@ -428,7 +428,7 @@ function commerce_recurring_rules_generate_order_from_recurring($recurring_entit
  *   Commerce order to check.
  */
 function commerce_recurring_rules_order_contains_recurring_product($order) {
-  return count(commerce_recurring_order_load_recurring_products($order)) > 0 ? TRUE : FALSE;
+  return count(commerce_recurring_order_load_recurring_line_items($order)) > 0 ? TRUE : FALSE;
 }
 
 /**
