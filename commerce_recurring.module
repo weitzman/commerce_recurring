@@ -18,7 +18,7 @@ function commerce_recurring_entity_info() {
       'base table' => 'commerce_recurring',
       'fieldable' => TRUE,
       'entity keys' => array(
-        'id' => 'commerce_recurring_id',
+        'id' => 'id',
         'bundle' => 'type',
       ),
       'bundle keys' => array(
@@ -320,7 +320,7 @@ function commerce_recurring_price_create_instance($field_name, $entity_type, $bu
  */
 function commerce_recurring_new(array $values = array()) {
   $values += array(
-    'commerce_recurring_id' => NULL,
+    'id' => NULL,
     'type' => isset($values['type']) ? $values['type'] : 'product',
     'status' => 1,
     'start_date' => '',
@@ -429,7 +429,7 @@ function commerce_recurring_load_by_order($order) {
   $result = $query->execute();
   if (!empty($result['commerce_recurring'])) {
     foreach($result['commerce_recurring'] as $recurring) {
-      $return[] = entity_load_single('commerce_recurring', $recurring->commerce_recurring_id);
+      $return[] = entity_load_single('commerce_recurring', $recurring->id);
     }
   }
   return $return;
@@ -445,4 +445,30 @@ function commerce_recurring_stop_recurring($recurring_entity) {
   $recurring_entity->status = 0;
   rules_invoke_event('commerce_recurring_stop_recurring', $recurring_entity);
   entity_save('commerce_recurring', $recurring_entity);
+}
+
+/**
+ * Implements hook_commerce_order_status_info().
+ */
+function commerce_recurring_commerce_order_status_info() {
+  $order_statuses = array();
+
+  // Create a new status before Pending so we can generate orders in recurring
+  // processes without intefering with the current cart for the user.
+  $order_statuses['recurring_pending'] = array(
+    'name' => 'recurring_pending',
+    'title' => t('Pending (Recurring order)'),
+    'state' => 'pending',
+    'weight' => -1,
+  );
+
+  return $order_statuses;
+}
+
+ /**
+  * Implements hook_cron().
+  */
+function commerce_recurring_cron() {
+  // Invoke our cron Rules event.
+  rules_invoke_all('commerce_recurring_cron');
 }

@@ -65,21 +65,33 @@ function commerce_recurring_default_rules_configuration() {
   $rule->label = t('Generate recurring orders on cron run');
   $rule->active = TRUE;
   $rule
-    ->event('cron')
+    ->event('commerce_recurring_cron')
     ->action('commerce_recurring_get_due_items', array(
       'number_items' => 5,
       'timestamp:select' => 'site:current-date',
       'provides' => array('commerce_recurring_entities', 'commerce_recurring_entity'),
     ));
 
+  $actions = array(
+    'commerce_recurring:select' => 'current-recurring-entity',
+    'timestamp:select' => 'site:current-date',
+  );
+
+  // Provide a default way to copy customer profiles to the new order.
+  $profile_fields  = commerce_info_fields('commerce_customer_profile_reference', 'commerce_order');
+  foreach ($profile_fields as $name => $field) {
+    // @TODO: The recurring order might be from a different order bundle.
+    if ($instance = field_info_instance('commerce_order', $name, 'commerce_order')) {
+      $actions[$name . ':select'] = strtr($name, '_', '-');
+    }
+  }
+
   $loop = rules_loop(array(
     'list:select' => 'commerce-recurring-entities',
     'item:var' => 'current_recurring_entity',
     'item:label' => t('Current recurring entity'),
-  ))->action('commerce_recurring_generate_order_from_recurring', array(
-    'commerce_recurring:select' => 'current-recurring-entity',
-    'timestamp:select' => 'site:current-date',
-  ));
+  ))->action('commerce_recurring_provide_order_properties', array('commerce_recurring:select' => 'current-recurring-entity'))
+  ->action('commerce_recurring_generate_order_from_recurring', $actions);
   $rule->action($loop);
 
   $rules['commerce_recurring_cron_generate_orders'] = $rule;

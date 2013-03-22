@@ -14,11 +14,11 @@ function commerce_recurring_entity_property_info() {
   // Add meta-data about the basic commerce_product properties.
   $properties = &$info['commerce_recurring']['properties'];
 
-  $properties['commerce_recurring_id'] = array(
+  $properties['id'] = array(
     'label' => t('Commerce recurring ID'),
     'description' => t('The internal numeric ID of the commerce recurring entity.'),
     'type' => 'integer',
-    'schema field' => 'commerce_recurring_id',
+    'schema field' => 'id',
   );
   $properties['type'] = array(
     'label' => t('Type'),
@@ -84,4 +84,19 @@ function commerce_recurring_entity_property_info() {
   );
 
   return $info;
+}
+
+/**
+ * Implements hook_entity_property_info_alter() on top of the Recurring module.
+ */
+function commerce_recurring_entity_property_info_alter(&$info) {
+  $properties = array();
+
+  foreach ($info['commerce_recurring']['bundles'] as $bundle => $bundle_info) {
+    $bundle_info += array('properties' => array());
+    $properties += $bundle_info['properties'];
+  }
+
+  $info['commerce_recurring']['properties']['commerce_recurring_ref_product'] = $properties['commerce_recurring_ref_product'];
+  $info['commerce_recurring']['properties']['commerce_recurring_order'] = $properties['commerce_recurring_order'];
 }

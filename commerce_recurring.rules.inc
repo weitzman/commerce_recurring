@@ -25,7 +25,14 @@ function commerce_recurring_rules_event_info() {
         'type' => 'commerce_recurring',
         'label' => t('Commerce recurring entity'),
       ),
+      'number_of_orders' => array(
+        'type' => 'decimal',
+        'label' => t('Number of orders'),
+        'description' => t('Number of orders associated to the recurring entity so reacting to the first or nth one is easier.'),
+        'default value' => 0,
+      ),
     ),
+    'access callback' => 'commerce_order_rules_access',
   );
 
   $events['commerce_recurring_stop_recurring'] = array(
@@ -37,11 +44,17 @@ function commerce_recurring_rules_event_info() {
         'label' => t('Commerce recurring entity'),
       ),
     ),
+    'access callback' => 'commerce_order_rules_access',
+  );
+
+  $events['commerce_recurring_cron'] = array(
+    'label' => t('Commerce Recurring cron is executed'),
+    'group' => t('Commerce recurring'),
+    'access callback' => 'commerce_order_rules_access',
   );
 
   return $events;
 }
-
 
 /**
  * Implements hook_rules_action_info().
@@ -95,6 +108,19 @@ function commerce_recurring_rules_action_info() {
     ),
   );
 
+  // Provide a default way to copy customer profiles to the new order.
+  $profiles = array();
+  $profile_fields  = commerce_info_fields('commerce_customer_profile_reference', 'commerce_order');
+  foreach ($profile_fields as $name => $field) {
+    // @TODO: The recurring order might be from a different order bundle.
+    if ($instance = field_info_instance('commerce_order', $name, 'commerce_order')) {
+      $profiles[$name] = array(
+        'label' => $instance['label'],
+        'type' => $field['type'],
+      );
+    }
+  }
+
   $actions['commerce_recurring_get_due_items'] = array(
     'label' => t('Get the recurring entities about to due'),
     'parameter' => array(
@@ -121,6 +147,27 @@ function commerce_recurring_rules_action_info() {
     ),
   );
 
+  $actions['commerce_recurring_provide_order_properties'] = array(
+    'label' => t('Provide properties to generate the order from the recurring entity'),
+    'description' => t('Add properties to the order generation form. Mainly for customer profile information'),
+    'parameter' => array(
+      'commerce_recurring' => array(
+        'type' => 'commerce_recurring',
+        'label' => t('Commerce recurring'),
+      ),
+    ),
+    'provides' => array(
+      'order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Commerce Order'),
+      ),
+    ) + $profiles,
+    'group' => t('Commerce recurring'),
+    'callbacks' => array(
+      'execute' => 'commerce_recurring_rules_provide_order_properties',
+    ),
+  );
+
   $actions['commerce_recurring_generate_order_from_recurring'] = array(
     'label' => t('Generate the order associated to the recurring entity'),
     'description' => t('Use the order relationship from the recurring entity to generate the associated order'),
@@ -133,7 +180,7 @@ function commerce_recurring_rules_action_info() {
         'type' => 'date',
         'label' => t('Due date'),
       ),
-    ),
+    ) + $profiles,
     'provides' => array(
       'order' => array(
         'type' => 'commerce_order',
@@ -294,10 +341,32 @@ function commerce_recurring_rules_get_due_items($number_items = 0, $due_date = N
   $recurring_entities = array();
   if (!empty($result['commerce_recurring'])) {
     foreach($result['commerce_recurring'] as $recurring_entity) {
-      $recurring_entities[] = entity_load_single('commerce_recurring', $recurring_entity->commerce_recurring_id);
+      $recurring_entities[] = entity_load_single('commerce_recurring', $recurring_entity->id);
     }
   }
+
   return array('commerce_recurring_entities' => $recurring_entities);
+}
+
+/**
+ * Provide extra information for generating the next recurring order.
+ */
+function commerce_recurring_rules_provide_order_properties($recurring_entity) {
+  $items = field_get_items('commerce_recurring', $recurring_entity, 'commerce_recurring_order');
+  $commerce_order = reset($items);
+  $commerce_order = commerce_order_load($commerce_order['target_id']);
+  $return = array('commerce_order' => $commerce_order);
+
+  // Provide a default way to copy customer profiles to the new order.
+  $profile_fields  = commerce_info_fields('commerce_customer_profile_reference', 'commerce_order');
+  foreach ($profile_fields as $name => $field) {
+    // @TODO: The recurring order might be from a different order bundle.
+    if ($instance = field_info_instance('commerce_order', $name, 'commerce_order')) {
+      $return[$name] = $commerce_order->{$name};
+    }
+  }
+
+  return $return;
 }
 
 /**
@@ -357,7 +426,6 @@ function commerce_recurring_rules_generate_recurring_product($order, $line_item)
     // Due date: previous due date + recurring period.
     // End date update.
     if ($recurring_entity = entity_load_single('commerce_recurring', $order->data['recurring_entity'])) {
-      $recurring_entity->commerce_recurring_order[LANGUAGE_NONE][]['target_id'] = $order->order_id;
       if (!empty($product->commerce_recurring_rec_period)) {
         $recurring_interval = $product_wrapper->commerce_recurring_rec_period->value();
         if (!empty($recurring_interval)) {
@@ -378,13 +446,33 @@ function commerce_recurring_rules_generate_recurring_product($order, $line_item)
     }
   }
 
-  rules_invoke_event('commerce_recurring_paid_full', $order, $recurring_entity);
+  rules_invoke_event('commerce_recurring_paid_full', $order, $recurring_entity, count($recurring_entity->commerce_recurring_order[LANGUAGE_NONE]));
 }
 
 /**
  * Generate the orders from the recurring entity.
  */
-function commerce_recurring_rules_generate_order_from_recurring($recurring_entity, $due_date) {
+function commerce_recurring_rules_generate_order_from_recurring() {
+  // First arg is the commerce recurring entity and second is the due date.
+  $args = func_get_args();
+  $extra_arguments = array();
+  $i = 0;
+
+  // Get the number of arguments that the action should have.
+  $actions = rules_fetch_data('action_info');
+  foreach ($actions['commerce_recurring_generate_order_from_recurring']['parameter'] as $name => $parameter) {
+    if ($name =='commerce_recurring') {
+      $recurring_entity = $args[$i];
+    }
+    elseif ($name == 'timestamp') {
+      $due_date = $args[$i];
+    }
+    else {
+      $extra_arguments[$name] = $args[$i];
+    }
+    $i++;
+  }
+
   // First we get the due date, default to now if empty.
   if (empty($due_date)) {
     $due_date = new DateObject();
@@ -405,17 +493,21 @@ function commerce_recurring_rules_generate_order_from_recurring($recurring_entit
   }
 
   // Generate a new order with that product.
-  $order = commerce_order_new($recurring_entity->uid, 'cart');
+  $order = commerce_order_new($recurring_entity->uid, 'commerce_recurring');
   $order->log = t('Created from recurring entity.');
   // Add the recurring entity id to the data array from the order to keep track.
-  $order->data['recurring_entity'] = $recurring_wrapper->commerce_recurring_id->value();
+  $order->data['recurring_entity'] = $recurring_entity->id;
+  foreach ($extra_arguments as $name => $argument) {
+    $order->{$name} = $argument;
+  }
+
   commerce_order_save($order);
 
   $line_item = commerce_product_line_item_new($product_wrapper->value());
   $line_item->order_id = $order->order_id;
   // We need to add a flag to the line item to be able to know that we're in a
   // recurring context in rules.
-  $line_item->data['recurring_entity'] = $recurring_wrapper->commerce_recurring_id->value();
+  $line_item->data['recurring_entity'] = $recurring_entity->id;
   rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
   commerce_line_item_save($line_item);
   entity_get_controller('commerce_line_item')->resetCache(array($line_item->line_item_id));

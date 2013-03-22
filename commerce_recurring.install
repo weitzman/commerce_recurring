@@ -14,7 +14,7 @@ function commerce_recurring_schema() {
   $schema['commerce_recurring'] = array(
     'description' => 'The base table for commerce recurring entities.',
     'fields' => array(
-      'commerce_recurring_id' => array(
+      'id' => array(
         'description' => 'The primary identifier for a recurring entity, used internally only.',
         'type' => 'serial',
         'unsigned' => TRUE,
@@ -66,7 +66,7 @@ function commerce_recurring_schema() {
         'description' => 'A serialized array of additional data.',
       ),
     ),
-    'primary key' => array('commerce_recurring_id'),
+    'primary key' => array('id'),
     'indexes' => array(
       'commerce_recurring_type' => array('type'),
       'uid' => array('uid'),
