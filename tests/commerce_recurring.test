@@ -5,6 +5,7 @@
  */
 
 class CommerceRecurringTestCase extends CommerceBaseTestCase {
+  private $customer = NULL;
 
   /**
    * getInfo() returns properties that are displayed in the test selection form.
@@ -32,6 +33,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     parent::setUp($modules);
 
     $this->site_admin = $this->createSiteAdmin();
+    $this->customer = $this->createStoreCustomer();
     cache_clear_all(); // Just in case
   }
 
@@ -42,45 +44,77 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
    *  FALSE if the appropiate modules were not available.
    */
   public function createRecurringProduct() {
-    if (module_exists('commerce_product')) {
-      $new_product = commerce_product_new('recurring');
-      $new_product->sku = $this->randomName(10);
-      $new_product->title = $this->randomName(10);
-      $new_product->uid = 1;
+    $new_product = commerce_product_new('recurring');
+    $new_product->sku = $this->randomName(10);
+    $new_product->title = $this->randomName(10);
+    $new_product->uid = 1;
 
-      // Set prices.
-      $new_product->commerce_price[LANGUAGE_NONE][0]['amount'] = rand(200, 50000);
-      $new_product->commerce_price[LANGUAGE_NONE][0]['currency_code'] = 'USD';
-      $new_product->commerce_recurring_ini_price[LANGUAGE_NONE][0]['amount'] = rand(200, 50000);
-      $new_product->commerce_recurring_ini_price[LANGUAGE_NONE][0]['currency_code'] = 'USD';
-      $new_product->commerce_recurring_rec_price[LANGUAGE_NONE][0]['amount'] = rand(200, 50000);
-      $new_product->commerce_recurring_rec_price[LANGUAGE_NONE][0]['currency_code'] = 'USD';
+    // Set prices.
+    $new_product->commerce_price[LANGUAGE_NONE][0]['amount'] = rand(200, 50000);
+    $new_product->commerce_price[LANGUAGE_NONE][0]['currency_code'] = 'USD';
+    $new_product->commerce_recurring_ini_price[LANGUAGE_NONE][0]['amount'] = rand(200, 50000);
+    $new_product->commerce_recurring_ini_price[LANGUAGE_NONE][0]['currency_code'] = 'USD';
+    $new_product->commerce_recurring_rec_price[LANGUAGE_NONE][0]['amount'] = rand(200, 50000);
+    $new_product->commerce_recurring_rec_price[LANGUAGE_NONE][0]['currency_code'] = 'USD';
 
-      // Set intervals.
-      foreach (array('commerce_recurring_ini_period', 'commerce_recurring_rec_period', 'commerce_recurring_end_period') as $field_name) {
-        $instance = field_info_instance('commerce_product', $field_name, 'recurring');
-        $period[] = array_rand($instance['settings']['allowed_periods'], 1);
-      }
-      $new_product->commerce_recurring_ini_period[LANGUAGE_NONE][0]['interval'] = rand(2,25);
-      $new_product->commerce_recurring_ini_period[LANGUAGE_NONE][0]['period'] = $period[0];
-      $new_product->commerce_recurring_rec_period[LANGUAGE_NONE][0]['interval'] = rand(2,25);
-      $new_product->commerce_recurring_rec_period[LANGUAGE_NONE][0]['period'] = $period[0];
-      $new_product->commerce_recurring_end_period[LANGUAGE_NONE][0]['interval'] = rand(2,25);
-      $new_product->commerce_recurring_end_period[LANGUAGE_NONE][0]['period'] = $period[0];
-
-      commerce_product_save($new_product);
-
-      return $new_product;
+    // Set intervals.
+    foreach (array('commerce_recurring_ini_period', 'commerce_recurring_rec_period', 'commerce_recurring_end_period') as $field_name) {
+      $instance = field_info_instance('commerce_product', $field_name, 'recurring');
+      $period[] = array_rand($instance['settings']['allowed_periods'], 1);
     }
-    else {
-      return FALSE;
+    $new_product->commerce_recurring_ini_period[LANGUAGE_NONE][0]['interval'] = rand(2,25);
+    $new_product->commerce_recurring_ini_period[LANGUAGE_NONE][0]['period'] = $period[0];
+    $new_product->commerce_recurring_rec_period[LANGUAGE_NONE][0]['interval'] = rand(2,25);
+    $new_product->commerce_recurring_rec_period[LANGUAGE_NONE][0]['period'] = $period[0];
+    $new_product->commerce_recurring_end_period[LANGUAGE_NONE][0]['interval'] = rand(2,25);
+    $new_product->commerce_recurring_end_period[LANGUAGE_NONE][0]['period'] = $period[0];
+
+    commerce_product_save($new_product);
+
+    return $new_product;
+  }
+
+  /**
+   * Creates a recurring entity to be used in other tests.
+   * @return
+   *  A recurring entity with fields configured randomly unless they're
+   *  specified as parameters.
+   */
+  public function createRecurringEntity($product = NULL, $start_date = NULL, $due_date = NULL, $end_date = NULL) {
+    if (empty($product)) {
+      $product = $this->createRecurringProduct();
     }
+    $line_item = commerce_cart_product_add_by_id($product->product_id, 1, TRUE, $this->customer->uid);
+
+    if (empty($start_date)) {
+      $start_date = new DateObject('2010-01-01');
+    }
+
+    if (empty($due_date)) {
+      $due_date = new DateObject();
+      $due_date->sub(new DateInterval('P1D'));
+    }
+
+    // Create the recurring entity faking the dates to be due.
+    $values = array(
+      'type' => 'product',
+      'product_id' => $product->product_id,
+      'order_ids' => array($line_item->order_id),
+      'start_date' => $start_date->getTimestamp(),
+      'due_date' => $due_date->getTimestamp(),
+      'end_date' => !empty($end_date) ? $end_date->getTimestamp() : NULL,
+      'uid' => $this->customer->uid,
+    );
+    $recurring_entity = commerce_recurring_new($values);
+    entity_save('commerce_recurring', $recurring_entity);
+
+    return $recurring_entity;
   }
 
   /**
    * Test creating a recurring product.
    */
-  public function aatestCreateRecurringProduct() {
+  public function testCreateRecurringProduct() {
     $store_admin = $this->createStoreAdmin();
     $this->drupalLogin($store_admin);
     $this->drupalGet('admin/commerce/products/add/recurring');
@@ -130,7 +164,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Create a Recurring entity.
    */
-  public function aatestCommerceRecurringEntityCreation() {
+  public function testCommerceRecurringEntityCreation() {
     $product = $this->createRecurringProduct();
     $line_item = commerce_cart_product_add_by_id($product->product_id);
     $values = array(
@@ -147,23 +181,16 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   }
 
   /**
-   * Test price display in product page.
-   */
-  public function aatestCommerceRecurringPriceProductPage() {
-  }
-
-  /**
    * When creating an order and finish a payment, recurring entity
    */
-  public function aatestCommerceRecurringEntityCreationWorkflow() {
-    // Create a customer to proceed with the order.
-    $customer = $this->createStoreCustomer();
-    $this->drupalLogin($customer);
+  public function testCommerceRecurringEntityCreationWorkflow() {
+    // Login as a customer to proceed with the order.
+    $this->drupalLogin($this->customer);
 
     // Add a product to the cart and go on in checkout.
     $product = $this->createRecurringProduct();
     $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
-    $line_item = commerce_cart_product_add_by_id($product->product_id, 1, TRUE, $customer->uid);
+    $line_item = commerce_cart_product_add_by_id($product->product_id, 1, TRUE, $this->customer->uid);
     $this->drupalPost($this->getCommerceUrl('cart'), array(), t('Checkout'));
 
     // Generate random information, as city, postal code, etc.
@@ -209,35 +236,18 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test cron run and order creation on recurring entity date base.
    */
-  public function aatestCommerceRecurringCronOrderCreation() {
-    // Create a customer to proceed with the order.
-    $customer = $this->createStoreCustomer();
-
+  public function testCommerceRecurringCronOrderCreation() {
     // Create a recurring entity.
     $product = $this->createRecurringProduct();
     $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
-    $line_item = commerce_cart_product_add_by_id($product->product_id, 1, TRUE, $customer->uid);
-
-    $start_date = new DateObject('2010-01-01');
-    $due_date = new DateObject();
-    $due_date->sub(new DateInterval('P1D'));
-
-    // Create the recurring entity faking the dates to be due.
-    $values = array(
-      'type' => 'product',
-      'product_id' => $product->product_id,
-      'order_ids' => array($line_item->order_id),
-      'start_date' => $start_date->getTimestamp(),
-      'due_date' => $due_date->getTimestamp(),
-      'uid' => $customer->uid,
-    );
-    $recurring_entity = commerce_recurring_new($values);
-    entity_save('commerce_recurring', $recurring_entity);
+    $line_item = commerce_cart_product_add_by_id($product->product_id, 1, TRUE, $this->customer->uid);
+    $recurring_entity = $this->createRecurringEntity($product);
 
     $initial_order = commerce_order_load($line_item->order_id);
-    $initial_order->commerce_customer_billing = (array) $this->createDummyCustomerProfile('billing', $customer->uid);
+    $initial_order->commerce_customer_billing = (array) $this->createDummyCustomerProfile('billing', $this->customer->uid);
     $initial_order->status = 'completed';
     commerce_order_save($initial_order);
+    commerce_cart_order_ids_reset();
 
     // Run cron.
     drupal_cron_run();
@@ -250,18 +260,16 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     // The order is the second one now.
     $order_wrapper = $recurring_wrapper->commerce_recurring_order->get(1);
     $order = $order_wrapper->value();
-    entity_get_controller('commerce_order')->resetCache(array($order->order_id));
 
     $this->assertTrue(isset($order), t('New order has been created for the recurring entity'));
     $this->assertEqual($order->data['recurring_entity'], $recurring_entity->id, t('Recurring id is associated with the order'));
     $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), $product_wrapper->commerce_recurring_rec_price->amount->value(), t('Total price is calculated ok'));
     $this->assertEqual($order->status, 'commerce_recurring', t('Order is created in recurring_pending status'));
 
-
     $first_order = $recurring_wrapper->commerce_recurring_order->get(0)->value();
     $this->assertEqual($order->commerce_customer_billing, $first_order->commerce_customer_billing, t('Customer profile information gets copied from the initial order to the recurring one'));
 
-    $user_current_cart = commerce_cart_order_load($customer->uid);
+    $user_current_cart = commerce_cart_order_load($this->customer->uid);
     $this->assertTrue(empty($user_current_cart), t('Customer cart is empty after creating a recurring order'));
   }
 
@@ -269,32 +277,16 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
    * Test recurring entity update when orders created in cron are processed.
    */
   public function testCommerceRecurringUpdateRecurringEntity() {
-    // Create a customer to proceed with the order.
-    $customer = $this->createStoreCustomer();
-
     // Create a recurring entity.
     $product = $this->createRecurringProduct();
-    $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
-    $line_item = commerce_cart_product_add_by_id($product->product_id, 1, TRUE, $customer->uid);
-
+    $line_item = commerce_cart_product_add_by_id($product->product_id, 1, TRUE, $this->customer->uid);
     $start_date = new DateObject('2010-01-01');
     $due_date = new DateObject();
     $due_date->sub(new DateInterval('P1D'));
-
-    // Create the recurring entity faking the dates to be due.
-    $values = array(
-      'type' => 'product',
-      'product_id' => $product->product_id,
-      'order_ids' => array($line_item->order_id),
-      'start_date' => $start_date->getTimestamp(),
-      'due_date' => $due_date->getTimestamp(),
-      'uid' => $customer->uid,
-    );
-    $recurring_entity = commerce_recurring_new($values);
-    entity_save('commerce_recurring', $recurring_entity);
+    $recurring_entity = $this->createRecurringEntity($product, $start_date, $due_date);
 
     $initial_order = commerce_order_load($line_item->order_id);
-    $initial_order->commerce_customer_billing = (array) $this->createDummyCustomerProfile('billing', $customer->uid);
+    $initial_order->commerce_customer_billing = (array) $this->createDummyCustomerProfile('billing', $this->customer->uid);
     $initial_order->status = 'completed';
     commerce_order_save($initial_order);
 
@@ -306,9 +298,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     $recurring_entity = reset($recurring_entities);
     $recurring_wrapper = entity_metadata_wrapper('commerce_recurring', $recurring_entity);
     // The order is the second one now.
-    $order_wrapper = $recurring_wrapper->commerce_recurring_order->get(1);
-    $order = $order_wrapper->value();
-
+    $order = $recurring_wrapper->commerce_recurring_order->get(1)->value();
 
     // Mock a payment that triggers Paid in full event.
     $payment_method = array('instance_id' => 'commerce_payment_example');
@@ -323,15 +313,45 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     $reloaded_recurring_entity_wrapper = entity_metadata_wrapper('commerce_recurring', $reloaded_recurring_entity);
 
     // Check if the recurring entity has been updated correctly.
-    // @TODO check the order id in the recurring entity.
-    // @TODO check the due date and potentially end date.
+    $this->assertTrue(in_array($order->order_id, $reloaded_recurring_entity_wrapper->commerce_recurring_order->raw()), t('Order is associated with the recurring entity.'));
+    $count_values = array_count_values($reloaded_recurring_entity_wrapper->commerce_recurring_order->raw());
+    $this->assertEqual($count_values[$order->order_id], 1, t('Order is associated once with the recurring entity.'));
 
+    // Due date needs to be updated to the next recurring period.
+    $product_wrapper = $reloaded_recurring_entity_wrapper->commerce_recurring_ref_product;
+    $recurring_interval = $product_wrapper->commerce_recurring_rec_period->value();
+    interval_apply_interval($due_date, $recurring_interval, TRUE);
+    $this->assertEqual($due_date->getTimestamp(), $reloaded_recurring_entity_wrapper->due_date->value(), t('Recurring due date is correct.'));
   }
 
   /**
-   * Test recurring entity update when orders created in cron are processed.
+   * Test recurring entity end date.
    */
-  public function aatestCommerceRecurringEndDate() {
+  public function testCommerceRecurringEndDate() {
+    // Create a recurring entity.
+    $product = $this->createRecurringProduct();
+    $line_item = commerce_cart_product_add_by_id($product->product_id, 1, TRUE, $this->customer->uid);
+    $start_date = new DateObject('2010-01-01');
+    $due_date = new DateObject();
+    $due_date->sub(new DateInterval('P1D'));
+    // Set the end date to be 1H before now.
+    $end_date = new DateObject();
+    $end_date->sub(new DateInterval('PT1H'));
+    $recurring_entity = $this->createRecurringEntity($product, $start_date, $due_date, $end_date);
+
+    $initial_order = commerce_order_load($line_item->order_id);
+    $initial_order->commerce_customer_billing = (array) $this->createDummyCustomerProfile('billing', $this->customer->uid);
+    $initial_order->status = 'completed';
+    commerce_order_save($initial_order);
+
+    // Run cron.
+    drupal_cron_run();
+    $recurring_entities = entity_load('commerce_recurring', array($recurring_entity->id), array(), TRUE);
+    $recurring_entity = reset($recurring_entities);
+    $recurring_wrapper = entity_metadata_wrapper('commerce_recurring', $recurring_entity);
+    $count_values = count($recurring_wrapper->commerce_recurring_order->raw());
+    $this->assertEqual($count_values, 1, t('Second order was not generated at cron as the end date is in the past.'));
+    $this->assertEqual($recurring_entity->status, 0, t('Recurring entity has been disabled.'));
   }
 
 }
