@@ -25,8 +25,7 @@ function commerce_recurring_entity_property_info() {
     'description' => t('The type of the commerce recurring entity.'),
     'type' => 'token',
     'setter callback' => 'entity_property_verbatim_set',
-    //'setter permission' => 'administer commerce_product entities',
-    //'options list' => 'commerce_product_type_options_list',
+    'setter permission' => 'administer commerce_recurring entities',
     'required' => TRUE,
     'schema field' => 'type',
   );
@@ -35,7 +34,7 @@ function commerce_recurring_entity_property_info() {
     'description' => t('Boolean indicating whether the commerce recurring entity is active or disabled.'),
     'type' => 'boolean',
     'setter callback' => 'entity_property_verbatim_set',
-    //'setter permission' => 'administer commerce_product entities',
+    'setter permission' => 'administer commerce_recurring entities',
     'schema field' => 'status',
   );
   $properties['start_date'] = array(
@@ -43,7 +42,7 @@ function commerce_recurring_entity_property_info() {
     'description' => t('The date the commerce recurring entity was created.'),
     'type' => 'date',
     'setter callback' => 'entity_property_verbatim_set',
-    //'setter permission' => 'administer commerce_product entities',
+    'setter permission' => 'administer commerce_recurring entities',
     'schema field' => 'start_date',
   );
   $properties['due_date'] = array(
@@ -51,7 +50,7 @@ function commerce_recurring_entity_property_info() {
     'description' => t('The date when the commerce recurring has the next due.'),
     'type' => 'date',
     'setter callback' => 'entity_property_verbatim_set',
-    //'setter permission' => 'administer commerce_product entities',
+    'setter permission' => 'administer commerce_recurring entities',
     'schema field' => 'due_date',
   );
   $properties['end_date'] = array(
@@ -59,28 +58,16 @@ function commerce_recurring_entity_property_info() {
     'description' => t('The date when the commerce recurring ends.'),
     'type' => 'date',
     'setter callback' => 'entity_property_verbatim_set',
-    //'setter permission' => 'administer commerce_product entities',
+    'setter permission' => 'administer commerce_recurring entities',
     'schema field' => 'end_date',
   );
   $properties['uid'] = array(
     'label' => t('Creator ID'),
-    'type' => 'integer',
+    'type' => 'user',
     'description' => t('The unique ID of the commerce recurring entity creator.'),
     'setter callback' => 'entity_property_verbatim_set',
-    //'setter permission' => 'administer commerce_product entities',
-    'clear' => array('creator'),
+    'setter permission' => 'administer commerce_recurring entities',
     'schema field' => 'uid',
-  );
-  $properties['creator'] = array(
-    'label' => t('Creator'),
-    'type' => 'user',
-    'description' => t('The creator of the commerce recurring entity.'),
-    'getter callback' => 'commerce_product_get_properties',
-    'setter callback' => 'commerce_product_set_properties',
-    //'setter permission' => 'administer commerce_product entities',
-    'required' => TRUE,
-    'computed' => TRUE,
-    'clear' => array('uid'),
   );
 
   return $info;

@@ -16,6 +16,7 @@ function commerce_recurring_entity_info() {
       'controller class' => 'EntityAPIController',
       'views controller class' => 'EntityDefaultViewsController',
       'base table' => 'commerce_recurring',
+      'uri callback' => 'commerce_recurring_uri',
       'fieldable' => TRUE,
       'entity keys' => array(
         'id' => 'id',
@@ -39,6 +40,14 @@ function commerce_recurring_entity_info() {
         ),
       ),
       'module' => 'commerce_recurring',
+      'access arguments' => array(
+        'user key' => 'uid',
+        'access tag' => 'commerce_recurring_access',
+      ),
+      'permission labels' => array(
+        'singular' => t('recurring entity'),
+        'plural' => t('recurring entities'),
+      ),
     ),
   );
 
@@ -471,4 +480,51 @@ function commerce_recurring_commerce_order_status_info() {
 function commerce_recurring_cron() {
   // Invoke our cron Rules event.
   rules_invoke_all('commerce_recurring_cron');
+}
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_recurring_permission() {
+  $permissions = array();
+  $permissions += commerce_entity_access_permissions('commerce_recurring');
+
+  return $permissions;
+}
+
+/**
+* Access callback for the entity API.
+*
+* @param $op
+*   The operation being performed. One of 'view', 'update', 'create', 'delete'
+*   or just 'edit' (being the same as 'create' or 'update').
+* @param $profile
+*   (optional) A profile to check access for. If nothing is given, access for
+*   all profiles is determined.
+* @param $account
+*   (optional) The user to check for. Leave it to NULL to check for the global user.
+*
+* @return boolean
+*   Whether access is allowed or not.
+*/
+function commerce_recurring_access($op, $type = NULL, $account = NULL) {
+  return user_access('administer commerce_recurring entities', $account);
+}
+
+/**
+ * Entity uri callback: gives modules a chance to specify a path for a recurring
+ * entity.
+ */
+function commerce_recurring_uri($recurring_entity) {
+  // Allow modules to specify a path, returning the first one found.
+  foreach (module_implements('commerce_recurring_uri') as $module) {
+    $uri = module_invoke($module, 'commerce_recurring_uri', $recurring_entity);
+
+    // If the implementation returned data, use that now.
+    if (!empty($uri)) {
+      return $uri;
+    }
+  }
+
+  return NULL;
 }
