@@ -1,88 +1,50 @@
 <?php
+
 /**
- * Admin UI for recurring entities.
+ * Implements hook_menu().
  */
+function commerce_recurring_ui_menu() {
+  $items = array();
 
-/**
-* Generates the profile type editing form.
-*/
-function commerce_recurring_ui_form($form, &$form_state, $recurring_entity, $op = 'edit') {
-  $form['label'] = array(
-    '#title' => t('Label'),
-    '#type' => 'textfield',
-    '#default_value' => $profile_type->label,
+  $items['admin/commerce/recurring-entities/%commerce_recurring/edit'] = array(
+    'title' => 'Edit',
+    'page callback' => 'entity_ui_get_form',
+    'page arguments' => array('commerce_recurring', 3),
+    'access callback' => 'commerce_recurring_access',
+    'access arguments' => array('update', 3),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -5,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'file' => 'commerce_recurring_ui.admin.inc',
   );
-  // Machine-readable type name.
-  $form['type'] = array(
-    '#type' => 'machine_name',
-    '#default_value' => isset($profile_type->type) ? $profile_type->type : '',
-    '#disabled' => $profile_type->isLocked(),
-    '#machine_name' => array(
-      'exists' => 'profile2_get_types',
-      'source' => array('label'),
-    ),
-    '#description' => t('A unique machine-readable name for this profile type. It must only contain lowercase letters, numbers, and underscores.'),
+  $items['admin/commerce/recurring-entities/%commerce_recurring/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_recurring_ui_delete_confirm_form', 3),
+    'access callback' => 'commerce_recurring_access',
+    'access arguments' => array('delete', 3),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 20,
+    'context' => MENU_CONTEXT_INLINE,
+    'file' => 'commerce_recurring_ui.admin.inc',
   );
-  $form['actions'] = array('#type' => 'actions');
-  $form['actions']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Save recurring entity'),
-    '#weight' => 40,
-  );
-  return $form;
-}
-
-/**
-* Form API submit callback for the type form.
-*/
-function commerce_recurring_ui_form_submit(&$form, &$form_state) {
-  $recurring_entity = entity_ui_form_submit_build_entity($form, $form_state);
-  // Save and go back.
-  $recurring_entity->save();
-  $form_state['redirect'] = 'admin/commerce/recurring-entities';
-}
-
-/**
- * Entity uri callback: points to the admin view page of the given order.
- */
-function commerce_recurring_ui_recurring_uri($order) {
-  // First look for a return value in the default entity uri callback.
-  $uri = commerce_recurring_uri($order);
-
-  // If a value was found, return it now.
-  if (!empty($uri)) {
-    return $uri;
-  }
-
-  // Only return a value if the user has permission to view the recurrent
-  // entity.
-  if (commerce_recurring_access('view', $recurring_entity)) {
-    return array(
-      'path' => 'admin/commerce/recurring-entities/' . $recurring_entity->id,
-    );
-  }
-
-  return NULL;
+  return $items;
 }
 
 /**
  * Implements hook_entity_info_alter().
  */
 function commerce_recurring_ui_entity_info_alter(&$entity_info) {
-  // Add a URI callback to the order entity.
-  $entity_info['commerce_recurring']['uri callback'] = 'commerce_recurring_ui_recurring_uri';
+  // @TODO: Add order bundle support when it's time for it.
+  $entity_info['commerce_recurring']['bundles']['product']['admin'] = array(
+    'path' => 'admin/commerce/recurring-entities/product',
+    'access arguments' => array('administer commerce_recurring entities'),
+  );
 
-  // Expose the admin UI for product fields.
-  foreach ($entity_info['commerce_recurring']['bundles'] as $type => &$bundle) {
-    $bundle['admin'] = array(
-      'path' => 'admin/commerce/recurring-entities',
-      'access arguments' => array('administer commerce_recurring entities'),
-    );
-  }
-      // Enable the entity API's admin UI.
+  // Enable the entity API's admin UI.
   $entity_info['commerce_recurring']['admin ui'] = array(
-    'path' => 'admin/commerce/profiles',
-    'file' => 'commerce_recurring.admin.inc',
+    'path' => 'admin/commerce/recurring-entities',
+    'file' => 'commerce_recurring_ui.admin.inc',
   );
 }
 

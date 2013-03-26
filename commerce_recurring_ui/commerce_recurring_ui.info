@@ -4,4 +4,7 @@ package = Commerce (contrib)
 core = 7.x
 dependencies[] = commerce_recurring
 dependencies[] = views
+
 configure = admin/commerce/recurring-entities
+
+files[] = includes/views/handlers/commerce_recurring_handler_field_order_operations.inc

@@ -55,6 +55,13 @@ function commerce_recurring_entity_info() {
 }
 
 /**
+ * Bundles of the recurring entity.
+ */
+function commerce_recurring_types() {
+  return array('product', 'order');
+}
+
+/**
  * Implements hook_enable().
  */
 function commerce_recurring_enable() {
@@ -153,10 +160,9 @@ function commerce_recurring_configure_product_type() {
  */
 function commerce_recurring_configure_recurring_entity_type() {
   // Product bundle.
-
   // Create a price field to save the price of the product at the moment of
   // the entity creation.
-  commerce_recurring_price_create_instance('commerce_recurring_fixed_price', 'commerce_recurring', 'product', t('Price'), 0, 'calculated_sell_price');
+  commerce_recurring_price_create_instance('commerce_recurring_fixed_price', 'commerce_recurring', 'product', t('Fixed price'), 0, 'calculated_sell_price');
 
   // Entity reference fields for relating the recurring entity to the product
   // that is recurring and also with the orders.
@@ -366,6 +372,35 @@ function commerce_recurring_new(array $values = array()) {
   }
 
   return entity_create('commerce_recurring', $values);
+}
+
+/**
+ * Loads a recurring enity by ID.
+ */
+function commerce_recurring_load($recurring_id) {
+  $recurring_entities = commerce_recurring_load_multiple(array($recurring_id), array());
+  return $recurring_entities ? reset($recurring_entities) : FALSE;
+}
+
+/**
+ * Loads multiple recurring entities by ID or based on a set of matching
+ * conditions.
+ *
+ * @see entity_load()
+ *
+ * @param $recurring_ids
+ *   An array of commerce recurring IDs.
+ * @param $conditions
+ *   An array of conditions to filter loaded orders by on the
+ *   {commerce_recurring} table in the form 'field' => $value.
+ * @param $reset
+ *   Whether to reset the internal commerce recurring loading cache.
+ *
+ * @return
+ *   An array of order objects indexed by id.
+ */
+function commerce_recurring_load_multiple($recurring_ids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('commerce_recurring', $recurring_ids, $conditions, $reset);
 }
 
 /**
