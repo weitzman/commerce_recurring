@@ -317,7 +317,7 @@ function commerce_recurring_rules_set_price($line_item, $listing_price, $initial
  */
 function commerce_recurring_rules_get_recurring_line_items($order) {
   $line_items = commerce_recurring_order_load_recurring_line_items($order);
-  return array('commerce_line_items' => $line_items[$order->order_id]);
+  return array('commerce_line_items' => isset($line_items[$order->order_id]) ? $line_items[$order->order_id] : array());
 }
 
 /**

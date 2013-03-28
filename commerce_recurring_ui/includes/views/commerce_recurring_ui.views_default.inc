@@ -291,17 +291,13 @@ function commerce_recurring_ui_views_default_views() {
   $handler->display->display_options['title'] = 'Orders associated with a recurring entity';
   $handler->display->display_options['use_more_always'] = FALSE;
   $handler->display->display_options['access']['type'] = 'perm';
-  $handler->display->display_options['access']['perm'] = 'view own commerce_order entities of bundle commerce_order';
+  $handler->display->display_options['access']['perm'] = 'view own commerce_order entities';
   $handler->display->display_options['cache']['type'] = 'none';
   $handler->display->display_options['query']['type'] = 'views_query';
   $handler->display->display_options['exposed_form']['type'] = 'basic';
   $handler->display->display_options['pager']['type'] = 'full';
   $handler->display->display_options['pager']['options']['items_per_page'] = '50';
   $handler->display->display_options['style_plugin'] = 'table';
-  /* Header: Global: Text area */
-  $handler->display->display_options['header']['area']['id'] = 'area';
-  $handler->display->display_options['header']['area']['table'] = 'views';
-  $handler->display->display_options['header']['area']['field'] = 'area';
   /* Relationship: Entity Reference: Referencing entity */
   $handler->display->display_options['relationships']['reverse_commerce_recurring_order_commerce_recurring']['id'] = 'reverse_commerce_recurring_order_commerce_recurring';
   $handler->display->display_options['relationships']['reverse_commerce_recurring_order_commerce_recurring']['table'] = 'commerce_order';

@@ -210,7 +210,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     // Finish checkout process
     $this->drupalPost(NULL, array('commerce_payment[payment_details][name]' => 'Example payment method'), t('Continue to next step'));
 
-    // Load required entities.
+    // Load recurring entities.
     $order = commerce_order_load($line_item->order_id);
     $recurring_entities = commerce_recurring_load_by_order($order);
     $recurring_entity = reset($recurring_entities);
@@ -354,6 +354,104 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     $this->assertEqual($recurring_entity->status, 0, t('Recurring entity has been disabled.'));
   }
 
+  /**
+   * Test adding a regular product so it shouldn't recur.
+   */
+  public function testCommmerceRecurringRegularProduct() {
+    $this->drupalLogin($this->customer);
+    $order = $this->createDummyOrder($this->customer->uid);
+    $this->drupalPost($this->getCommerceUrl('cart'), array(), t('Checkout'));
+
+    // Generate random information, as city, postal code, etc.
+    $address_info = $this->generateAddressInformation();
+    // Fill in the billing address information.
+    $billing_pane = $this->xpath("//select[starts-with(@name, 'customer_profile_billing[commerce_customer_address]')]");
+    $this->drupalPostAJAX(NULL, array((string) $billing_pane[0]['name'] => 'US'), (string) $billing_pane[0]['name']);
+    // Fill in the required information for billing pane, with a random State.
+    $info = array(
+      'customer_profile_billing[commerce_customer_address][und][0][name_line]' => $address_info['name_line'],
+      'customer_profile_billing[commerce_customer_address][und][0][thoroughfare]' => $address_info['thoroughfare'],
+      'customer_profile_billing[commerce_customer_address][und][0][locality]' => $address_info['locality'],
+      'customer_profile_billing[commerce_customer_address][und][0][administrative_area]' => 'KY',
+      'customer_profile_billing[commerce_customer_address][und][0][postal_code]' => $address_info['postal_code'],
+    );
+    $this->drupalPost(NULL, $info, t('Continue to next step'));
+    // Finish checkout process
+    $this->drupalPost(NULL, array('commerce_payment[payment_details][name]' => 'Example payment method'), t('Continue to next step'));
+
+    $orders = commerce_order_load_multiple(array($order->order_id), array(), TRUE);
+    $order = reset($orders);
+    $this->assertEqual(array(), commerce_recurring_load_by_order($order), t('No recurring entities associated with the order.'));
+  }
+
+  /**
+   * Test purchasing a Regular product and a recurring product.
+   */
+  function testCommerceRecurringRegularAndRecurringProducts() {
+    $this->drupalLogin($this->customer);
+    $regular_product = $this->createDummyProduct();
+    $line_item = commerce_cart_product_add_by_id($regular_product->product_id, 1, TRUE, $this->customer->uid);
+    $recurring_product = $this->createRecurringProduct();
+    $line_item = commerce_cart_product_add_by_id($recurring_product->product_id, 1, TRUE, $this->customer->uid);
+    $this->drupalPost($this->getCommerceUrl('cart'), array(), t('Checkout'));
+
+    // Generate random information, as city, postal code, etc.
+    $address_info = $this->generateAddressInformation();
+    // Fill in the billing address information.
+    $billing_pane = $this->xpath("//select[starts-with(@name, 'customer_profile_billing[commerce_customer_address]')]");
+    $this->drupalPostAJAX(NULL, array((string) $billing_pane[0]['name'] => 'US'), (string) $billing_pane[0]['name']);
+    // Fill in the required information for billing pane, with a random State.
+    $info = array(
+      'customer_profile_billing[commerce_customer_address][und][0][name_line]' => $address_info['name_line'],
+      'customer_profile_billing[commerce_customer_address][und][0][thoroughfare]' => $address_info['thoroughfare'],
+      'customer_profile_billing[commerce_customer_address][und][0][locality]' => $address_info['locality'],
+      'customer_profile_billing[commerce_customer_address][und][0][administrative_area]' => 'KY',
+      'customer_profile_billing[commerce_customer_address][und][0][postal_code]' => $address_info['postal_code'],
+    );
+    $this->drupalPost(NULL, $info, t('Continue to next step'));
+    // Finish checkout process
+    $this->drupalPost(NULL, array('commerce_payment[payment_details][name]' => 'Example payment method'), t('Continue to next step'));
+    // Load required entities.
+    $order = commerce_order_load($line_item->order_id);
+    $recurring_entities = commerce_recurring_load_by_order($order);
+    $recurring_entity = reset($recurring_entities);
+    $recurring_wrapper = entity_metadata_wrapper('commerce_recurring', $recurring_entity);
+    $this->assertTrue(!empty($recurring_entities), t('A recurring entity was created for the order'));
+    $this->assertEqual(count($recurring_entities), 1, t('Only one recurring entity was created for the order'));
+    $this->assertEqual($recurring_wrapper->commerce_recurring_ref_product->value(), $recurring_product, t('Recurring product is associated with the recurring entity'));
+    $this->assertNotEqual($recurring_wrapper->commerce_recurring_ref_product->value(), $regular_product, t('Regular product is not associated with the recurring entity'));
+  }
+
+  /**
+   * Test purchasing a several recurring products.
+   */
+  function testCommerceRecurringPurchaseTwoRecurringProducts() {
+    $this->drupalLogin($this->customer);
+    $first_recurring_product = $this->createRecurringProduct();
+    $line_item = commerce_cart_product_add_by_id($first_recurring_product->product_id, 1, TRUE, $this->customer->uid);
+    $second_recurring_product = $this->createRecurringProduct();
+    $line_item = commerce_cart_product_add_by_id($second_recurring_product->product_id, 1, TRUE, $this->customer->uid);
+    $this->drupalPost($this->getCommerceUrl('cart'), array(), t('Checkout'));
+
+    // Generate random information, as city, postal code, etc.
+    $address_info = $this->generateAddressInformation();
+    // Fill in the billing address information.
+    $billing_pane = $this->xpath("//select[starts-with(@name, 'customer_profile_billing[commerce_customer_address]')]");
+    $this->drupalPostAJAX(NULL, array((string) $billing_pane[0]['name'] => 'US'), (string) $billing_pane[0]['name']);
+    // Fill in the required information for billing pane, with a random State.
+    $info = array(
+      'customer_profile_billing[commerce_customer_address][und][0][name_line]' => $address_info['name_line'],
+      'customer_profile_billing[commerce_customer_address][und][0][thoroughfare]' => $address_info['thoroughfare'],
+      'customer_profile_billing[commerce_customer_address][und][0][locality]' => $address_info['locality'],
+      'customer_profile_billing[commerce_customer_address][und][0][administrative_area]' => 'KY',
+      'customer_profile_billing[commerce_customer_address][und][0][postal_code]' => $address_info['postal_code'],
+    );
+    $this->drupalPost(NULL, $info, t('Continue to next step'));
+    // Finish checkout process
+    $this->drupalPost(NULL, array('commerce_payment[payment_details][name]' => 'Example payment method'), t('Continue to next step'));
+    $order = commerce_order_load($line_item->order_id);
+    $this->assertEqual(count(commerce_recurring_load_by_order($order)), 2, t('Two recurring entities are created when there are two recurring products in the cart.'));
+  }
 }
 
 /**
