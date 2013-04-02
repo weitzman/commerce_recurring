@@ -379,46 +379,7 @@ function commerce_recurring_rules_generate_recurring_product($order, $line_item)
 
   // We need to check if there's already an order with that recurring entity.
   if (empty($order->data['recurring_entity'])) {
-    // If we're creating the recurring entity, we need to set the following:
-    // commerce_price at the moment of creation (product price).
-    // Start date: now().
-    // Due date: Start date + initial period from product.
-    // End date: optional, start date + expiration period.
-    $date = new DateObject();
-    $start_date = $date->getTimestamp();
-
-    $due_date = clone $date;
-    if (!empty($product->commerce_recurring_ini_period)) {
-      $initial_interval = $product_wrapper->commerce_recurring_ini_period->value();
-      if (empty($initial_interval)) {
-        if (!empty($product->commerce_recurring_rec_period)) {
-          $initial_interval = $product_wrapper->commerce_recurring_rec_period->value();
-        }
-      }
-    }
-    if (!empty($initial_interval)) {
-      interval_apply_interval($due_date, $initial_interval, TRUE);
-    }
-    $due_date = $due_date->getTimestamp();
-
-    if (!empty($product->commerce_recurring_end_period)) {
-      $end_interval = $product_wrapper->commerce_recurring_end_period->value();
-      interval_apply_interval($date, $end_interval, TRUE);
-      $end_date = $date->getTimestamp();
-    }
-
-    $values = array(
-      'product_id' => $product->product_id,
-      'order_ids' => array($order->order_id),
-      'uid' => $order->uid,
-      'start_date' => $start_date,
-      'due_date' => $due_date,
-      'end_date' => isset($end_date) ? $end_date : NULL,
-    );
-    $recurring_entity = commerce_recurring_new($values);
-    // Add the price at the moment of purchase.
-    $recurring_entity->commerce_recurring_fixed_price[LANGUAGE_NONE][0] = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);;
-    entity_save('commerce_recurring', $recurring_entity);
+    $recurring_entity = commerce_recurring_new_from_product($product, $order, $line_item);
   }
   else {
     // If we're updating the recurring entity, we need to update this values:
@@ -426,6 +387,10 @@ function commerce_recurring_rules_generate_recurring_product($order, $line_item)
     // Due date: previous due date + recurring period.
     // End date update.
     if ($recurring_entity = entity_load_single('commerce_recurring', $order->data['recurring_entity'])) {
+      // If the recurring entity has been disabled, don't go forward.
+      if (!$recurring_entity->status) {
+        return;
+      }
       if (!empty($product->commerce_recurring_rec_period)) {
         $recurring_interval = $product_wrapper->commerce_recurring_rec_period->value();
         if (!empty($recurring_interval)) {

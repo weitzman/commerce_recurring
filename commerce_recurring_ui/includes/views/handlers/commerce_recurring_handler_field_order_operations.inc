@@ -37,7 +37,7 @@ class commerce_recurring_handler_field_order_operations extends views_handler_fi
     $recurring_id = $this->get_value($values, 'id');
 
     // Get the operations links.
-    $links = menu_contextual_links('commerce-recuring', 'admin/commerce/recurring-entities', array($recurring_id));
+    $links = menu_contextual_links('commerce-recurring', 'admin/commerce/recurring-entities', array($recurring_id));
 
     if (!empty($links)) {
       // Add the destination to the links if specified.

@@ -375,7 +375,77 @@ function commerce_recurring_new(array $values = array()) {
 }
 
 /**
- * Loads a recurring enity by ID.
+ * Generate a new recurring entity from a product.
+ * We set the price to the initial price from the line item if available.
+ * The start date for the recurring is the current date unless a set one is
+ * specified.
+ * Due date is start date + initial date.
+ * End date is optional, start date + end period.
+ *
+ * @param $product
+ *   Commerce product associated with the recurring entity.
+ * @param  $order
+ *   Commerce order to associate the recurring entity with.
+ * @param $line_item
+ *   Commerce line item of the order.
+ * @param $start_date
+ *   Timestamp that corresponds to the start date for the recurring entity.
+ *
+ * @return $recurring_entity
+ *   Recurring entity newly created.
+ */
+function commerce_recurring_new_from_product($product, $order, $line_item = NULL, $start_date = NULL) {
+  if (empty($product)) {
+    return;
+  }
+  $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
+  if (empty($start_date)) {
+    $date = new DateObject();
+    $start_date = $date->getTimestamp();
+  } else {
+    $date = new DateObject($start_date);
+  }
+
+  $due_date = clone $date;
+  if (!empty($product->commerce_recurring_ini_period)) {
+    $initial_interval = $product_wrapper->commerce_recurring_ini_period->value();
+    if (empty($initial_interval)) {
+      if (!empty($product->commerce_recurring_rec_period)) {
+        $initial_interval = $product_wrapper->commerce_recurring_rec_period->value();
+      }
+    }
+  }
+  if (!empty($initial_interval)) {
+    interval_apply_interval($due_date, $initial_interval, TRUE);
+  }
+  $due_date = $due_date->getTimestamp();
+
+  if (!empty($product->commerce_recurring_end_period)) {
+    $end_interval = $product_wrapper->commerce_recurring_end_period->value();
+    interval_apply_interval($date, $end_interval, TRUE);
+    $end_date = $date->getTimestamp();
+  }
+
+  $values = array(
+    'product_id' => $product->product_id,
+    'order_ids' => array($order->order_id),
+    'uid' => $order->uid,
+    'start_date' => $start_date,
+    'due_date' => $due_date,
+    'end_date' => isset($end_date) ? $end_date : NULL,
+  );
+  $recurring_entity = commerce_recurring_new($values);
+  // Add the price at the moment of purchase.
+  if (!empty($line_item)) {
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+    $recurring_entity->commerce_recurring_fixed_price[LANGUAGE_NONE][0] = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);;
+  }
+  entity_save('commerce_recurring', $recurring_entity);
+  return $recurring_entity;
+}
+
+/**
+ * Loads a recurring entity by ID.
  */
 function commerce_recurring_load($recurring_id) {
   $recurring_entities = commerce_recurring_load_multiple(array($recurring_id), array());
