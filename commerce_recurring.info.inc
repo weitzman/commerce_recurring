@@ -61,6 +61,15 @@ function commerce_recurring_entity_property_info() {
     'setter permission' => 'administer commerce_recurring entities',
     'schema field' => 'end_date',
   );
+  $properties['quantity'] = array(
+    'label' => t('Quantity'),
+    'description' => t('Quantity associated with this recurring entity'),
+    'type' => 'decimal',
+    'getter callback' => 'entity_property_verbatim_get',
+    'setter callback' => 'entity_property_verbatim_set',
+    'schema field' => 'quantity',
+    'bundle' => 'product',
+  );
   $properties['uid'] = array(
     'label' => t('Creator ID'),
     'type' => 'user',

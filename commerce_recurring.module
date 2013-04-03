@@ -2,6 +2,7 @@
 
 /**
  * @file
+ * Commerce recurring module file.
  */
 
 /**
@@ -144,7 +145,7 @@ function commerce_recurring_configure_product_type() {
     $instance = field_info_instance('commerce_product', $field_name, 'recurring');
 
     if (empty($info_field)) {
-      $field = field_create_field($field);
+      field_create_field($field);
     }
 
     if (empty($instance)) {
@@ -221,7 +222,7 @@ function commerce_recurring_configure_recurring_entity_type() {
     $instance = field_info_instance('commerce_recurring', $field_name, 'product');
 
     if (empty($info_field)) {
-      $field = field_create_field($field);
+      field_create_field($field);
     }
 
     if (empty($instance)) {
@@ -247,13 +248,14 @@ function commerce_recurring_configure_recurring_entity_type() {
  *   The bundle name of the entity the field instance will be attached to.
  * @param $label
  *   The label of the field instance.
- * @param $weight
+ * @param int $weight
  *   The default weight of the field instance widget and display.
- * @param $calculation
+ * @param bool $calculation
  *   A string indicating the default value of the display formatter's calculation
  *     setting.
- * @param $display
+ * @param array $display
  *   An array of default display data used for the entity's current view modes.
+ * @param bool $required
  */
 function commerce_recurring_price_create_instance($field_name, $entity_type, $bundle, $label, $weight = 0, $calculation = FALSE, $display = array(), $required = FALSE) {
   // If a field type we know should exist isn't found, clear the Field cache.
@@ -273,7 +275,7 @@ function commerce_recurring_price_create_instance($field_name, $entity_type, $bu
       'entity_types' => array($entity_type),
       'translatable' => FALSE,
     );
-    $field = field_create_field($field);
+    field_create_field($field);
   }
 
   if (empty($instance)) {
@@ -342,6 +344,7 @@ function commerce_recurring_new(array $values = array()) {
     'due_date' => '',
     'end_date' => '',
     'uid' => '',
+    'quantity' => 1,
     'data' => array(),
   );
 
@@ -382,31 +385,26 @@ function commerce_recurring_new(array $values = array()) {
  * Due date is start date + initial date.
  * End date is optional, start date + end period.
  *
- * @param $product
- *   Commerce product associated with the recurring entity.
  * @param  $order
  *   Commerce order to associate the recurring entity with.
- * @param $line_item
- *   Commerce line item of the order.
- * @param $start_date
- *   Timestamp that corresponds to the start date for the recurring entity.
+ * @param $product
+ *   Commerce product associated with the recurring entity.
+ * @param $fixed_price
+ * @param $quantity
+ * @internal param $line_item Commerce line item of the order.*   Commerce line item of the order.
+ * @internal param $start_date Timestamp that corresponds to the start date for the recurring entity.*   Timestamp that corresponds to the start date for the recurring entity.
  *
- * @return $recurring_entity
- *   Recurring entity newly created.
+ * @return entity $recurring_entity
  */
-function commerce_recurring_new_from_product($product, $order, $line_item = NULL, $start_date = NULL) {
+function commerce_recurring_new_from_product($order, $product, $fixed_price, $quantity) {
   if (empty($product)) {
     return;
   }
   $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
-  if (empty($start_date)) {
-    $date = new DateObject();
-    $start_date = $date->getTimestamp();
-  } else {
-    $date = new DateObject($start_date);
-  }
-
+  $date = new DateObject();
+  $start_date = $date->getTimestamp();
   $due_date = clone $date;
+
   if (!empty($product->commerce_recurring_ini_period)) {
     $initial_interval = $product_wrapper->commerce_recurring_ini_period->value();
     if (empty($initial_interval)) {
@@ -435,12 +433,13 @@ function commerce_recurring_new_from_product($product, $order, $line_item = NULL
     'end_date' => isset($end_date) ? $end_date : NULL,
   );
   $recurring_entity = commerce_recurring_new($values);
-  // Add the price at the moment of purchase.
-  if (!empty($line_item)) {
-    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-    $recurring_entity->commerce_recurring_fixed_price[LANGUAGE_NONE][0] = commerce_price_wrapper_value($line_item_wrapper, 'commerce_unit_price', TRUE);;
+  // Add the price and quantity at the moment of purchase.
+  if (!empty($fixed_price)) {
+    $recurring_entity->commerce_recurring_fixed_price[LANGUAGE_NONE][0] = $fixed_price;
+    $recurring_entity->quantity = empty($quantity) ? 1 : $quantity;
   }
   entity_save('commerce_recurring', $recurring_entity);
+
   return $recurring_entity;
 }
 
@@ -478,6 +477,7 @@ function commerce_recurring_load_multiple($recurring_ids = array(), $conditions 
  *
  * @param $product
  *   Commerce product.
+ * @return bool
  */
 function commerce_recurring_product_is_recurring($product) {
   $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
@@ -533,6 +533,7 @@ function commerce_recurring_order_load_recurring_line_items($order) {
  *
  * @param $order
  *   Commerce order.
+ * @return array
  */
 function commerce_recurring_load_by_order($order) {
   $return = array();
@@ -598,20 +599,20 @@ function commerce_recurring_permission() {
 }
 
 /**
-* Access callback for the entity API.
-*
-* @param $op
-*   The operation being performed. One of 'view', 'update', 'create', 'delete'
-*   or just 'edit' (being the same as 'create' or 'update').
-* @param $profile
-*   (optional) A profile to check access for. If nothing is given, access for
-*   all profiles is determined.
-* @param $account
-*   (optional) The user to check for. Leave it to NULL to check for the global user.
-*
-* @return boolean
-*   Whether access is allowed or not.
-*/
+ * Access callback for the entity API.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create', 'delete'
+ *   or just 'edit' (being the same as 'create' or 'update').
+ * @param null $type
+ * @param $account
+ *   (optional) The user to check for. Leave it to NULL to check for the global user.
+ *
+ * @internal param $profile (optional) A profile to check access for. If nothing is given, access for*   (optional) A profile to check access for. If nothing is given, access for
+ *   all profiles is determined.
+ * @return boolean
+ *   Whether access is allowed or not.
+ */
 function commerce_recurring_access($op, $type = NULL, $account = NULL) {
   return user_access('administer commerce_recurring entities', $account);
 }

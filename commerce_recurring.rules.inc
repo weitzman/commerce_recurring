@@ -207,6 +207,14 @@ function commerce_recurring_rules_action_info() {
         'type' => 'commerce_line_item',
         'label' => t('Commerce line item'),
       ),
+      'fixed_price' => array(
+        'type' => 'commerce_price',
+        'label' => t('Fixed price for the recurring entity'),
+      ),
+      'quantity' => array(
+        'type' => 'decimal',
+        'label' => t('Quantity'),
+      ),
     ),
     'group' => t('Commerce recurring'),
     'callbacks' => array(
@@ -246,6 +254,9 @@ function commerce_recurring_rules_condition_info() {
  *
  * @param $line_item
  *   Commerce line item affected by the price replacement.
+ * @param $listing_price
+ * @param $initial_price
+ * @param $recurring_price
  */
 function commerce_recurring_rules_set_price($line_item, $listing_price, $initial_price, $recurring_price) {
   // If the line item contains a product, we replace the price by the initial
@@ -372,14 +383,14 @@ function commerce_recurring_rules_provide_order_properties($recurring_entity) {
 /**
  * Generate the recurring entity using the product information.
  */
-function commerce_recurring_rules_generate_recurring_product($order, $line_item) {
+function commerce_recurring_rules_generate_recurring_product($order, $line_item, $fixed_price, $quantity) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
   $product_wrapper = $line_item_wrapper->commerce_product;
   $product = $product_wrapper->value();
 
   // We need to check if there's already an order with that recurring entity.
   if (empty($order->data['recurring_entity'])) {
-    $recurring_entity = commerce_recurring_new_from_product($product, $order, $line_item);
+    $recurring_entity = commerce_recurring_new_from_product($order, $product, $fixed_price, $quantity);
   }
   else {
     // If we're updating the recurring entity, we need to update this values:
@@ -468,7 +479,7 @@ function commerce_recurring_rules_generate_order_from_recurring() {
 
   commerce_order_save($order);
 
-  $line_item = commerce_product_line_item_new($product_wrapper->value());
+  $line_item = commerce_product_line_item_new($product_wrapper->value(), $recurring_entity->quantity);
   $line_item->order_id = $order->order_id;
 
   // We need to add a flag to the line item to be able to know that we're in a
@@ -490,6 +501,7 @@ function commerce_recurring_rules_generate_order_from_recurring() {
  *
  * @param $order
  *   Commerce order to check.
+ * @return bool
  */
 function commerce_recurring_rules_order_contains_recurring_product($order) {
   return count(commerce_recurring_order_load_recurring_line_items($order)) > 0 ? TRUE : FALSE;

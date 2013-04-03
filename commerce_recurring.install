@@ -58,6 +58,14 @@ function commerce_recurring_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'quantity' => array(
+        'type' => 'numeric',
+        'size' => 'normal',
+        'not null' => TRUE,
+        'default' => 0,
+        'precision' => 10,
+        'scale' => 2,
+      ),
       'data' => array(
         'type' => 'blob',
         'not null' => FALSE,
