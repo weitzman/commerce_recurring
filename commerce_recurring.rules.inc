@@ -264,8 +264,7 @@ function commerce_recurring_rules_set_price($line_item, $listing_price, $initial
   if (commerce_line_items_quantity(array($line_item), commerce_product_line_item_types())) {
     $price = array();
     $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-    $product_wrapper = $line_item_wrapper->commerce_product;
-    $product = $product_wrapper->value();
+    $product = $line_item_wrapper->commerce_product->value();
     // If the product is recurring we act.
     if (commerce_recurring_product_is_recurring($product)) {
       if (!empty($line_item->order_id)) {

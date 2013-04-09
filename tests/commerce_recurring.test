@@ -48,6 +48,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     $new_product->sku = $this->randomName(10);
     $new_product->title = $this->randomName(10);
     $new_product->uid = 1;
+    $period = array();
 
     // Set prices.
     $new_product->commerce_price[LANGUAGE_NONE][0]['amount'] = rand(200, 50000);
@@ -76,6 +77,17 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
 
   /**
    * Creates a recurring entity to be used in other tests.
+   * @param entity $product
+   *   Commerce Product assigned to the Recurring entity.
+   * @param int $quantity
+   *   Quantity of the product.
+   * @param int $start_date
+   *   Initial date for recurring.
+   * @param int $due_date
+   *   Due date for recurring.
+   * @param int $end_date
+   *   End date for recurring.
+   *
    * @return bool A recurring entity with fields configured randomly unless they're
    */
   public function createRecurringEntity($product = NULL, $quantity = 1, $start_date = NULL, $due_date = NULL, $end_date = NULL) {
@@ -513,6 +525,18 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
 
     $this->assertTrue(isset($order), t('New order has been created for the recurring entity'));
     $this->assertEqual($order_wrapper->commerce_line_items->get(0)->quantity->value(), 2, t('Order line item with the recurring product has quantity 2.'));
+  }
+
+  /**
+   * Test product is recurring check.
+   */
+  function testCommerceRecurringProductIsRecurring() {
+    // Create a recurring and a non recurring product.
+    $recurring_product = $this->createRecurringProduct();
+    $regular_product = $this->createDummyProduct();
+
+    $this->assertFalse(commerce_recurring_product_is_recurring($regular_product), t('Regular product not identified as recurring.'));
+    $this->assertTrue(commerce_recurring_product_is_recurring($recurring_product), t('Recurring product identified as recurring.'));
   }
 }
 

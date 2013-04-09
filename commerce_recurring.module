@@ -468,7 +468,7 @@ function commerce_recurring_load($recurring_id) {
  * @return
  *   An array of order objects indexed by id.
  */
-function commerce_recurring_load_multiple($recurring_ids = array(), $conditions = array(), $reset = FALSE) {
+function commerce_recurring_load_multiple(array $recurring_ids = array(), array $conditions = array(), $reset = FALSE) {
   return entity_load('commerce_recurring', $recurring_ids, $conditions, $reset);
 }
 
@@ -480,22 +480,20 @@ function commerce_recurring_load_multiple($recurring_ids = array(), $conditions 
  * @return bool
  */
 function commerce_recurring_product_is_recurring($product) {
-  $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
   // If the product is of type recurring, we don't need to look anything else.
-  if ($product_wrapper->type->value() == 'recurring') {
+  if ($product->type == 'recurring') {
     return TRUE;
   }
   // In case of other product types, they still might be recurring ones, check
   // for the presence of any of the recurring fields.
   $fields = array('commerce_recurring_ini_price', 'commerce_recurring_rec_price', 'commerce_recurring_ini_period', 'commerce_recurring_rec_period', 'commerce_recurring_end_period');
   foreach ($fields as $field_name) {
-    if (!empty($product_wrapper->{$field_name})) {
+    if ($items = field_get_items('commerce_product', $product, $field_name)) {
       return TRUE;
     }
   }
 
   // @TODO: Add a hook to be able to set recurring product types otherwise.
-
   return FALSE;
 }
 
@@ -515,7 +513,7 @@ function commerce_recurring_order_load_recurring_line_items($order) {
   if (!empty($order) && !isset($recurring_entities)) {
     $recurring_entities = array();
     $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-    foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    foreach ($order_wrapper->commerce_line_items as $line_item_wrapper) {
       if (in_array($line_item_wrapper->type->value(), commerce_product_line_item_types())) {
         $product = $line_item_wrapper->commerce_product->value();
         if (commerce_recurring_product_is_recurring($product)) {
