@@ -32,7 +32,6 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     $modules = parent::setUpHelper('all', $other_modules);
     parent::setUp($modules);
 
-    $this->site_admin = $this->createSiteAdmin();
     $this->customer = $this->createStoreCustomer();
     cache_clear_all(); // Just in case
   }
@@ -501,7 +500,6 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   function testCommerceRecurringCronOrderCreationWithQuantity() {
     // Create a recurring entity.
     $product = $this->createRecurringProduct();
-    $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
     $line_item = commerce_cart_product_add_by_id($product->product_id, 2, TRUE, $this->customer->uid);
     $recurring_entity = $this->createRecurringEntity($product, 2);
 
@@ -537,6 +535,35 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
 
     $this->assertFalse(commerce_recurring_product_is_recurring($regular_product), t('Regular product not identified as recurring.'));
     $this->assertTrue(commerce_recurring_product_is_recurring($recurring_product), t('Recurring product identified as recurring.'));
+  }
+
+  /**
+   * Test price list for recurring products.
+   */
+  function testCommerceRecurringProductPriceListing() {
+    $this->drupalLogin($this->customer);
+    $recurring_product = $this->createRecurringProduct();
+    $this->createDummyProductDisplayContentType('product_display', TRUE, 'field_product', FIELD_CARDINALITY_UNLIMITED);
+    $node = $this->createDummyProductNode(array($recurring_product->product_id));
+    $expected_price = commerce_currency_format($recurring_product->commerce_recurring_ini_price[LANGUAGE_NONE][0]['amount'], $recurring_product->commerce_recurring_ini_price[LANGUAGE_NONE][0]['currency_code']);
+
+    // Check if the price is right in the product display page.
+    // Price should be the initial one.
+    $this->drupalGet('node/' . $node->nid);
+
+    // Add the cart block to the product page.
+    $site_admin = $this->createSiteAdmin();
+    $this->drupalLogin($site_admin);
+    $this->drupalGet('admin/structure/block/manage');
+    $edit = array();
+    $edit['blocks[commerce_cart_cart][region]'] = 'sidebar_first';
+    $this->drupalPost('admin/structure/block', $edit, t('Save blocks'));
+
+    // Check if the price is right after adding the product to the cart.
+    $this->drupalLogin($this->customer);
+    $this->drupalPost('node/' . $node->nid, array(), t('Add to cart'));
+    $this->assertText($expected_price, t('Recurring product price in the display page (with cart) is the initial one as expected.'));
+
   }
 }
 
