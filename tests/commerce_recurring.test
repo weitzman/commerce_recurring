@@ -274,7 +274,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     $this->assertTrue(isset($order), t('New order has been created for the recurring entity'));
     $this->assertEqual($order->data['recurring_entity'], $recurring_entity->id, t('Recurring id is associated with the order'));
     $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), $product_wrapper->commerce_recurring_rec_price->amount->value(), t('Total price is calculated ok'));
-    $this->assertEqual($order->status, 'commerce_recurring', t('Order is created in recurring_pending status'));
+    $this->assertEqual($order->status, 'recurring_pending', t('Order is created in recurring_pending status'));
 
     $first_order = $recurring_wrapper->commerce_recurring_order->get(0)->value();
     $this->assertEqual($order->commerce_customer_billing, $first_order->commerce_customer_billing, t('Customer profile information gets copied from the initial order to the recurring one'));

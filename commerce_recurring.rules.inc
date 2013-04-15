@@ -468,7 +468,7 @@ function commerce_recurring_rules_generate_order_from_recurring() {
   }
 
   // Generate a new order with that product.
-  $order = commerce_order_new($recurring_entity->uid, 'commerce_recurring');
+  $order = commerce_order_new($recurring_entity->uid, 'recurring_pending');
   $order->log = t('Created from recurring entity.');
   // Add the recurring entity id to the data array from the order to keep track.
   $order->data['recurring_entity'] = $recurring_entity->id;
