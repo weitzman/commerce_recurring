@@ -177,12 +177,8 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   function testCommerceRecurringEntityCreation() {
     $product = $this->createRecurringProduct();
     $line_item = commerce_cart_product_add_by_id($product->product_id);
-    $values = array(
-      'type' => 'product',
-      'product_id' => $product->product_id,
-      'order_ids' => array($line_item->order_id),
-    );
-    $recurring_entity = commerce_recurring_new($values);
+    $order = commerce_order_load($line_item->order_id);
+    $recurring_entity = commerce_recurring_new_from_product($order, $product, $line_item->commerce_unit_price[LANGUAGE_NONE][0], $line_item->quantity);
     entity_save('commerce_recurring', $recurring_entity);
     $recurring_entity_load = entity_load_single('commerce_recurring', $recurring_entity->id);
     $this->assertTrue($recurring_entity->id == 1, t('Recurring entity has generated an id.'));
@@ -231,6 +227,83 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     $due_date = new DateObject($start_date);
     $end_date = new DateObject($start_date);
     $initial_interval = $product_wrapper->commerce_recurring_ini_period->value();
+    $end_interval = $product_wrapper->commerce_recurring_end_period->value();
+    interval_apply_interval($due_date, $initial_interval, TRUE);
+    interval_apply_interval($end_date, $end_interval, TRUE);
+
+    // Assert if the recurring entity is being created as expected.
+    $this->assertEqual($recurring_wrapper->commerce_recurring_ref_product->value(), $product, t('Product is correctly set in the recurring entity'));
+    $this->assertEqual($recurring_wrapper->commerce_recurring_order->get(0)->order_id->value(), $order->order_id, t('Order is correctly set in the recurring entity'));
+    $this->assertEqual($recurring_wrapper->commerce_recurring_fixed_price->amount->value(), $product_wrapper->commerce_recurring_ini_price->amount->value(), t('Initial price is correctly set for the recurring entity'));
+    $this->assertEqual($recurring_wrapper->due_date->value(), $due_date->getTimestamp(), t('Recurring date is set for the recurring entity'));
+    $this->assertEqual($recurring_wrapper->end_date->value(), $end_date->getTimestamp(), t('End date is set for the recurring entity'));
+  }
+
+  /**
+   * Test workflow with no initial date.
+   */
+  function testCommerceRecurringEntityCreationWorkflowNoInitialDate() {
+    // Login as a customer to proceed with the order.
+    $this->drupalLogin($this->customer);
+
+    // Add a product to the cart without initial period.
+    $product = commerce_product_new('recurring');
+    $product->sku = $this->randomName(10);
+    $product->title = $this->randomName(10);
+    $product->uid = 1;
+    $period = array();
+
+    // Set prices.
+    $product->commerce_price[LANGUAGE_NONE][0]['amount'] = rand(200, 50000);
+    $product->commerce_price[LANGUAGE_NONE][0]['currency_code'] = 'USD';
+    $product->commerce_recurring_ini_price[LANGUAGE_NONE][0]['amount'] = rand(200, 50000);
+    $product->commerce_recurring_ini_price[LANGUAGE_NONE][0]['currency_code'] = 'USD';
+    $product->commerce_recurring_rec_price[LANGUAGE_NONE][0]['amount'] = rand(200, 50000);
+    $product->commerce_recurring_rec_price[LANGUAGE_NONE][0]['currency_code'] = 'USD';
+
+    // Set intervals.
+    foreach (array('commerce_recurring_ini_period', 'commerce_recurring_rec_period', 'commerce_recurring_end_period') as $field_name) {
+      $instance = field_info_instance('commerce_product', $field_name, 'recurring');
+      $period[] = array_rand($instance['settings']['allowed_periods'], 1);
+    }
+    $product->commerce_recurring_rec_period[LANGUAGE_NONE][0]['interval'] = rand(2,25);
+    $product->commerce_recurring_rec_period[LANGUAGE_NONE][0]['period'] = $period[0];
+    $product->commerce_recurring_end_period[LANGUAGE_NONE][0]['interval'] = rand(2,25);
+    $product->commerce_recurring_end_period[LANGUAGE_NONE][0]['period'] = $period[0];
+    commerce_product_save($product);
+
+    $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
+    $line_item = commerce_cart_product_add_by_id($product->product_id, 1, TRUE, $this->customer->uid);
+    $this->drupalPost($this->getCommerceUrl('cart'), array(), t('Checkout'));
+
+    // Generate random information, as city, postal code, etc.
+    $address_info = $this->generateAddressInformation();
+    // Fill in the billing address information.
+    $billing_pane = $this->xpath("//select[starts-with(@name, 'customer_profile_billing[commerce_customer_address]')]");
+    $this->drupalPostAJAX(NULL, array((string) $billing_pane[0]['name'] => 'US'), (string) $billing_pane[0]['name']);
+    // Fill in the required information for billing pane, with a random State.
+    $info = array(
+      'customer_profile_billing[commerce_customer_address][und][0][name_line]' => $address_info['name_line'],
+      'customer_profile_billing[commerce_customer_address][und][0][thoroughfare]' => $address_info['thoroughfare'],
+      'customer_profile_billing[commerce_customer_address][und][0][locality]' => $address_info['locality'],
+      'customer_profile_billing[commerce_customer_address][und][0][administrative_area]' => 'KY',
+      'customer_profile_billing[commerce_customer_address][und][0][postal_code]' => $address_info['postal_code'],
+    );
+    $this->drupalPost(NULL, $info, t('Continue to next step'));
+    // Finish checkout process
+    $this->drupalPost(NULL, array('commerce_payment[payment_details][name]' => 'Example payment method'), t('Continue to next step'));
+
+    // Load recurring entities.
+    $order = commerce_order_load($line_item->order_id);
+    $recurring_entities = commerce_recurring_load_by_order($order);
+    $recurring_entity = reset($recurring_entities);
+    $recurring_wrapper = entity_metadata_wrapper('commerce_recurring', $recurring_entity);
+
+    // Gather expected dates.
+    $start_date = $recurring_wrapper->start_date->value();
+    $due_date = new DateObject($start_date);
+    $end_date = new DateObject($start_date);
+    $initial_interval = $product_wrapper->commerce_recurring_rec_period->value();
     $end_interval = $product_wrapper->commerce_recurring_end_period->value();
     interval_apply_interval($due_date, $initial_interval, TRUE);
     interval_apply_interval($end_date, $end_interval, TRUE);

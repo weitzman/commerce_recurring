@@ -407,10 +407,10 @@ function commerce_recurring_new_from_product($order, $product, $fixed_price, $qu
 
   if (!empty($product->commerce_recurring_ini_period)) {
     $initial_interval = $product_wrapper->commerce_recurring_ini_period->value();
-    if (empty($initial_interval)) {
-      if (!empty($product->commerce_recurring_rec_period)) {
-        $initial_interval = $product_wrapper->commerce_recurring_rec_period->value();
-      }
+  }
+  if (empty($initial_interval)) {
+    if (!empty($product->commerce_recurring_rec_period)) {
+      $initial_interval = $product_wrapper->commerce_recurring_rec_period->value();
     }
   }
   if (!empty($initial_interval)) {
