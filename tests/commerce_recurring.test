@@ -541,8 +541,8 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
    */
   function testCommerceRecurringCreatingRecurringEntityQuantity() {
     $this->drupalLogin($this->customer);
-    $recurring_product = $this->createRecurringProduct();
-    $line_item = commerce_cart_product_add_by_id($recurring_product->product_id, 2, TRUE, $this->customer->uid);
+    $product = $this->createRecurringProduct();
+    $line_item = commerce_cart_product_add_by_id($product->product_id, 2, TRUE, $this->customer->uid);
     $this->drupalPost($this->getCommerceUrl('cart'), array(), t('Checkout'));
     // Generate random information, as city, postal code, etc.
     $address_info = $this->generateAddressInformation();
@@ -563,7 +563,9 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     $order = commerce_order_load($line_item->order_id);
     $recurring_entities = commerce_recurring_load_by_order($order);
     $recurring_entity = reset($recurring_entities);
+
     $this->assertEqual($recurring_entity->quantity, 2, t('The recurring entity generated has quantity 2.'));
+    $this->assertEqual($recurring_entity->commerce_recurring_fixed_price[LANGUAGE_NONE][0]['amount'], $product->commerce_recurring_ini_price[LANGUAGE_NONE][0]['amount'], t('Recurring entity fixed price is the product initial price.'));
     $this->assertEqual(count(commerce_recurring_load_by_order($order)), 1, t('Just one recurring entity has been created.'));
   }
 

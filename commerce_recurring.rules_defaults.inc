@@ -56,7 +56,7 @@ function commerce_recurring_default_rules_configuration() {
   ))->action('commerce_recurring_generate_recurring_product', array(
     'commerce_order:select' => 'commerce-order',
     'commerce_line_item:select' => 'current-line-item',
-    'fixed_price:select' => 'current-line-item:commerce-total',
+    'fixed_price:select' => 'current-line-item:commerce-unit-price',
     'quantity:select' => 'current-line-item:quantity',
   ));
   $rule->action($loop);
