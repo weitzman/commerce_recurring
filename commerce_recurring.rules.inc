@@ -392,33 +392,7 @@ function commerce_recurring_rules_generate_recurring_product($order, $line_item,
     $recurring_entity = commerce_recurring_new_from_product($order, $product, $fixed_price, $quantity);
   }
   else {
-    // If we're updating the recurring entity, we need to update this values:
-    // Add the new order at the end of the list of orders.
-    // Due date: previous due date + recurring period.
-    // End date update.
-    if ($recurring_entity = entity_load_single('commerce_recurring', $order->data['recurring_entity'])) {
-      // If the recurring entity has been disabled, don't go forward.
-      if (!$recurring_entity->status) {
-        return;
-      }
-      if (!empty($product->commerce_recurring_rec_period)) {
-        $recurring_interval = $product_wrapper->commerce_recurring_rec_period->value();
-        if (!empty($recurring_interval)) {
-          $date = new DateObject($recurring_entity->due_date);
-          interval_apply_interval($date, $recurring_interval, TRUE);
-          $recurring_entity->due_date = $date->getTimestamp();
-          entity_save('commerce_recurring', $recurring_entity);
-        }
-      }
-      else {
-        // If there's no more due dates, deactivate the recurring entity.
-        commerce_recurring_stop_recurring($recurring_entity);
-        return;
-      }
-    }
-    else {
-      return;
-    }
+    $recurring_entity = entity_load_single('commerce_recurring', $order->data['recurring_entity']);
   }
 
   rules_invoke_event('commerce_recurring_paid_full', $order, $recurring_entity, count($recurring_entity->commerce_recurring_order[LANGUAGE_NONE]));
@@ -457,13 +431,15 @@ function commerce_recurring_rules_generate_order_from_recurring() {
   $recurring_wrapper = entity_metadata_wrapper('commerce_recurring', $recurring_entity);
   $product_wrapper = $recurring_wrapper->commerce_recurring_ref_product;
 
-  // @TODO Add a check for the latest order of the recurring entity.
-  // If that wasn't paid or the order has not been completed, stop the
-  // recurring.
+  // @TODO Take care of order fail handling? http://drupal.org/node/1969350
 
   // If the due date is over the end date, stop the recurring.
   if (!empty($recurring_entity->end_date) && ($due_date > $recurring_entity->end_date)) {
     commerce_recurring_stop_recurring($recurring_entity);
+    return;
+  }
+  // If the recurring entity has been disabled, don't go forward.
+  if (!$recurring_entity->status) {
     return;
   }
 
@@ -475,7 +451,6 @@ function commerce_recurring_rules_generate_order_from_recurring() {
   foreach ($extra_arguments as $name => $argument) {
     $order->{$name} = $argument;
   }
-
   commerce_order_save($order);
 
   $line_item = commerce_product_line_item_new($product_wrapper->value(), $recurring_entity->quantity);
@@ -484,12 +459,26 @@ function commerce_recurring_rules_generate_order_from_recurring() {
   // We need to add a flag to the line item to be able to know that we're in a
   // recurring context in rules.
   $line_item->data['recurring_entity'] = $recurring_entity->id;
+  // Update the current line item price.
   rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
   commerce_line_item_save($line_item);
 
   $order->commerce_line_items[LANGUAGE_NONE][0]['line_item_id'] = $line_item->line_item_id;
   commerce_order_save($order);
 
+  // Add the order and update all the recurring values needed for the next
+  // iteration.
+  // Due date: previous due date + recurring period.
+  // End date update.
+  $product = $product_wrapper->value();
+  if (!empty($product->commerce_recurring_rec_period)) {
+    $recurring_interval = $product_wrapper->commerce_recurring_rec_period->value();
+    if (!empty($recurring_interval)) {
+      $date = new DateObject($recurring_entity->due_date);
+      interval_apply_interval($date, $recurring_interval, TRUE);
+      $recurring_entity->due_date = $date->getTimestamp();
+    }
+  }
   $recurring_wrapper->commerce_recurring_order[] = $order->order_id;
   entity_save('commerce_recurring', $recurring_wrapper->value());
   return array('order' => $order);
