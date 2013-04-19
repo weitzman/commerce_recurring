@@ -222,6 +222,24 @@ function commerce_recurring_rules_action_info() {
     ),
   );
 
+  $actions['commerce_recurring_stop_recurring'] = array(
+    'label' => t('Deactivate the recurring entity'),
+    'description' => t('Cancel the recurring entity. You can cancel from any entity type, most common are cancelling the recurring entity from the order or from the same recurring entity.'),
+    'parameter' => array(
+      'data' => array(
+        'type' => 'entity',
+        'label' => t('Entity'),
+        'description' => t('Specifies the entity to disable the recurring from.'),
+        'restriction' => 'selector',
+        'wrapped' => TRUE,
+      ),
+    ),
+    'group' => t('Commerce recurring'),
+    'callbacks' => array(
+      'execute' => 'commerce_recurring_rules_stop_recurring',
+    ),
+  );
+
   return $actions;
 }
 
@@ -495,6 +513,26 @@ function commerce_recurring_rules_order_contains_recurring_product($order) {
   return count(commerce_recurring_order_load_recurring_line_items($order)) > 0 ? TRUE : FALSE;
 }
 
+
+/**
+ * React to disable the recurring entity associated to a given entity.
+ */
+function commerce_recurring_rules_stop_recurring($wrapper) {
+  switch ($wrapper->type->value()) {
+    case 'commerce_order':
+      $recurring_entities = commerce_recurring_load_by_order($wrapper->value());
+      // It's very unlikely that there's more than one recurring entity
+      // associated with the order but take care of that case as well.
+      foreach ($recurring_entities as $recurring_entity) {
+        commerce_recurring_stop_recurring($recurring_entity);
+      }
+      break;
+    case 'commerce_recurring':
+      $recurring_entity = $wrapper->value();
+      commerce_recurring_stop_recurring($recurring_entity);
+      break;
+  }
+}
 /**
  * @}
  */

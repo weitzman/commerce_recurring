@@ -98,5 +98,27 @@ function commerce_recurring_default_rules_configuration() {
 
   $rules['commerce_recurring_cron_generate_orders'] = $rule;
 
+  $rule = rules_reaction_rule();
+  $rule->label = t('Deactivate recurring entity when order is canceled');
+  $rule->active = TRUE;
+
+  $rule
+    ->event('commerce_order_update')
+    ->condition(rules_condition('data_is', array(
+      'data:select' => 'commerce-order:state',
+      'op' => '==',
+      'value:select' => 'commerce-order-unchanged:state',
+    ))->negate())
+    ->condition('data_is', array(
+      'data:select' => 'commerce-order:state',
+      'op' => '==',
+      'value' => 'canceled',
+    ))
+    ->action('commerce_recurring_stop_recurring', array(
+      'data:select' => 'commerce-order'
+    ));
+
+  $rules['commerce_recurring_disable_recurring_on_order_cancel'] = $rule;
+
   return $rules;
 }

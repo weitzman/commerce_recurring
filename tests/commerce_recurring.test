@@ -638,8 +638,31 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     $this->drupalLogin($this->customer);
     $this->drupalPost('node/' . $node->nid, array(), t('Add to cart'));
     $this->assertText($expected_price, t('Recurring product price in the display page (with cart) is the initial one as expected.'));
-
   }
+
+  /**
+   * Test if the recurring entity is disabled when cancelling an order.
+   */
+  function testCommerceRecurringCancelRecurringFromOrder() {
+    // Create a recurring entity.
+    $product = $this->createRecurringProduct();
+    $line_item = commerce_cart_product_add_by_id($product->product_id, 1, TRUE, $this->customer->uid);
+    $start_date = new DateObject('2010-01-01');
+    $due_date = new DateObject();
+    $due_date->sub(new DateInterval('P1D'));
+    $recurring_entity = $this->createRecurringEntity($product, 1, $start_date, $due_date);
+
+    $order = commerce_order_load($line_item->order_id);
+    $order->commerce_customer_billing = (array) $this->createDummyCustomerProfile('billing', $this->customer->uid);
+    $order->status = 'completed';
+    commerce_order_save($order);
+
+    $order->status = 'canceled';
+    commerce_order_save($order);
+    $recurring_entity = entity_load_single('commerce_recurring', $recurring_entity->id);
+    $this->assertEqual($recurring_entity->status, 0, t('Recurring entity has been disabled when the order is canceled'));
+  }
+
 }
 
 /**
