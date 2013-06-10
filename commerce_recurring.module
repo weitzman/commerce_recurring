@@ -49,6 +49,9 @@ function commerce_recurring_entity_info() {
         'singular' => t('recurring entity'),
         'plural' => t('recurring entities'),
       ),
+
+      // Prevent Redirect from altering the line item form.
+      'redirect' => FALSE,
     ),
   );
 
