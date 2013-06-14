@@ -86,13 +86,14 @@ function commerce_recurring_entity_property_info() {
  * Implements hook_entity_property_info_alter() on top of the Recurring module.
  */
 function commerce_recurring_entity_property_info_alter(&$info) {
-  $properties = array();
+  if (isset($info['commerce_recurring']['bundles'])) {
+    $properties = array();
+    foreach ($info['commerce_recurring']['bundles'] as $bundle => $bundle_info) {
+      $bundle_info += array('properties' => array());
+      $properties += $bundle_info['properties'];
+    }
 
-  foreach ($info['commerce_recurring']['bundles'] as $bundle => $bundle_info) {
-    $bundle_info += array('properties' => array());
-    $properties += $bundle_info['properties'];
+    $info['commerce_recurring']['properties']['commerce_recurring_ref_product'] = $properties['commerce_recurring_ref_product'];
+    $info['commerce_recurring']['properties']['commerce_recurring_order'] = $properties['commerce_recurring_order'];
   }
-
-  $info['commerce_recurring']['properties']['commerce_recurring_ref_product'] = $properties['commerce_recurring_ref_product'];
-  $info['commerce_recurring']['properties']['commerce_recurring_order'] = $properties['commerce_recurring_order'];
 }
