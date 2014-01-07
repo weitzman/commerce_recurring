@@ -108,6 +108,26 @@ function commerce_recurring_rules_action_info() {
     ),
   );
 
+  $actions['commerce_recurring_get_recurring_on_order'] = array(
+    'label' => t('Get all the recurring entities on an order'),
+    'parameter' => array(
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Order'),
+      ),
+    ),
+    'provides' => array(
+      'commerce_recurring_entities' => array(
+        'label' => t('Commerce recurring entities'),
+        'type' => 'list<commerce_recurring>',
+      ),
+    ),
+    'group' => t('Commerce recurring'),
+    'callbacks' => array(
+      'execute' => 'commerce_recurring_rules_get_recurring_on_order',
+    ),
+  );
+
   // Provide a default way to copy customer profiles to the new order.
   $profiles = array();
   $profile_fields  = commerce_info_fields('commerce_customer_profile_reference', 'commerce_order');
@@ -346,6 +366,14 @@ function commerce_recurring_rules_set_price($line_item, $listing_price, $initial
 function commerce_recurring_rules_get_recurring_line_items($order) {
   $line_items = commerce_recurring_order_load_recurring_line_items($order);
   return array('commerce_line_items' => isset($line_items[$order->order_id]) ? $line_items[$order->order_id] : array());
+}
+
+/**
+ * Return the recurring entities present inside an order.
+ */
+function commerce_recurring_rules_get_recurring_on_order($order) {
+  $recurring_entities = commerce_recurring_load_by_order($order);
+  return array('commerce_recurring_entities' => (!empty($recurring_entities)) ? $recurring_entities : array());
 }
 
 /**
