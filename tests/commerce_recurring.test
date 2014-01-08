@@ -5,6 +5,10 @@
  */
 
 class CommerceRecurringTestCase extends CommerceBaseTestCase {
+  /**
+   * @var stdClass
+   * User for the testing.
+   */
   private $customer = NULL;
 
   /**
@@ -214,7 +218,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     );
     $this->drupalPost(NULL, $info, t('Continue to next step'));
     // Finish checkout process
-    $this->drupalPost(NULL, array('commerce_payment[payment_details][name]' => 'Example payment method'), t('Continue to next step'));
+    $this->drupalPost(NULL, array('commerce_payment[payment_method]' => 'commerce_payment_example|commerce_payment_commerce_payment_example'), t('Continue to next step'));
 
     // Load recurring entities.
     $order = commerce_order_load($line_item->order_id);
@@ -291,7 +295,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     );
     $this->drupalPost(NULL, $info, t('Continue to next step'));
     // Finish checkout process
-    $this->drupalPost(NULL, array('commerce_payment[payment_details][name]' => 'Example payment method'), t('Continue to next step'));
+    $this->drupalPost(NULL, array('commerce_payment[payment_method]' => 'commerce_payment_example|commerce_payment_commerce_payment_example'), t('Continue to next step'));
 
     // Load recurring entities.
     $order = commerce_order_load($line_item->order_id);
@@ -389,6 +393,17 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
       'amount' => $order->commerce_order_total[LANGUAGE_NONE][0]['amount'],
       'currency_code' => $order->commerce_order_total[LANGUAGE_NONE][0]['currency_code'],
     );
+
+    // Accomodate the default payment example order data values.
+    $number = '4111111111111111';
+    $order->data['commerce_payment_example'] = array(
+      'credit_card' => array(
+        'number' => substr($number, 0, 4) . str_repeat('-', strlen($number) - 8) . substr($number, -4),
+        'exp_month' => date('m'),
+        'exp_year' => date('Y'),
+      ),
+    );
+
     commerce_payment_example_transaction($payment_method, $order, $charge, 'Test payment');
 
     $recurring_entities = entity_load('commerce_recurring', array($order->data['recurring_entity']), array(), TRUE);
@@ -460,7 +475,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     );
     $this->drupalPost(NULL, $info, t('Continue to next step'));
     // Finish checkout process
-    $this->drupalPost(NULL, array('commerce_payment[payment_details][name]' => 'Example payment method'), t('Continue to next step'));
+    $this->drupalPost(NULL, array('commerce_payment[payment_method]' => 'commerce_payment_example|commerce_payment_commerce_payment_example'), t('Continue to next step'));
 
     $orders = commerce_order_load_multiple(array($order->order_id), array(), TRUE);
     $order = reset($orders);
@@ -493,7 +508,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     );
     $this->drupalPost(NULL, $info, t('Continue to next step'));
     // Finish checkout process
-    $this->drupalPost(NULL, array('commerce_payment[payment_details][name]' => 'Example payment method'), t('Continue to next step'));
+    $this->drupalPost(NULL, array('commerce_payment[payment_method]' => 'commerce_payment_example|commerce_payment_commerce_payment_example'), t('Continue to next step'));
     // Load required entities.
     $order = commerce_order_load($line_item->order_id);
     $recurring_entities = commerce_recurring_load_by_order($order);
@@ -531,7 +546,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     );
     $this->drupalPost(NULL, $info, t('Continue to next step'));
     // Finish checkout process
-    $this->drupalPost(NULL, array('commerce_payment[payment_details][name]' => 'Example payment method'), t('Continue to next step'));
+    $this->drupalPost(NULL, array('commerce_payment[payment_method]' => 'commerce_payment_example|commerce_payment_commerce_payment_example'), t('Continue to next step'));
     $order = commerce_order_load($line_item->order_id);
     $this->assertEqual(count(commerce_recurring_load_by_order($order)), 2, t('Two recurring entities are created when there are two recurring products in the cart.'));
   }
@@ -559,7 +574,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
     );
     $this->drupalPost(NULL, $info, t('Continue to next step'));
     // Finish checkout process
-    $this->drupalPost(NULL, array('commerce_payment[payment_details][name]' => 'Example payment method'), t('Continue to next step'));
+    $this->drupalPost(NULL, array('commerce_payment[payment_method]' => 'commerce_payment_example|commerce_payment_commerce_payment_example'), t('Continue to next step'));
     $order = commerce_order_load($line_item->order_id);
     $recurring_entities = commerce_recurring_load_by_order($order);
     $recurring_entity = reset($recurring_entities);
