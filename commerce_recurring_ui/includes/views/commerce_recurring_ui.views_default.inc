@@ -215,6 +215,7 @@ function commerce_recurring_ui_views_default_views() {
   $handler->display->display_options['fields']['uid']['table'] = 'commerce_recurring';
   $handler->display->display_options['fields']['uid']['field'] = 'uid';
   $handler->display->display_options['fields']['uid']['exclude'] = TRUE;
+  $handler->display->display_options['fields']['uid']['separator'] = '';
   /* Field: Commerce recurring entity: Commerce recurring start date */
   $handler->display->display_options['fields']['start_date']['id'] = 'start_date';
   $handler->display->display_options['fields']['start_date']['table'] = 'commerce_recurring';
