@@ -111,6 +111,7 @@ function commerce_recurring_install() {
  */
 function commerce_recurring_uninstall() {
   module_load_include('module', 'commerce');
+  module_load_include('module', 'commerce_product_ui');
   // Delete recurring product type and field instances.
   commerce_product_ui_product_type_delete('recurring');
   commerce_delete_instances('commerce_product', 'recurring');
