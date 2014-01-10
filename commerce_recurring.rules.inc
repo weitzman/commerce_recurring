@@ -177,7 +177,7 @@ function commerce_recurring_rules_action_info() {
       ),
     ),
     'provides' => array(
-      'order' => array(
+      'commerce_order' => array(
         'type' => 'commerce_order',
         'label' => t('Commerce Order'),
       ),
@@ -202,7 +202,7 @@ function commerce_recurring_rules_action_info() {
       ),
     ) + $profiles,
     'provides' => array(
-      'order' => array(
+      'commerce_order' => array(
         'type' => 'commerce_order',
         'label' => t('Commerce Order'),
       ),
@@ -527,7 +527,7 @@ function commerce_recurring_rules_generate_order_from_recurring() {
   }
   $recurring_wrapper->commerce_recurring_order[] = $order->order_id;
   entity_save('commerce_recurring', $recurring_wrapper->value());
-  return array('order' => $order);
+  return array('commerce_order' => $order);
 }
 
 /**
