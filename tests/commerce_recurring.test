@@ -128,7 +128,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test creating a recurring product.
    */
-  function aatestCreateRecurringProduct() {
+  function testCreateRecurringProduct() {
     $store_admin = $this->createStoreAdmin();
     $this->drupalLogin($store_admin);
     $this->drupalGet('admin/commerce/products/add/recurring');
@@ -178,7 +178,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Create a Recurring entity.
    */
-  function aatestCommerceRecurringEntityCreation() {
+  function testCommerceRecurringEntityCreation() {
     $product = $this->createRecurringProduct();
     $line_item = commerce_cart_product_add_by_id($product->product_id);
     $order = commerce_order_load($line_item->order_id);
@@ -193,7 +193,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * When creating an order and finish a payment, recurring entity
    */
-  function aatestCommerceRecurringEntityCreationWorkflow() {
+  function testCommerceRecurringEntityCreationWorkflow() {
     // Login as a customer to proceed with the order.
     $this->drupalLogin($this->customer);
 
@@ -246,7 +246,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test workflow with no initial date.
    */
-  function aatestCommerceRecurringEntityCreationWorkflowNoInitialDate() {
+  function testCommerceRecurringEntityCreationWorkflowNoInitialDate() {
     // Login as a customer to proceed with the order.
     $this->drupalLogin($this->customer);
 
@@ -323,7 +323,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test cron run and order creation on recurring entity date base.
    */
-  function aatestCommerceRecurringCronOrderCreation() {
+  function testCommerceRecurringCronOrderCreation() {
     // Create a recurring entity.
     $product = $this->createRecurringProduct();
     $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
@@ -363,7 +363,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test recurring entity update when orders created in cron are processed.
    */
-  function aatestCommerceRecurringUpdateRecurringEntity() {
+  function testCommerceRecurringUpdateRecurringEntity() {
     // Create a recurring entity.
     $product = $this->createRecurringProduct();
     $line_item = commerce_cart_product_add_by_id($product->product_id, 1, TRUE, $this->customer->uid);
@@ -425,7 +425,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test recurring entity end date.
    */
-  function aatestCommerceRecurringEndDate() {
+  function testCommerceRecurringEndDate() {
     // Create a recurring entity.
     $product = $this->createRecurringProduct();
     $line_item = commerce_cart_product_add_by_id($product->product_id, 1, TRUE, $this->customer->uid);
@@ -455,7 +455,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test adding a regular product so it shouldn't recur.
    */
-  function aatestCommmerceRecurringRegularProduct() {
+  function testCommmerceRecurringRegularProduct() {
     $this->drupalLogin($this->customer);
     $order = $this->createDummyOrder($this->customer->uid);
     $this->drupalPost($this->getCommerceUrl('cart'), array(), t('Checkout'));
@@ -544,7 +544,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test purchasing a Regular product and a recurring product.
    */
-  function aatestCommerceRecurringRegularAndRecurringProducts() {
+  function testCommerceRecurringRegularAndRecurringProducts() {
     $this->drupalLogin($this->customer);
     $regular_product = $this->createDummyProduct();
     $line_item = commerce_cart_product_add_by_id($regular_product->product_id, 1, TRUE, $this->customer->uid);
@@ -582,7 +582,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test purchasing a several recurring products.
    */
-  function aatestCommerceRecurringPurchaseTwoRecurringProducts() {
+  function testCommerceRecurringPurchaseTwoRecurringProducts() {
     $this->drupalLogin($this->customer);
     $first_recurring_product = $this->createRecurringProduct();
     $line_item = commerce_cart_product_add_by_id($first_recurring_product->product_id, 1, TRUE, $this->customer->uid);
@@ -613,7 +613,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test recurring entity creation with quantity.
    */
-  function aatestCommerceRecurringCreatingRecurringEntityQuantity() {
+  function testCommerceRecurringCreatingRecurringEntityQuantity() {
     $this->drupalLogin($this->customer);
     $product = $this->createRecurringProduct();
     $line_item = commerce_cart_product_add_by_id($product->product_id, 2, TRUE, $this->customer->uid);
@@ -646,7 +646,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test recurring orders with quantity.
    */
-  function aatestCommerceRecurringCronOrderCreationWithQuantity() {
+  function testCommerceRecurringCronOrderCreationWithQuantity() {
     // Create a recurring entity.
     $product = $this->createRecurringProduct();
     $line_item = commerce_cart_product_add_by_id($product->product_id, 2, TRUE, $this->customer->uid);
@@ -677,7 +677,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test product is recurring check.
    */
-  function aatestCommerceRecurringProductIsRecurring() {
+  function testCommerceRecurringProductIsRecurring() {
     // Create a recurring and a non recurring product.
     $recurring_product = $this->createRecurringProduct();
     $regular_product = $this->createDummyProduct();
@@ -689,7 +689,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test price list for recurring products.
    */
-  function aatestCommerceRecurringProductPriceListing() {
+  function testCommerceRecurringProductPriceListing() {
     $this->drupalLogin($this->customer);
     $recurring_product = $this->createRecurringProduct();
     $this->createDummyProductDisplayContentType('product_display', TRUE, 'field_product', FIELD_CARDINALITY_UNLIMITED);
@@ -717,7 +717,7 @@ class CommerceRecurringTestCase extends CommerceBaseTestCase {
   /**
    * Test if the recurring entity is disabled when cancelling an order.
    */
-  function aatestCommerceRecurringCancelRecurringFromOrder() {
+  function testCommerceRecurringCancelRecurringFromOrder() {
     // Create a recurring entity.
     $product = $this->createRecurringProduct();
     $line_item = commerce_cart_product_add_by_id($product->product_id, 1, TRUE, $this->customer->uid);
@@ -838,7 +838,7 @@ class CommerceRecurringEnableDisableTestCase extends ModuleTestCase {
   /**
    * Test if the module has been correctly enabled.
    */
-  public function aatestCommerceRecurringEnable() {
+  public function testCommerceRecurringEnable() {
     $modules = array_merge($this->dependent_modules, array($this->module));
     // Test enable.
     $this->assertModuleTablesExist($this->module);
@@ -856,7 +856,7 @@ class CommerceRecurringEnableDisableTestCase extends ModuleTestCase {
   /**
    * Test if the module can be correctly disabled.
    */
-  public function aatestCommerceRecurringDisable() {
+  public function testCommerceRecurringDisable() {
     // Test disable.
     $this->disableCommerceRecurring();
     $this->assertText(t('The configuration options have been saved.'), t('Modules status has been updated.'));
@@ -876,7 +876,7 @@ class CommerceRecurringEnableDisableTestCase extends ModuleTestCase {
   /**
    * Test if the module can be correctly uninstalled.
    */
-  public function aatestCommerceRecurringDisableUninstall() {
+  public function testCommerceRecurringDisableUninstall() {
     $this->disableCommerceRecurring();
     // Uninstall the module.
     $edit = array();
