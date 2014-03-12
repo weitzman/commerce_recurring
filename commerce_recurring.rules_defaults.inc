@@ -13,6 +13,7 @@ function commerce_recurring_default_rules_configuration() {
 
   $rule = rules_reaction_rule();
   $rule->label = t('Override price for recurring');
+  $rule->tags = array('Commerce recurring');
   $rule->active = TRUE;
   $rule
     ->event('commerce_product_calculate_sell_price')
@@ -41,6 +42,7 @@ function commerce_recurring_default_rules_configuration() {
 
   $rule = rules_reaction_rule();
   $rule->label = t('Create a recurring entity when the order is completed');
+  $rule->tags = array('Commerce recurring');
   $rule->active = TRUE;
   $rule
     ->event('commerce_payment_order_paid_in_full')
@@ -65,6 +67,7 @@ function commerce_recurring_default_rules_configuration() {
 
   $rule = rules_reaction_rule();
   $rule->label = t('Generate recurring orders on cron run');
+  $rule->tags = array('Commerce recurring');
   $rule->active = TRUE;
   $rule
     ->event('commerce_recurring_cron')
@@ -100,6 +103,7 @@ function commerce_recurring_default_rules_configuration() {
 
   $rule = rules_reaction_rule();
   $rule->label = t('Deactivate recurring entity when order is canceled');
+  $rule->tags = array('Commerce recurring');
   $rule->active = TRUE;
 
   $rule
@@ -119,6 +123,54 @@ function commerce_recurring_default_rules_configuration() {
     ));
 
   $rules['commerce_recurring_disable_recurring_on_order_cancel'] = $rule;
+
+
+  $rule = rules_reaction_rule();
+  $rule->label = t('Assign an anonymous recurring entity to a pre-existing user');
+  $rule->tags = array('Commerce recurring');
+  $rule->active = TRUE;
+
+  $rule
+    ->event('commerce_recurring_paid_full')
+    ->condition('data_is', array(
+      'data:select' => 'commerce-order:uid',
+      'op' => '==',
+      'value' => '0',
+    ))
+    ->condition('entity_exists', array(
+      'type' => 'user',
+      'property' => 'mail',
+      'value:select' => 'commerce-order:mail',
+    ))
+    ->condition('data_is', array(
+      'data:select' => 'commerce-order:type',
+      'op' => '==',
+      'value' => 'commerce_order',
+    ))
+    ->action('entity_query', array(
+      'type' => 'user',
+      'property' => 'mail',
+      'value:select' => 'commerce-order:mail',
+      'limit' => 1,
+      'entity_fetched:label' => t('Fetched account'),
+      'entity_fetched:var' => 'account_fetched',
+    ));
+
+  $loop = rules_loop(array(
+    'list:select' => 'account-fetched',
+    'item:var' => 'list_item',
+    'item:label' => t('Current list item'),
+    'item:type' => 'user',
+  ))
+    ->action('data_set', array(
+      'data:select' => 'commerce_recurring:uid',
+      'value:select' => 'list-item',
+    ));
+
+  // Add the loop to the rule as an action.
+  $rule->action($loop);
+
+  $rules['commerce_recurring_assign_recurring_entity'] = $rule;
 
   return $rules;
 }
