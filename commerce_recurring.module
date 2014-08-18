@@ -394,8 +394,6 @@ function commerce_recurring_new(array $values = array()) {
  *   Commerce product associated with the recurring entity.
  * @param $fixed_price
  * @param $quantity
- * @internal param $line_item Commerce line item of the order.*   Commerce line item of the order.
- * @internal param $start_date Timestamp that corresponds to the start date for the recurring entity.*   Timestamp that corresponds to the start date for the recurring entity.
  *
  * @return entity $recurring_entity
  */
@@ -607,10 +605,7 @@ function commerce_recurring_permission() {
  *   or just 'edit' (being the same as 'create' or 'update').
  * @param null $type
  * @param $account
- *   (optional) The user to check for. Leave it to NULL to check for the global user.
- *
- * @internal param $profile (optional) A profile to check access for. If nothing is given, access for*   (optional) A profile to check access for. If nothing is given, access for
- *   all profiles is determined.
+ *   The user to check for. Leave it to NULL to check for the global user.
  * @return boolean
  *   Whether access is allowed or not.
  */

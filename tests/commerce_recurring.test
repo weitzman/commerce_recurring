@@ -758,18 +758,19 @@ class CommerceRecurringEnableDisableTestCase extends ModuleTestCase {
 
   /**
    * setUp() performs any pre-requisite tasks that need to happen.
+   *
+   * Overrides the parent setup to be able to enable all the required modules.
    */
   public function setUp() {
-    parent::setUp();
-
-    // Install modules required, as the parent setup for this case is just
-    // installing a basic profile.
     $modules = array_merge($this->dependent_modules, array($this->module));
-    if ($modules) {
-      $success = module_enable($modules, TRUE);
-      $this->assertTrue($success, t('Enabled modules: %modules', array('%modules' => implode(', ', $modules))));
-    }
-    cache_clear_all();
+    DrupalWebTestCase::setUp($modules);
+    module_enable(array('system_test'));
+    $this->admin_user = $this->drupalCreateUser(array(
+      'access administration pages',
+      'administer modules'
+    ));
+    $this->drupalLogin($this->admin_user);
+
   }
 
   /**
@@ -870,7 +871,6 @@ class CommerceRecurringEnableDisableTestCase extends ModuleTestCase {
     $this->assertCommerceRecurringEntity(TRUE);
     $fields = array('commerce_recurring_ref_product', 'commerce_recurring_order', 'commerce_recurring_fixed_price');
     $this->assertCommerceRecurringFields($fields, 'commerce_recurring', 'product', TRUE);
-
   }
 
   /**
@@ -894,4 +894,5 @@ class CommerceRecurringEnableDisableTestCase extends ModuleTestCase {
     $fields = array('commerce_recurring_ref_product', 'commerce_recurring_order', 'commerce_recurring_fixed_price');
     $this->assertCommerceRecurringFields($fields, 'commerce_recurring', 'product', FALSE);
   }
+
 }
