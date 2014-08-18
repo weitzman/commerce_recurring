@@ -113,6 +113,7 @@ function commerce_recurring_ui_views_default_views() {
   $handler->display->display_options['fields']['id']['table'] = 'commerce_recurring';
   $handler->display->display_options['fields']['id']['field'] = 'id';
   $handler->display->display_options['fields']['id']['label'] = 'Id';
+  $handler->display->display_options['fields']['id']['separator'] = '';
   /* Field: User: Name */
   $handler->display->display_options['fields']['name']['id'] = 'name';
   $handler->display->display_options['fields']['name']['table'] = 'users';
@@ -210,6 +211,7 @@ function commerce_recurring_ui_views_default_views() {
   $handler->display->display_options['fields']['id']['table'] = 'commerce_recurring';
   $handler->display->display_options['fields']['id']['field'] = 'id';
   $handler->display->display_options['fields']['id']['label'] = 'Id';
+  $handler->display->display_options['fields']['id']['separator'] = '';
   /* Field: Commerce recurring entity: Creator ID */
   $handler->display->display_options['fields']['uid']['id'] = 'uid';
   $handler->display->display_options['fields']['uid']['table'] = 'commerce_recurring';
