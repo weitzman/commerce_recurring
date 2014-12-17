@@ -35,11 +35,13 @@ function commerce_recurring_ui_menu() {
  * Implements hook_entity_info_alter().
  */
 function commerce_recurring_ui_entity_info_alter(&$entity_info) {
-  // @TODO: Add order bundle support when it's time for it.
-  $entity_info['commerce_recurring']['bundles']['product']['admin'] = array(
-    'path' => 'admin/commerce/recurring-entities/product',
-    'access arguments' => array('administer commerce_recurring entities'),
-  );
+  // @TODO Needs an improvement so it shows up in a different page (no tabs).
+  foreach (commerce_recurring_types() as $type) {
+    $entity_info['commerce_recurring']['bundles'][$type]['admin'] = array(
+      'path' => "admin/commerce/recurring-entities/$type",
+      'access arguments' => array('administer commerce_recurring entities'),
+    );
+  }
 
   // Enable the entity API's admin UI.
   $entity_info['commerce_recurring']['admin ui'] = array(
