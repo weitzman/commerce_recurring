@@ -154,11 +154,6 @@ function commerce_recurring_ui_views_default_views() {
   $handler->display->display_options['fields']['operations']['field'] = 'operations';
   $handler->display->display_options['fields']['operations']['label'] = 'Operations';
   $handler->display->display_options['fields']['operations']['add_destination'] = 0;
-  /* Filter criterion: Commerce recurring entity: Type */
-  $handler->display->display_options['filters']['type']['id'] = 'type';
-  $handler->display->display_options['filters']['type']['table'] = 'commerce_recurring';
-  $handler->display->display_options['filters']['type']['field'] = 'type';
-  $handler->display->display_options['filters']['type']['value'] = 'product';
 
   /* Display: Page */
   $handler = $view->new_display('page', 'Page', 'admin_page');
