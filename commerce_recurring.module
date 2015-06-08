@@ -630,3 +630,21 @@ function commerce_recurring_uri($recurring_entity) {
 
   return NULL;
 }
+
+/**
+ * Implements hook_commerce_checkout_router().
+ */
+function commerce_recurring_commerce_checkout_router($order, $checkout_page) {
+  // Just in the last page of the checkout if the order is not anonymous,
+  // we get the recurring entities belonging to the order and save them so
+  // they don't end up as anonymous.
+  if ($checkout_page['page_id'] == 'complete' && !empty($order->uid)) {
+    $recurring_entities = commerce_recurring_load_by_order($order);
+    foreach ($recurring_entities as $recurring_entity) {
+      if (empty($recurring_entity->uid)) {
+        $recurring_entity->uid = $order->uid;
+        entity_save('commerce_recurring', $recurring_entity);
+      }
+    }
+  }
+}
