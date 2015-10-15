@@ -213,6 +213,21 @@ function commerce_recurring_rules_action_info() {
     ),
   );
 
+  $actions['commerce_recurring_iterate_recurring_from_order'] = array(
+    'label' => t('Update a recurring entity from a completed order'),
+    'description' => t('Iterate through all recurring entities on the order and update'),
+    'parameter' => array(
+      'commerce_order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Order'),
+      ),
+    ),
+    'group' => t('Commerce recurring'),
+    'callbacks' => array(
+      'execute' => 'commerce_recurring_rules_iterate_recurring_from_order',
+    ),
+  );
+
   // @TODO Break the commerce product parameter in components for allowing to
   // set the initial dates, prices more granular.
   $actions['commerce_recurring_generate_recurring_product'] = array(
@@ -512,22 +527,36 @@ function commerce_recurring_rules_generate_order_from_recurring() {
   $order->commerce_line_items[LANGUAGE_NONE][0]['line_item_id'] = $line_item->line_item_id;
   commerce_order_save($order);
 
-  // Add the order and update all the recurring values needed for the next
-  // iteration.
-  // Due date: previous due date + recurring period.
-  // End date update.
-  $product = $product_wrapper->value();
-  if (!empty($product->commerce_recurring_rec_period)) {
-    $recurring_interval = $product_wrapper->commerce_recurring_rec_period->value();
-    if (!empty($recurring_interval)) {
-      $date = new DateObject($recurring_entity->due_date);
-      interval_apply_interval($date, $recurring_interval, TRUE);
-      $recurring_entity->due_date = $date->getTimestamp();
-    }
-  }
   $recurring_wrapper->commerce_recurring_order[] = $order->order_id;
   entity_save('commerce_recurring', $recurring_wrapper->value());
   return array('commerce_order' => $order);
+}
+
+/**
+ * Extend recurring entity values after successful recursion.
+ */
+function commerce_recurring_rules_iterate_recurring_from_order($order) {
+  $recurring_entities = commerce_recurring_load_by_order($order);
+
+  foreach ($recurring_entities as $recurring_entity) {
+    $recurring_wrapper = entity_metadata_wrapper('commerce_recurring', $recurring_entity);
+    $product_wrapper = $recurring_wrapper->commerce_recurring_ref_product;
+    $product = $product_wrapper->value();
+
+    // Add the order and update all the recurring values needed for the next
+    // iteration.
+    // Due date: previous due date + recurring period.
+    // End date update.
+    if (!empty($product->commerce_recurring_rec_period)) {
+      $recurring_interval = $product_wrapper->commerce_recurring_rec_period->value();
+      if (!empty($recurring_interval)) {
+        $date = new DateObject($recurring_entity->due_date);
+        interval_apply_interval($date, $recurring_interval, TRUE);
+        $recurring_entity->due_date = $date->getTimestamp();
+        entity_save('commerce_recurring', $recurring_wrapper->value());
+      }
+    }
+  }
 }
 
 /**

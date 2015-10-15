@@ -96,7 +96,10 @@ function commerce_recurring_default_rules_configuration() {
     'item:var' => 'current_recurring_entity',
     'item:label' => t('Current recurring entity'),
   ))->action('commerce_recurring_provide_order_properties', array('commerce_recurring:select' => 'current-recurring-entity'))
-  ->action('commerce_recurring_generate_order_from_recurring', $actions);
+    ->action('commerce_recurring_generate_order_from_recurring', $actions)
+    ->action('commerce_recurring_iterate_recurring_from_order', array(
+      'commerce_order:select' => 'commerce-order',
+      ));
   $rule->action($loop);
 
   $rules['commerce_recurring_cron_generate_orders'] = $rule;
