@@ -184,7 +184,7 @@ function commerce_recurring_ui_views_default_views() {
 
   /* Display: Master */
   $handler = $view->new_display('default', 'Master', 'default');
-  $handler->display->display_options['title'] = 'User recurring entities';
+  $handler->display->display_options['title'] = 'Recurring Subscriptions';
   $handler->display->display_options['use_more_always'] = FALSE;
   $handler->display->display_options['access']['type'] = 'perm';
   $handler->display->display_options['access']['perm'] = 'view own commerce_recurring entities';
@@ -237,15 +237,10 @@ function commerce_recurring_ui_views_default_views() {
   $handler->display->display_options['fields']['status']['field'] = 'status';
   $handler->display->display_options['fields']['status']['type'] = 'unicode-yes-no';
   $handler->display->display_options['fields']['status']['not'] = 0;
-  /* Field: Global: Custom text */
-  $handler->display->display_options['fields']['nothing']['id'] = 'nothing';
-  $handler->display->display_options['fields']['nothing']['table'] = 'views';
-  $handler->display->display_options['fields']['nothing']['field'] = 'nothing';
-  $handler->display->display_options['fields']['nothing']['label'] = '';
-  $handler->display->display_options['fields']['nothing']['alter']['text'] = 'View orders';
-  $handler->display->display_options['fields']['nothing']['alter']['make_link'] = TRUE;
-  $handler->display->display_options['fields']['nothing']['alter']['path'] = 'user/[uid]/recurring/[id]/orders';
-  $handler->display->display_options['fields']['nothing']['element_label_colon'] = FALSE;
+  /* Field: Commerce Recurring: Operations */
+  $handler->display->display_options['fields']['operations_dropbutton']['id'] = 'operations_dropbutton';
+  $handler->display->display_options['fields']['operations_dropbutton']['table'] = 'commerce_recurring';
+  $handler->display->display_options['fields']['operations_dropbutton']['field'] = 'operations_dropbutton';
   /* Contextual filter: Commerce recurring entity: Creator ID */
   $handler->display->display_options['arguments']['uid']['id'] = 'uid';
   $handler->display->display_options['arguments']['uid']['table'] = 'commerce_recurring';

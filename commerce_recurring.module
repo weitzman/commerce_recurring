@@ -592,6 +592,7 @@ function commerce_recurring_cron() {
  */
 function commerce_recurring_permission() {
   $permissions = array();
+
   $permissions += commerce_entity_access_permissions('commerce_recurring');
 
   return $permissions;
@@ -616,6 +617,8 @@ function commerce_recurring_access($op, $type = NULL, $account = NULL) {
 /**
  * Entity uri callback: gives modules a chance to specify a path for a recurring
  * entity.
+ * @param $recurring_entity
+ * @return null or $uri
  */
 function commerce_recurring_uri($recurring_entity) {
   // Allow modules to specify a path, returning the first one found.
@@ -627,12 +630,13 @@ function commerce_recurring_uri($recurring_entity) {
       return $uri;
     }
   }
-
   return NULL;
 }
 
 /**
  * Implements hook_commerce_checkout_router().
+ * @param $order
+ * @param $checkout_page
  */
 function commerce_recurring_commerce_checkout_router($order, $checkout_page) {
   // Just in the last page of the checkout if the order is not anonymous,
@@ -648,3 +652,4 @@ function commerce_recurring_commerce_checkout_router($order, $checkout_page) {
     }
   }
 }
+

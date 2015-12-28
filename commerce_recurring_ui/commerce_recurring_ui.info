@@ -8,3 +8,5 @@ dependencies[] = views
 configure = admin/commerce/recurring-entities
 
 files[] = includes/views/handlers/commerce_recurring_handler_field_order_operations.inc
+files[] = includes/views/handlers/commerce_recurring_ui_handler_field_operations_dropbutton.inc
+
