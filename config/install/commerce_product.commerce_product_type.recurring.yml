@@ -1,0 +1,11 @@
+langcode: en
+status: true
+dependencies:
+  enforced:
+    module:
+      - commerce_recurring
+id: recurring
+label: Recurring
+description: ''
+variationType: recurring
+injectVariationFields: true

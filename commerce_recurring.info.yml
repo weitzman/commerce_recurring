@@ -1,0 +1,44 @@
+name: Commerce Recurring
+type: module
+description: 'Provides recurring payment options for Drupal Commerce.'
+package: Commerce (contrib)
+core: 8.x
+dependencies:
+  - commerce_order
+  - commerce_product
+  - interval
+  - rules
+config_devel:
+  install:
+    - commerce_product.commerce_product_type.recurring
+    - commerce_product.commerce_product_variation_type.recurring
+    - commerce_recurring.commerce_recurring_type.default
+    - core.entity_form_display.commerce_product.recurring.default
+    - core.entity_form_display.commerce_product_variation.recurring.default
+    - core.entity_form_display.commerce_recurring.default.default
+    - core.entity_view_display.commerce_product.recurring.default
+    - core.entity_view_display.commerce_product_variation.recurring.default
+    - core.entity_view_display.commerce_recurring.default.default
+    - core.entity_view_display.commerce_recurring.default.user
+    - core.entity_view_mode.commerce_recurring.user
+    - field.field.commerce_product.recurring.body
+    - field.field.commerce_product.recurring.stores
+    - field.field.commerce_product.recurring.variations
+    - field.field.commerce_product_variation.recurring.recurring_end_period
+    - field.field.commerce_product_variation.recurring.recurring_initial_period
+    - field.field.commerce_product_variation.recurring.recurring_initial_price
+    - field.field.commerce_product_variation.recurring.recurring_period
+    - field.field.commerce_product_variation.recurring.recurring_price
+    - field.field.commerce_recurring.default.line_items
+    - field.field.commerce_recurring.default.recurring_orders
+    - field.storage.commerce_product_variation.recurring_end_period
+    - field.storage.commerce_product_variation.recurring_initial_period
+    - field.storage.commerce_product_variation.recurring_initial_price
+    - field.storage.commerce_product_variation.recurring_period
+    - field.storage.commerce_product_variation.recurring_price
+    - field.storage.commerce_recurring.line_items
+    - field.storage.commerce_recurring.recurring_orders
+    - views.view.commerce_recurring_line_item_table
+    - views.view.commerce_recurring_order_table
+    - views.view.commerce_recurrings
+    - views.view.commerce_user_recurrings

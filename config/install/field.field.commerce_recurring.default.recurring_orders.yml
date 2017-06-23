@@ -1,0 +1,20 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_recurring.commerce_recurring_type.default
+    - field.storage.commerce_recurring.recurring_orders
+id: commerce_recurring.default.recurring_orders
+field_name: recurring_orders
+entity_type: commerce_recurring
+bundle: default
+label: 'Recurring orders'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:commerce_order'
+  handler_settings: {  }
+field_type: entity_reference

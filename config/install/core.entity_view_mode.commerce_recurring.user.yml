@@ -1,0 +1,9 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_recurring
+id: commerce_recurring.user
+label: User
+targetEntityType: commerce_recurring
+cache: true

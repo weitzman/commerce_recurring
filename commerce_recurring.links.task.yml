@@ -1,0 +1,14 @@
+entity.commerce_recurring.collection:
+  route_name: 'entity.commerce_recurring.collection'
+  base_route: 'entity.commerce_recurring.collection'
+  title: 'Recurrings'
+
+entity.commerce_recurring.edit_form:
+  route_name: 'entity.commerce_recurring.edit_form'
+  base_route: 'entity.commerce_recurring.edit_form'
+  title: 'Edit'
+
+entity.commerce_recurring_type.edit_form:
+  route_name: 'entity.commerce_recurring_type.edit_form'
+  base_route: 'entity.commerce_recurring_type.edit_form'
+  title: 'Edit'

@@ -1,0 +1,82 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.recurring
+    - field.field.commerce_product_variation.recurring.recurring_end_period
+    - field.field.commerce_product_variation.recurring.recurring_initial_period
+    - field.field.commerce_product_variation.recurring.recurring_initial_price
+    - field.field.commerce_product_variation.recurring.recurring_period
+    - field.field.commerce_product_variation.recurring.recurring_price
+  enforced:
+    module:
+      - commerce_recurring
+  module:
+    - commerce_price
+    - interval
+id: commerce_product_variation.recurring.default
+targetEntityType: commerce_product_variation
+bundle: recurring
+mode: default
+content:
+  price:
+    type: commerce_price_default
+    weight: 1
+    settings: {  }
+    third_party_settings: {  }
+  recurring_end_period:
+    weight: 6
+    settings:
+      allowed_periods:
+        day: day
+        month: month
+        year: year
+        week: week
+    third_party_settings: {  }
+    type: interval_default
+  recurring_initial_period:
+    weight: 4
+    settings:
+      allowed_periods:
+        day: day
+        month: month
+        year: year
+        week: week
+    third_party_settings: {  }
+    type: interval_default
+  recurring_initial_price:
+    weight: 2
+    settings: {  }
+    third_party_settings: {  }
+    type: commerce_price_default
+  recurring_period:
+    weight: 5
+    settings:
+      allowed_periods:
+        day: day
+        month: month
+        year: year
+        week: week
+    third_party_settings: {  }
+    type: interval_default
+  recurring_price:
+    weight: 3
+    settings: {  }
+    third_party_settings: {  }
+    type: commerce_price_default
+  sku:
+    type: string_textfield
+    weight: 0
+    settings:
+      size: 60
+      placeholder: ''
+    third_party_settings: {  }
+  status:
+    type: boolean_checkbox
+    weight: 7
+    settings:
+      display_label: true
+    third_party_settings: {  }
+hidden:
+  created: true
+  uid: true

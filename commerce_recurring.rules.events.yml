@@ -1,0 +1,26 @@
+commerce_recurring_cron:
+  label: 'Commerce Recurring cron is executed'
+  category: 'Commerce Recurring'
+
+commerce_recurring_order_paid_full:
+  label: 'Recurring order is paid in full'
+  category: 'Commerce Recurring'
+  context:
+    commerce_order:
+      type: 'entity:commerce_order'
+      label: 'Commerce order'
+    commerce_recurring:
+      type: 'entity:commerce_recurring'
+      label: 'Commerce recurring'
+    number_of_orders:
+      type: 'decimal'
+      label: 'Number of orders'
+      description: 'Number of orders associated to the recurring so reacting to the first or nth one is easier.'
+
+commerce_recurring_stop:
+  label: 'Commerce recurring is stopped'
+  category: 'Commerce Recurring'
+  context:
+    commerce_recurring:
+      type: 'entity:commerce_recurring'
+      label: 'Commerce recurring'

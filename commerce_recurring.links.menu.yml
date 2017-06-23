@@ -1,0 +1,11 @@
+entity.commerce_recurring.collection:
+  title: 'Recurrings'
+  route_name: 'entity.commerce_recurring.collection'
+  parent: 'commerce.admin_commerce'
+  description: 'Manage your recurrings.'
+
+entity.commerce_recurring_type.collection:
+  title: 'Recurring types'
+  route_name: 'entity.commerce_recurring_type.collection'
+  parent: 'commerce.configuration'
+  description: 'Manage your recurring types.'

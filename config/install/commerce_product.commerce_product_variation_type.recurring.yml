@@ -1,0 +1,10 @@
+langcode: en
+status: true
+dependencies:
+  enforced:
+    module:
+      - commerce_recurring
+id: recurring
+label: Recurring
+lineItemType: product_variation
+generateTitle: true

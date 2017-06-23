@@ -1,0 +1,86 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_recurring.commerce_recurring_type.default
+    - core.entity_view_mode.commerce_recurring.user
+    - field.field.commerce_recurring.default.line_items
+    - field.field.commerce_recurring.default.recurring_orders
+  module:
+    - commerce_price
+    - commerce_recurring
+    - interval
+id: commerce_recurring.default.user
+targetEntityType: commerce_recurring
+bundle: default
+mode: user
+content:
+  due_date:
+    label: above
+    type: timestamp_ago
+    weight: 5
+    settings:
+      future_format: '@interval hence'
+      past_format: '@interval ago'
+      granularity: 2
+    third_party_settings: {  }
+  end_date:
+    label: above
+    type: timestamp
+    weight: 4
+    settings:
+      date_format: short
+      custom_date_format: ''
+      timezone: ''
+    third_party_settings: {  }
+  interval:
+    label: above
+    type: interval_default
+    weight: 6
+    settings: {  }
+    third_party_settings: {  }
+  line_items:
+    type: commerce_recurring_line_item_table
+    weight: 9
+    settings: {  }
+    third_party_settings: {  }
+    label: above
+  recurring_orders:
+    type: commerce_recurring_order_table
+    weight: 10
+    settings: {  }
+    third_party_settings: {  }
+    label: above
+  start_date:
+    label: above
+    type: timestamp
+    weight: 3
+    settings:
+      date_format: short
+      custom_date_format: ''
+      timezone: ''
+    third_party_settings: {  }
+  status:
+    label: above
+    weight: 7
+    settings:
+      format: yes-no
+      format_custom_true: ''
+      format_custom_false: ''
+    third_party_settings: {  }
+    type: boolean
+  total_price:
+    type: commerce_price_default
+    weight: 8
+    settings:
+      strip_trailing_zeroes: false
+      display_currency_code: false
+    third_party_settings: {  }
+    label: above
+hidden:
+  billing_profile: true
+  ip_address: true
+  mail: true
+  recurring_number: true
+  store_id: true
+  uid: true

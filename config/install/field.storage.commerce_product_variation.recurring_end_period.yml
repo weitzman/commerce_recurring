@@ -1,0 +1,21 @@
+langcode: en
+status: true
+dependencies:
+  enforced:
+    module:
+      - commerce_recurring
+  module:
+    - commerce_product
+    - interval
+id: commerce_product_variation.recurring_end_period
+field_name: recurring_end_period
+entity_type: commerce_product_variation
+type: interval
+settings: {  }
+module: interval
+locked: false
+cardinality: 1
+translatable: true
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

@@ -1,0 +1,22 @@
+{#
+/**
+ * @file
+ * Template for recurrings in the 'user' view mode.
+ *
+ * Available variables:
+ * - attributes: HTML attributes for the wrapper.
+ * - recurring: The rendered recurring fields.
+ *   Use 'orecurring_rder' to print them all, or print a subset such as
+ *   ' recurring.recurring_number'. Use the following code to exclude the
+ *   printing of a given field:
+ *   @code
+ *   {{  recurring|without('recurring_number') }}
+ *   @endcode
+ * -  recurring_entity: The recurring entity.
+ *
+ * @ingroup themeable
+ */
+#}
+<div{{ attributes }}>
+  {{ recurring }}
+</div>

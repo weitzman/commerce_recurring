@@ -1,0 +1,23 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_product.commerce_product_variation_type.recurring
+    - field.storage.commerce_product_variation.recurring_initial_period
+  enforced:
+    module:
+      - commerce_recurring
+  module:
+    - interval
+id: commerce_product_variation.recurring.recurring_initial_period
+field_name: recurring_initial_period
+entity_type: commerce_product_variation
+bundle: recurring
+label: 'Initial period'
+description: ''
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: interval

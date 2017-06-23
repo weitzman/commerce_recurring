@@ -1,0 +1,65 @@
+entity.commerce_recurring_type.collection:
+  path: '/admin/commerce/config/recurring-types'
+  defaults:
+    _entity_list: 'commerce_recurring_type'
+    _title: 'Recurring types'
+  requirements:
+    _permission: 'administer recurring types'
+
+entity.commerce_recurring.collection:
+  path: '/admin/commerce/recurrings'
+  defaults:
+    _entity_list: 'commerce_recurring'
+    _title: 'Recurrings'
+  requirements:
+    _permission: 'administer recurrings'
+
+entity.commerce_recurring.add_page:
+  path: '/admin/commerce/recurrings/add'
+  defaults:
+    _form: '\Drupal\commerce_recurring\Form\RecurringAddForm'
+    _title: 'Create a new recurring'
+  requirements:
+    _access_recurring_add: 'default'
+# @todo this need work, problems with permissions!
+
+entity.commerce_recurring.user_view:
+  path: '/user/{user}/recurrings/{commerce_recurring}'
+  defaults:
+    _entity_view: 'commerce_recurring.user'
+    _title: 'Recurring information'
+  options:
+    parameters:
+      entity:
+        user: 'entity:user'
+        commerce_recurring: 'entity:commerce_recurring'
+  requirements:
+    _entity_access: 'commerce_recurring.view'
+    commerce_recurring: \d+
+
+entity.commerce_recurring.user_edit_form:
+  path: '/user/{user}/recurrings/{commerce_recurring}/edit'
+  defaults:
+    _form: '\Drupal\commerce_recurring\Form\RecurringUserEditForm'
+    _title: 'Edit recurring'
+  options:
+    parameters:
+      user:
+        type: 'entity:user'
+      commerce_recurring:
+        type: 'entity:commerce_recurring'
+  requirements:
+    _entity_access: 'commerce_recurring.update'
+    commerce_recurring: \d+
+
+entity.commerce_recurring.reassign_form:
+  path: '/admin/commerce/recurrings/{commerce_recurring}/reassign'
+  defaults:
+    _form: '\Drupal\commerce_recurring\Form\RecurringReassignForm'
+    _title: 'Reassign recurring'
+  options:
+    parameters:
+      commerce_recurring:
+        type: 'entity:commerce_recurring'
+  requirements:
+    _permission: 'administer recurrings'
