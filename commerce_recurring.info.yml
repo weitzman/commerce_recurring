@@ -4,10 +4,8 @@ description: 'Provides recurring payment options for Drupal Commerce.'
 package: Commerce (contrib)
 core: 8.x
 dependencies:
-  - commerce_order
-  - commerce_product
-  - interval
-  - rules
+  - commerce:commerce_order
+  - commerce:commerce_product
 config_devel:
   install:
     - commerce_product.commerce_product_type.recurring
