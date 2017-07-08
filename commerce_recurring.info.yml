@@ -6,8 +6,8 @@ core: 8.x
 dependencies:
   - commerce:commerce_order
   - commerce:commerce_product
-  - rules
   - interval
+  - rules
 config_devel:
   install:
     - commerce_product.commerce_product_type.recurring
