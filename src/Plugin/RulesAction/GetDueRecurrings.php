@@ -9,7 +9,7 @@ use Drupal\rules\Core\RulesActionBase;
  * Provides a 'Get the commerce recurrings about to due' action.
  *
  * @RulesAction(
- *   id = "commerce_recurring_set_line_item_price",
+ *   id = "commerce_recurring_set_order_item_price",
  *   label = @Translation("Get the commerce recurrings about to due"),
  *   category = @Translation("Commerce Recurring"),
  *   context = {

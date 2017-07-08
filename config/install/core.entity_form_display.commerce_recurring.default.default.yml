@@ -3,7 +3,7 @@ status: true
 dependencies:
   config:
     - commerce_recurring.commerce_recurring_type.default
-    - field.field.commerce_recurring.default.line_items
+    - field.field.commerce_recurring.default.order_items
     - field.field.commerce_recurring.default.recurring_orders
   module:
     - commerce_order
@@ -51,13 +51,13 @@ content:
         year: year
         week: week
     third_party_settings: {  }
-  line_items:
+  order_items:
     type: inline_entity_form_complex
     weight: 7
     settings:
       override_labels: true
-      label_singular: 'recurring line item'
-      label_plural: 'recurring line items'
+      label_singular: 'recurring order item'
+      label_plural: 'recurring order items'
       allow_new: true
       match_operator: CONTAINS
       allow_existing: false

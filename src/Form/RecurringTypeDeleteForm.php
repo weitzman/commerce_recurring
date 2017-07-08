@@ -3,7 +3,7 @@
 namespace Drupal\commerce_recurring\Form;
 
 use Drupal\Core\Entity\EntityDeleteForm;
-use Drupal\Core\Entity\Query\QueryFactory;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -13,20 +13,18 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 class RecurringTypeDeleteForm extends EntityDeleteForm {
 
   /**
-   * The query factory to create entity queries.
-   *
-   * @var \Drupal\Core\Entity\Query\QueryFactory
+   * @var \Drupal\Core\Entity\EntityStorageInterface
+   *   The entity storage service.
    */
-  protected $queryFactory;
+  protected $recurringStorage;
 
   /**
    * Constructs a new RecurringTypeDeleteForm object.
    *
-   * @param \Drupal\Core\Entity\Query\QueryFactory $query_factory
-   *   The entity query object.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entityTypeManager
    */
-  public function __construct(QueryFactory $query_factory) {
-    $this->queryFactory = $query_factory;
+  public function __construct(EntityTypeManagerInterface $entityTypeManager) {
+    $this->recurringStorage = $entityTypeManager->getStorage('commerce_recurring');
   }
 
   /**
@@ -34,7 +32,7 @@ class RecurringTypeDeleteForm extends EntityDeleteForm {
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity.query')
+      $container->get('entity_type.manager')
     );
   }
 
@@ -42,7 +40,7 @@ class RecurringTypeDeleteForm extends EntityDeleteForm {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
-    $recurring_count = $this->queryFactory->get('commerce_recurring')
+    $recurring_count = $this->recurringStorage->getQuery()
       ->condition('type', $this->entity->id())
       ->count()
       ->execute();

@@ -65,7 +65,7 @@ class RecurringTypeAccessTest extends EntityKernelTestBase {
     $this->installEntitySchema('commerce_product_type');
     $this->installEntitySchema('commerce_store');
     $this->installEntitySchema('commerce_order');
-    $this->installEntitySchema('commerce_line_item');
+    $this->installEntitySchema('commerce_order_item');
     $this->installEntitySchema('commerce_recurring');
     $this->installConfig('commerce_product');
     $this->installConfig('commerce_store');

@@ -68,7 +68,7 @@ class RecurringTypeTest extends CommerceRecurringBrowserTestBase {
       'id' => 'sample2',
       'label' => 'Label for sample2',
     ]);
-    commerce_recurring_add_line_items_field($type);
+    commerce_recurring_add_order_items_field($type);
     commerce_recurring_add_recurring_orders_field($type);
 
     // Create a recurring.

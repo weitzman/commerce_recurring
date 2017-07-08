@@ -7,16 +7,16 @@ use Drupal\commerce_recurring\Controller\RecurringController;
 use Drupal\rules\Core\RulesConditionBase;
 
 /**
- * Provides an 'Commerce order contains a recurring product variation' condition.
+ * Provides an 'Order contains a recurring product variation' condition.
  *
  * @Condition(
  *   id = "commerce_recurring_commerce_order_contains_recurring_product_variation",
- *   label = @Translation("Commerce order contains a recurring product variation"),
+ *   label = @Translation("Order contains a recurring product variation"),
  *   category = @Translation("Commerce Recurring"),
  *   context = {
  *     "entity" = @ContextDefinition("commerce_order",
- *       label = @Translation("Commerce order"),
- *       description = @Translation("Specifies the commerce order for which to evaluate the condition.")
+ *       label = @Translation("Order"),
+ *       description = @Translation("Specifies the order for which to evaluate the condition.")
  *     )
  *   }
  * )
@@ -24,13 +24,13 @@ use Drupal\rules\Core\RulesConditionBase;
 class CommerceOrderContainsRecurringProductVariation extends RulesConditionBase {
 
   /**
-   * Check if the provided commerce order contains a recurring product variations.
+   * Check if the provided order contains a recurring product variations.
    *
    * @param \Drupal\commerce_order\Entity\OrderInterface $order
-   *   The commerce order to check.
+   *   The order to check.
    *
    * @return bool
-   *   TRUE if the provided commerce order is recurring.
+   *   TRUE if the provided order is recurring.
    */
   protected function doEvaluate(OrderInterface $order) {
     return RecurringController::orderContainsRecurringProduct($order);

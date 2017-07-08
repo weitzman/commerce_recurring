@@ -6,5 +6,5 @@ dependencies:
       - commerce_recurring
 id: recurring
 label: Recurring
-lineItemType: product_variation
+orderItemType: product_variation
 generateTitle: true

@@ -3,10 +3,9 @@
 namespace Drupal\commerce_recurring\Entity;
 
 use Drupal\commerce_order\Adjustment;
-use Drupal\commerce_order\Entity\LineItemInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\commerce_order\Entity\OrderItemInterface;
 use Drupal\commerce_price\Price;
-use Drupal\commerce_store\Entity\StoreInterface;
 use Drupal\Core\Entity\ContentEntityBase;
 use Drupal\Core\Entity\EntityChangedTrait;
 use Drupal\Core\Entity\EntityStorageInterface;
@@ -298,26 +297,26 @@ class Recurring extends ContentEntityBase implements RecurringInterface {
    * {@inheritdoc}
    */
   public static function postDelete(EntityStorageInterface $storage, array $entities) {
-    /* @var \Drupal\commerce_order\Entity\LineItem $line_item */
-    /* @var \Drupal\commerce_order\LineItemStorage $line_item_storage */
-    /* @var \Drupal\commerce_order\Entity\Order $recurring_order */
-    /* @var \Drupal\commerce_order\LineItemStorage $recurring_order_storage */
-    // Delete the line items of a deleted recurring.
-    $line_items = [];
+    // Delete the order items of a deleted recurring.
+    $order_items = [];
     $recurring_orders = [];
     foreach ($entities as $entity) {
-      foreach ($entity->getLineItems() as $line_item) {
-        $line_items[$line_item->id()] = $line_item;
+      /** @var \Drupal\commerce_order\Entity\OrderItemInterface $order_item */
+      foreach ($entity->getOrderItems() as $order_item) {
+        $order_items[$order_item->id()] = $order_item;
       }
+      /** @var \Drupal\commerce_order\Entity\OrderInterface $recurring_order */
       foreach ($entity->getRecurringOrders() as $recurring_order) {
         $recurring_orders[$recurring_order->id()] = $recurring_order;
       }
     }
 
-    $line_item_storage = \Drupal::service('entity_type.manager')
-      ->getStorage('commerce_line_item');
-    $line_item_storage->delete($line_items);
+    /** @var \Drupal\commerce_order\OrderItemStorageInterface $order_item_storage */
+    $order_item_storage = \Drupal::service('entity_type.manager')
+      ->getStorage('commerce_order_item');
+    $order_item_storage->delete($order_items);
 
+    /** @var \Drupal\commerce_order\OrderItemStorageInterface $recurring_order_storage */
     $recurring_order_storage = \Drupal::service('entity_type.manager')
       ->getStorage('commerce_order');
     $recurring_order_storage->delete($recurring_orders);
@@ -355,11 +354,11 @@ class Recurring extends ContentEntityBase implements RecurringInterface {
       $this->save();
     }
 
-    // Ensure there's a back-reference on each line item.
-    foreach ($this->getLineItems() as $line_item) {
-      if ($line_item->order_id->isEmpty()) {
-        $line_item->order_id = $this->id();
-        $line_item->save();
+    // Ensure there's a back-reference on each order item.
+    foreach ($this->getOrderItems() as $order_item) {
+      if ($order_item->order_id->isEmpty()) {
+        $order_item->order_id = $this->id();
+        $order_item->save();
       }
     }
   }
@@ -569,9 +568,9 @@ class Recurring extends ContentEntityBase implements RecurringInterface {
   /**
    * {@inheritdoc}
    */
-  public function addLineItem(LineItemInterface $line_item) {
-    if (!$this->hasLineItem($line_item)) {
-      $this->get('line_items')->appendItem($line_item);
+  public function addOrderItem(OrderItemInterface $order_item) {
+    if (!$this->hasOrderItem($order_item)) {
+      $this->get('order_items')->appendItem($order_item);
       $this->recalculateTotalPrice();
     }
 
@@ -581,17 +580,17 @@ class Recurring extends ContentEntityBase implements RecurringInterface {
   /**
    * {@inheritdoc}
    */
-  public function hasLineItem(LineItemInterface $line_item) {
-    return $this->getLineItemIndex($line_item) !== FALSE;
+  public function hasOrderItem(OrderItemInterface $order_item) {
+    return $this->getOrderItemIndex($order_item) !== FALSE;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function removeLineItem(LineItemInterface $line_item) {
-    $index = $this->getLineItemIndex($line_item);
+  public function removeOrderItem(OrderItemInterface $order_item) {
+    $index = $this->getOrderItemIndex($order_item);
     if ($index !== FALSE) {
-      $this->get('line_items')->offsetUnset($index);
+      $this->get('order_items')->offsetUnset($index);
       $this->recalculateTotalPrice();
     }
 
@@ -601,25 +600,25 @@ class Recurring extends ContentEntityBase implements RecurringInterface {
   /**
    * {@inheritdoc}
    */
-  public function getLineItems() {
-    /** @var \Drupal\Core\Field\EntityReferenceFieldItemList $line_items */
-    $line_items = $this->get('line_items');
+  public function getOrderItems() {
+    /** @var \Drupal\Core\Field\EntityReferenceFieldItemList $order_items */
+    $order_items = $this->get('order_items');
 
-    return $line_items->referencedEntities();
+    return $order_items->referencedEntities();
   }
 
   /**
    * {@inheritdoc}
    */
-  public function hasLineItems() {
-    return !$this->get('line_items')->isEmpty();
+  public function hasOrderItems() {
+    return !$this->get('order_items')->isEmpty();
   }
 
   /**
    * {@inheritdoc}
    */
-  public function setLineItems(array $line_items) {
-    $this->set('line_items', $line_items);
+  public function setOrderItems(array $order_items) {
+    $this->set('order_items', $order_items);
     $this->recalculateTotalPrice();
 
     return $this;
@@ -748,15 +747,15 @@ class Recurring extends ContentEntityBase implements RecurringInterface {
   /**
    * {@inheritdoc}
    */
-  public function getStore() {
-    return $this->get('store_id')->entity;
+  public function getStores() {
+    return $this->get('stores');
   }
 
   /**
    * {@inheritdoc}
    */
-  public function setStore(StoreInterface $store) {
-    $this->set('store_id', $store->id());
+  public function setStores(array $stores) {
+    $this->set('stores', $stores);
 
     return $this;
   }
@@ -764,15 +763,20 @@ class Recurring extends ContentEntityBase implements RecurringInterface {
   /**
    * {@inheritdoc}
    */
-  public function getStoreId() {
-    return $this->get('store_id')->target_id;
+  public function getStoreIds() {
+    $store_ids = [];
+    foreach ($this->getStores() as $field_item) {
+      $store_ids[] = $field_item->target_id;
+    }
+
+    return $store_ids;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function setStoreId($store_id) {
-    $this->set('store_id', $store_id);
+  public function setStoreIds(array $store_ids) {
+    $this->set('stores', $store_ids);
 
     return $this;
   }
@@ -793,46 +797,42 @@ class Recurring extends ContentEntityBase implements RecurringInterface {
   /**
    * Initializes the recurring currency code.
    *
-   * Takes the currency of the first line item if found.
-   * Otherwise it falls back to the store's default currency.
+   * Takes the currency of the first order item if found.
    *
    * @return string|null
    *   The currency code, or NULL if the recurring is in an incomplete state
-   *   (no line items, no store).
+   *   (no order items, no store).
    */
   protected function initializeCurrencyCode() {
-    if ($this->hasLineItems()) {
-      $line_items = $this->getLineItems();
-      $first_line_item = reset($line_items);
+    if ($this->hasOrderItems()) {
+      $order_items = $this->getOrderItems();
+      $first_order_item = reset($order_items);
       /** @var \Drupal\commerce_price\Price $unit_price */
-      $unit_price = $first_line_item->getUnitPrice();
+      $unit_price = $first_order_item->getUnitPrice();
       if ($unit_price) {
         return $unit_price->getCurrencyCode();
       }
-    }
-    if ($store = $this->getStore()) {
-      return $store->getDefaultCurrencyCode();
     }
 
     return NULL;
   }
 
   /**
-   * Gets the index of the given line item.
+   * Gets the index of the given order item.
    *
-   * @param \Drupal\commerce_order\Entity\LineItemInterface $line_item
-   *   The line item.
+   * @param \Drupal\commerce_order\Entity\OrderItemInterface $order_item
+   *   The order item.
    *
    * @return int|bool
-   *   The index of the given line item, or FALSE if not found.
+   *   The index of the given order item, or FALSE if not found.
    */
-  protected function getLineItemIndex(LineItemInterface $line_item) {
-    $values = $this->get('line_items')->getValue();
-    $line_item_ids = array_map(function ($value) {
+  protected function getOrderItemIndex(OrderItemInterface $order_item) {
+    $values = $this->get('order_items')->getValue();
+    $order_item_ids = array_map(function ($value) {
       return $value['target_id'];
     }, $values);
 
-    return array_search($line_item->id(), $line_item_ids);
+    return array_search($order_item->id(), $order_item_ids);
   }
 
   /**
@@ -854,7 +854,7 @@ class Recurring extends ContentEntityBase implements RecurringInterface {
   }
 
   /**
-   * Recalculates the line item total price.
+   * Recalculates the order item total price.
    */
   protected function recalculateTotalPrice() {
     /** @var \Drupal\commerce_price\Price $total_price */
@@ -872,11 +872,11 @@ class Recurring extends ContentEntityBase implements RecurringInterface {
     }
 
     $total_price = new Price('0', $currency_code);
-    foreach ($this->getLineItems() as $line_item) {
-      $total_price = $total_price->add($line_item->getTotalPrice());
-      foreach ($line_item->getAdjustments() as $adjustment) {
+    foreach ($this->getOrderItems() as $order_item) {
+      $total_price = $total_price->add($order_item->getTotalPrice());
+      foreach ($order_item->getAdjustments() as $adjustment) {
         $adjustment_total = $adjustment->getAmount()
-          ->multiply($line_item->getQuantity());
+          ->multiply($order_item->getQuantity());
         $total_price = $total_price->add($adjustment_total);
       }
     }

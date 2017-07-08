@@ -16,7 +16,7 @@ class RecurringOrderPaidFullEvent extends Event {
   const EVENT_NAME = 'commerce_recurring_paid_full';
 
   /**
-   * The recurring commerce order.
+   * The recurring order.
    *
    * @var \Drupal\commerce_order\Entity\OrderInterface
    */
@@ -39,24 +39,24 @@ class RecurringOrderPaidFullEvent extends Event {
   /**
    * Constructs a new RecurringOrderPaidFull event.
    *
-   * @param \Drupal\commerce_order\Entity\OrderInterface $commerce_order
-   *   The commerce order.
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The order.
    * @param \Drupal\commerce_recurring\Entity\RecurringInterface $commerce_recurring
    *   The commerce recurring.
    * @param int $number_of_orders
    *   The number of orders.
    */
-  public function __construct(OrderInterface $commerce_order, RecurringInterface $commerce_recurring, $number_of_orders = 0) {
-    $this->order = $commerce_order;
+  public function __construct(OrderInterface $order, RecurringInterface $commerce_recurring, $number_of_orders = 0) {
+    $this->order = $order;
     $this->recurring = $commerce_recurring;
     $this->numberOfOrders = $number_of_orders;
   }
 
   /**
-   * Gets the recurring commerce order.
+   * Gets the recurring order.
    *
    * @return \Drupal\commerce_order\Entity\OrderInterface
-   *   Gets the recurring commerce order.
+   *   Gets the recurring order.
    */
   public function getOrder() {
     return $this->order;

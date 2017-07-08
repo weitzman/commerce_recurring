@@ -6,6 +6,8 @@ core: 8.x
 dependencies:
   - commerce:commerce_order
   - commerce:commerce_product
+  - interval
+  - rules
 config_devel:
   install:
     - commerce_product.commerce_product_type.recurring
@@ -27,16 +29,16 @@ config_devel:
     - field.field.commerce_product_variation.recurring.recurring_initial_price
     - field.field.commerce_product_variation.recurring.recurring_period
     - field.field.commerce_product_variation.recurring.recurring_price
-    - field.field.commerce_recurring.default.line_items
+    - field.field.commerce_recurring.default.order_items
     - field.field.commerce_recurring.default.recurring_orders
     - field.storage.commerce_product_variation.recurring_end_period
     - field.storage.commerce_product_variation.recurring_initial_period
     - field.storage.commerce_product_variation.recurring_initial_price
     - field.storage.commerce_product_variation.recurring_period
     - field.storage.commerce_product_variation.recurring_price
-    - field.storage.commerce_recurring.line_items
+    - field.storage.commerce_recurring.order_items
     - field.storage.commerce_recurring.recurring_orders
-    - views.view.commerce_recurring_line_item_table
+    - views.view.commerce_recurring_order_item_table
     - views.view.commerce_recurring_order_table
     - views.view.commerce_recurrings
     - views.view.commerce_user_recurrings

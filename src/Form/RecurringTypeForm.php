@@ -50,7 +50,7 @@ class RecurringTypeForm extends BundleEntityFormBase {
     $form_state->setRedirect('entity.commerce_recurring_type.collection');
 
     if ($status == SAVED_NEW) {
-      commerce_recurring_add_line_items_field($this->entity);
+      commerce_recurring_add_order_items_field($this->entity);
       commerce_recurring_add_recurring_orders_field($this->entity);
     }
   }

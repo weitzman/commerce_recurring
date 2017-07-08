@@ -2,18 +2,18 @@
 
 namespace Drupal\commerce_recurring\Entity;
 
-use Drupal\commerce_store\Entity\EntityStoreInterface;
-use Drupal\commerce_order\EntityAdjustableInterface;
-use Drupal\commerce_order\Entity\LineItemInterface;
+use Drupal\commerce_order\Entity\OrderItemInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\commerce_order\EntityAdjustableInterface;
+use Drupal\commerce_store\Entity\EntityStoresInterface;
 use Drupal\Core\Entity\EntityChangedInterface;
-use Drupal\user\EntityOwnerInterface;
 use Drupal\profile\Entity\ProfileInterface;
+use Drupal\user\EntityOwnerInterface;
 
 /**
  * Defines the interface for recurrings.
  */
-interface RecurringInterface extends EntityAdjustableInterface, EntityStoreInterface, EntityChangedInterface, EntityOwnerInterface {
+interface RecurringInterface extends EntityAdjustableInterface, EntityStoresInterface, EntityChangedInterface, EntityOwnerInterface {
 
   /**
    * Gets the billing profile.
@@ -200,61 +200,61 @@ interface RecurringInterface extends EntityAdjustableInterface, EntityStoreInter
   public function setIpAddress($ip_address);
 
   /**
-   * Adds a line item.
+   * Adds a order item.
    *
-   * @param \Drupal\commerce_order\Entity\LineItemInterface $line_item
-   *   The line item.
+   * @param \Drupal\commerce_order\Entity\OrderItemInterface $order_item
+   *   The order item.
    *
    * @return $this
    */
-  public function addLineItem(LineItemInterface $line_item);
+  public function addOrderItem(OrderItemInterface $order_item);
 
   /**
-   * Checks whether the recurring has a given line item.
+   * Checks whether the recurring has a given order item.
    *
-   * @param \Drupal\commerce_order\Entity\LineItemInterface $line_item
-   *   The line item.
+   * @param \Drupal\commerce_order\Entity\OrderItemInterface $order_item
+   *   The order item.
    *
    * @return bool
-   *   TRUE if the line item was found, FALSE otherwise.
+   *   TRUE if the order item was found, FALSE otherwise.
    */
-  public function hasLineItem(LineItemInterface $line_item);
+  public function hasOrderItem(OrderItemInterface $order_item);
 
   /**
-   * Removes a line item.
+   * Removes a order item.
    *
-   * @param \Drupal\commerce_order\Entity\LineItemInterface $line_item
-   *   The line item.
+   * @param \Drupal\commerce_order\Entity\OrderItemInterface $order_item
+   *   The order item.
    *
    * @return $this
    */
-  public function removeLineItem(LineItemInterface $line_item);
+  public function removeOrderItem(OrderItemInterface $order_item);
 
   /**
-   * Gets the line items.
+   * Gets the order items.
    *
-   * @return \Drupal\commerce_order\Entity\LineItemInterface[]
-   *   The line items.
+   * @return \Drupal\commerce_order\Entity\OrderItemInterface[]
+   *   The order items.
    */
-  public function getLineItems();
+  public function getOrderItems();
 
   /**
-   * Gets whether the recurring has line items.
+   * Gets whether the recurring has order items.
    *
    * @return bool
-   *   TRUE if the recurring has line items, FALSE otherwise.
+   *   TRUE if the recurring has order items, FALSE otherwise.
    */
-  public function hasLineItems();
+  public function hasOrderItems();
 
   /**
-   * Sets the line items.
+   * Sets the order items.
    *
-   * @param \Drupal\commerce_order\Entity\LineItemInterface[] $line_items
-   *   The line items.
+   * @param \Drupal\commerce_order\Entity\OrderItemInterface[] $order_items
+   *   The order items.
    *
    * @return $this
    */
-  public function setLineItems(array $line_items);
+  public function setOrderItems(array $order_items);
 
   /**
    * Adds a recurring order.
@@ -290,7 +290,7 @@ interface RecurringInterface extends EntityAdjustableInterface, EntityStoreInter
   /**
    * Gets the recurring orders.
    *
-   * @return \Drupal\commerce_order\Entity\LineItemInterface[]
+   * @return \Drupal\commerce_order\Entity\OrderItemInterface[]
    *   The recurring orders.
    */
   public function getRecurringOrders();

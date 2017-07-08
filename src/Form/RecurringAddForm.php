@@ -2,6 +2,7 @@
 
 namespace Drupal\commerce_recurring\Form;
 
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
@@ -30,21 +31,32 @@ class RecurringAddForm extends FormBase {
   protected $storeStorage;
 
   /**
+   * Time service.
+   *
+   * @var \Drupal\Component\Datetime\TimeInterface
+   */
+  protected $time;
+
+  /**
    * Constructs a new RecurringAddForm object.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, TimeInterface $time) {
     $this->recurringStorage = $entity_type_manager->getStorage('commerce_recurring');
     $this->storeStorage = $entity_type_manager->getStorage('commerce_store');
+    $this->time = $time;
   }
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container) {
-    return new static($container->get('entity_type.manager'));
+    return new static(
+      $container->get('entity_type.manager'),
+      $container->get('datetime.time')
+    );
   }
 
   /**
@@ -105,7 +117,7 @@ class RecurringAddForm extends FormBase {
       'mail' => $values['mail'],
       'uid' => [$values['uid']],
       'store_id' => [$values['store_id']],
-      'start_date' => REQUEST_TIME,
+      'start_date' => $this->time->getRequestTime(),
     ];
     $recurring = $this->recurringStorage->create($recurring_data);
     $recurring->save();
