@@ -27,7 +27,7 @@ use Drupal\rules\Core\RulesActionBase;
  *   provides = {
  *     "commerce_order" = @ContextDefinition(
  *       "commerce_order",
- *       label = @Translation("Commerce Order")
+ *       label = @Translation("Order")
  *     )
  *   }
  * )

@@ -7,19 +7,19 @@ use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\rules\Core\RulesActionBase;
 
 /**
- * Provides a 'Create/Update a recurring order from line items' action.
+ * Provides a 'Create/Update a recurring order from order items' action.
  *
  * @RulesAction(
  *   id = "commerce_recurring_generate_recurring_order",
- *   label = @Translation("Create/Update a recurring order from line items"),
+ *   label = @Translation("Create/Update a recurring order from order items"),
  *   category = @Translation("Commerce Recurring"),
  *   context = {
  *     "commerce_order" = @ContextDefinition("commerce_order",
- *       label = @Translation("Commerce Order"),
- *       description = @Translation("Specifies the recurring commerce order, which should be created/updated.")
+ *       label = @Translation("Order"),
+ *       description = @Translation("Specifies the recurring order, which should be created/updated.")
  *     ),
- *     "commerce_line_items" = @ContextDefinition("list<commerce_line_item>",
- *       label = @Translation("Commerce Line items"),
+ *     "commerce_order_items" = @ContextDefinition("list<commerce_order_item>",
+ *       label = @Translation("Order items"),
  *     )
  *   }
  * )
@@ -43,14 +43,14 @@ class GenerateRecurringFromOrder extends RulesActionBase {
   }
 
   /**
-   * Create/Update a recurring order from line items.
+   * Create/Update a recurring order from order items.
    *
-   * @param \Drupal\commerce_order\Entity\OrderInterface $commerce_order
-   *   The commerce order entity.
-   * @param array $commerce_line_items
-   *   The commerce line items entity.
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The order entity.
+   * @param array $order_items
+   *   The order items entity.
    */
-  protected function doExecute(OrderInterface $commerce_order, array $commerce_line_items = []) {
+  protected function doExecute(OrderInterface $order, array $order_items = []) {
     // @todo Finish this action.
   }
 

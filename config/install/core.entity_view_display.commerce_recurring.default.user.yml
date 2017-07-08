@@ -4,7 +4,7 @@ dependencies:
   config:
     - commerce_recurring.commerce_recurring_type.default
     - core.entity_view_mode.commerce_recurring.user
-    - field.field.commerce_recurring.default.line_items
+    - field.field.commerce_recurring.default.order_items
     - field.field.commerce_recurring.default.recurring_orders
   module:
     - commerce_price
@@ -39,8 +39,8 @@ content:
     weight: 6
     settings: {  }
     third_party_settings: {  }
-  line_items:
-    type: commerce_recurring_line_item_table
+  order_items:
+    type: commerce_recurring_order_item_table
     weight: 9
     settings: {  }
     third_party_settings: {  }

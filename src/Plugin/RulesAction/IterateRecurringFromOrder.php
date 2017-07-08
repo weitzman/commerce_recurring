@@ -15,8 +15,8 @@ use Drupal\rules\Core\RulesActionBase;
  *   category = @Translation("Commerce Recurring"),
  *   context = {
  *     "commerce_order" = @ContextDefinition("commerce_order",
- *       label = @Translation("Commerce Order"),
- *       description = @Translation("Specifies the commerce order, which should be used.")
+ *       label = @Translation("Order"),
+ *       description = @Translation("Specifies the order, which should be used.")
  *     ),
  *   }
  * )
@@ -40,12 +40,12 @@ class IterateRecurringFromOrder extends RulesActionBase {
   }
 
   /**
-   * Create/Update a recurring order from line items.
+   * Create/Update a recurring order from order items.
    *
-   * @param \Drupal\commerce_order\Entity\OrderInterface $commerce_order
-   *   The commerce order entity.
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The order entity.
    */
-  protected function doExecute(OrderInterface $commerce_order) {
+  protected function doExecute(OrderInterface $order) {
     // @todo Finish this action.
   }
 

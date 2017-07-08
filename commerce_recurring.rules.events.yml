@@ -8,7 +8,7 @@ commerce_recurring_order_paid_full:
   context:
     commerce_order:
       type: 'entity:commerce_order'
-      label: 'Commerce order'
+      label: 'Order'
     commerce_recurring:
       type: 'entity:commerce_recurring'
       label: 'Commerce recurring'

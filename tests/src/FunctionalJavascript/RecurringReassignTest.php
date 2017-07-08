@@ -29,7 +29,7 @@ class RecurringReassignTest extends CommerceRecurringBrowserTestBase {
    * Tests the reassign form with a new user.
    */
   public function testRecurringReassign() {
-    $line_item = $this->createEntity('commerce_line_item', [
+    $order_item = $this->createEntity('commerce_order_item', [
       'type' => 'product_variation',
       'unit_price' => [
         'amount' => '100',
@@ -41,7 +41,7 @@ class RecurringReassignTest extends CommerceRecurringBrowserTestBase {
       'type' => 'default',
       'mail' => $this->loggedInUser->getEmail(),
       'uid' => $this->loggedInUser->id(),
-      'line_items' => [$line_item],
+      'order_items' => [$order_item],
     ]);
 
     $this->assertTrue($recurring->hasLinkTemplate('reassign-form'));

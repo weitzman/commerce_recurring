@@ -7,16 +7,16 @@ use Drupal\commerce_recurring\Controller\RecurringController;
 use Drupal\rules\Core\RulesConditionBase;
 
 /**
- * Provides an 'Commerce order is recurring' condition.
+ * Provides an 'Order is recurring' condition.
  *
  * @Condition(
  *   id = "commerce_recurring_commerce_order_is_recurring",
- *   label = @Translation("Commerce order is recurring"),
+ *   label = @Translation("Order is recurring"),
  *   category = @Translation("Commerce Recurring"),
  *   context = {
  *     "entity" = @ContextDefinition("commerce_order",
- *       label = @Translation("Commerce order"),
- *       description = @Translation("Specifies the commerce order for which to evaluate the condition.")
+ *       label = @Translation("Order"),
+ *       description = @Translation("Specifies the order for which to evaluate the condition.")
  *     )
  *   }
  * )
@@ -40,13 +40,13 @@ class CommerceOrderIsRecurring extends RulesConditionBase {
   }
 
   /**
-   * Check if the provided commerce order is recurring.
+   * Check if the provided order is recurring.
    *
    * @param \Drupal\commerce_order\Entity\OrderInterface $order
-   *   The commerce order to check.
+   *   The order to check.
    *
    * @return bool
-   *   TRUE if the provided commerce order is recurring.
+   *   TRUE if the provided order is recurring.
    */
   protected function doEvaluate(OrderInterface $order) {
     return $this->recurringController->orderIsRecurring($order);

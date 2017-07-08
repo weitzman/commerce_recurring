@@ -66,7 +66,7 @@ abstract class CommerceRecurringBrowserTestBase extends CommerceBrowserTestBase 
     return array_merge([
       'administer orders',
       'administer order types',
-      'administer line item types',
+      'administer order item types',
       'administer recurrings',
       'administer recurring types',
     ], parent::getAdministratorPermissions());

@@ -4,8 +4,8 @@ namespace Drupal\Tests\commerce_recurring\Kernel\Entity;
 
 use Drupal\commerce_recurring\Entity\Recurring;
 use Drupal\commerce_order\Adjustment;
-use Drupal\commerce_order\Entity\LineItem;
-use Drupal\commerce_order\Entity\LineItemType;
+use Drupal\commerce_order\Entity\OrderItem;
+use Drupal\commerce_order\Entity\OrderItemType;
 use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_price\Price;
 use Drupal\commerce_store\Entity\Store;
@@ -43,11 +43,11 @@ class RecurringTest extends EntityKernelTestBase {
   protected $recurringAdjustments = [];
 
   /**
-   * A sample line items.
+   * A sample order items.
    *
-   * @var \Drupal\commerce_order\Entity\LineItemInterface[]
+   * @var \Drupal\commerce_order\Entity\OrderItemInterface[]
    */
-  protected $recurringLineItems = [];
+  protected $recurringOrderItems = [];
 
   /**
    * A sample store.
@@ -99,7 +99,7 @@ class RecurringTest extends EntityKernelTestBase {
     $this->installEntitySchema('commerce_product_type');
     $this->installEntitySchema('commerce_store');
     $this->installEntitySchema('commerce_order');
-    $this->installEntitySchema('commerce_line_item');
+    $this->installEntitySchema('commerce_order_item');
     $this->installEntitySchema('commerce_recurring');
     $this->installConfig('commerce_product');
     $this->installConfig('commerce_store');
@@ -115,8 +115,8 @@ class RecurringTest extends EntityKernelTestBase {
     $store->save();
     $this->store = $this->reloadEntity($store);
 
-    // A line item type that doesn't need a purchasable entity, for simplicity.
-    LineItemType::create([
+    // A order item type that doesn't need a purchasable entity, for simplicity.
+    OrderItemType::create([
       'id' => 'test',
       'label' => 'Test',
       'orderType' => 'default',
@@ -134,84 +134,84 @@ class RecurringTest extends EntityKernelTestBase {
     $this->profile = $this->reloadEntity($profile);
 
     // Create two sample order.
-    $line_items = [];
-    $line_item = LineItem::create([
+    $order_items = [];
+    $order_item = OrderItem::create([
       'type' => 'test',
       'quantity' => '1',
       'unit_price' => new Price('4.00', 'USD'),
     ]);
-    $line_item->save();
-    $line_items[0] = $this->reloadEntity($line_item);
+    $order_item->save();
+    $order_items[0] = $this->reloadEntity($order_item);
 
-    $line_item = LineItem::create([
+    $order_item = OrderItem::create([
       'type' => 'test',
       'quantity' => '2',
       'unit_price' => new Price('3.00', 'USD'),
     ]);
-    $line_item->save();
-    $line_items[1] = $this->reloadEntity($line_item);
+    $order_item->save();
+    $order_items[1] = $this->reloadEntity($order_item);
 
     $order = Order::create([
       'type' => 'default',
       'state' => 'completed',
     ]);
     $order->setStore($this->store);
-    $order->setOwner($this->user);
+    $order->setCustomer($this->user);
     $order->setEmail('commerce_recurring@example.com');
     $order->setBillingProfile($profile);
-    $order->setLineItems($line_items);
+    $order->setItems($order_items);
     $order->setCreatedTime(1473069600);
     $order->setPlacedTime(1473069600);
     $order->save();
     $this->recurringOrders[0] = $this->reloadEntity($order);
 
-    $line_items = [];
-    $line_item = LineItem::create([
+    $order_items = [];
+    $order_item = OrderItem::create([
       'type' => 'test',
       'quantity' => '1',
       'unit_price' => new Price('4.00', 'USD'),
     ]);
-    $line_item->save();
-    $line_items[0] = $this->reloadEntity($line_item);
+    $order_item->save();
+    $order_items[0] = $this->reloadEntity($order_item);
 
-    $line_item = LineItem::create([
+    $order_item = OrderItem::create([
       'type' => 'test',
       'quantity' => '2',
       'unit_price' => new Price('3.00', 'USD'),
     ]);
-    $line_item->save();
-    $line_items[1] = $this->reloadEntity($line_item);
+    $order_item->save();
+    $order_items[1] = $this->reloadEntity($order_item);
 
     $order = Order::create([
       'type' => 'default',
       'state' => 'completed',
     ]);
     $order->setStore($this->store);
-    $order->setOwner($this->user);
+    $order->setCustomer($this->user);
     $order->setEmail('commerce_recurring@example.com');
     $order->setBillingProfile($profile);
-    $order->setLineItems($line_items);
+    $order->setItems($order_items);
     $order->setCreatedTime(1473069600);
     $order->setPlacedTime(1473069600);
     $order->save();
     $this->recurringOrders[1] = $this->reloadEntity($order);
 
-    // Create two commerce line items for the recurring.
-    $line_item = LineItem::create([
+    // Create two order items for the recurring.
+    $order_item = OrderItem::create([
       'type' => 'test',
       'quantity' => '1',
       'unit_price' => new Price('4.00', 'USD'),
     ]);
-    $line_item->save();
-    $this->recurringLineItems[0] = $this->reloadEntity($line_item);
+    $order_item->save();
+    $this->recurringOrderItems[0] = $this->reloadEntity($order_item);
 
-    $line_item = LineItem::create([
+    $order_item = OrderItem::create([
       'type' => 'test',
       'quantity' => '2',
       'unit_price' => new Price('3.00', 'USD'),
     ]);
-    $line_item->save();
-    $this->recurringLineItems[1] = $this->reloadEntity($line_item);
+    $order_item->save();
+    $this->recurringOrderItems[1] = $this->reloadEntity($order_item);
 
     // Create two commerce adjustments for the recurring.
     $adjustments[0] = new Adjustment([
@@ -255,12 +255,12 @@ class RecurringTest extends EntityKernelTestBase {
    * @covers ::setIntervalTime
    * @covers ::getIpAddress
    * @covers ::setIpAddress
-   * @covers ::addLineItem
-   * @covers ::hasLineItem
-   * @covers ::removeLineItem
-   * @covers ::getLineItems
-   * @covers ::hasLineItems
-   * @covers ::setLineItems
+   * @covers ::addOrderItem
+   * @covers ::hasOrderItem
+   * @covers ::removeOrderItem
+   * @covers ::getOrderItems
+   * @covers ::hasOrderItems
+   * @covers ::setOrderItems
    * @covers ::addRecurringOrder
    * @covers ::hasRecurringOrder
    * @covers ::removeRecurringOrder
@@ -345,17 +345,17 @@ class RecurringTest extends EntityKernelTestBase {
     $recurring->setIpAddress('127.0.0.2');
     $this->assertEquals('127.0.0.2', $recurring->getIpAddress());
 
-    // Test public (add|has|remove)LineItem and (get|has|set)LineItems methods.
-    $recurring->setLineItems($this->recurringLineItems);
-    $this->assertEquals($this->recurringLineItems, $recurring->getLineItems());
-    $this->assertTrue($recurring->hasLineItems());
-    $recurring->removeLineItem($this->recurringLineItems[1]);
-    $this->assertEquals([$this->recurringLineItems[0]], $recurring->getLineItems());
-    $this->assertTrue($recurring->hasLineItem($this->recurringLineItems[0]));
-    $this->assertFalse($recurring->hasLineItem($this->recurringLineItems[1]));
-    $recurring->addLineItem($this->recurringLineItems[1]);
-    $this->assertEquals($this->recurringLineItems, $recurring->getLineItems());
-    $this->assertTrue($recurring->hasLineItem($this->recurringLineItems[1]));
+    // Test public (add|has|remove)OrderItem and (get|has|set)OrderItems methods.
+    $recurring->setOrderItems($this->recurringOrderItems);
+    $this->assertEquals($this->recurringOrderItems, $recurring->getOrderItems());
+    $this->assertTrue($recurring->hasOrderItems());
+    $recurring->removeOrderItem($this->recurringOrderItems[1]);
+    $this->assertEquals([$this->recurringOrderItems[0]], $recurring->getOrderItems());
+    $this->assertTrue($recurring->hasOrderItem($this->recurringOrderItems[0]));
+    $this->assertFalse($recurring->hasOrderItem($this->recurringOrderItems[1]));
+    $recurring->addOrderItem($this->recurringOrderItems[1]);
+    $this->assertEquals($this->recurringOrderItems, $recurring->getOrderItems());
+    $this->assertTrue($recurring->hasOrderItem($this->recurringOrderItems[1]));
 
     // Test public (add|has|remove)RecurringOrder and
     // (get|has|set)RecurringOrders methods.
@@ -382,16 +382,16 @@ class RecurringTest extends EntityKernelTestBase {
     $recurring->setAdjustments($this->recurringAdjustments);
     $this->assertEquals($this->recurringAdjustments, $recurring->getAdjustments());
     $this->assertEquals(new Price('19.00', 'USD'), $recurring->getTotalPrice());
-    // Add an adjustment to the second line item, confirm it's a part of the
+    // Add an adjustment to the second order item, confirm it's a part of the
     // recurring total, multiplied by quantity.
-    $recurring->removeLineItem($this->recurringLineItems[1]);
-    $line_item = $this->recurringLineItems[1];
-    $line_item->addAdjustment(new Adjustment([
+    $recurring->removeOrderItem($this->recurringOrderItems[1]);
+    $order_item = $this->recurringOrderItems[1];
+    $order_item->addAdjustment(new Adjustment([
       'type' => 'custom',
       'label' => 'Random fee',
       'amount' => new Price('5.00', 'USD'),
     ]));
-    $recurring->addLineItem($line_item);
+    $recurring->addOrderItem($order_item);
     $this->assertEquals(new Price('29.00', 'USD'), $recurring->getTotalPrice());
 
     // Test public (get|set)Owner methods.

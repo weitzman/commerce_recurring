@@ -7,11 +7,11 @@ use Drupal\commerce_recurring\Controller\RecurringController;
 use Drupal\rules\Core\RulesActionBase;
 
 /**
- * Provides a 'Get all the recurring orders on a order' action.
+ * Provides a 'Get all the order items containing recurring products from an order' action.
  *
  * @RulesAction(
- *   id = "commerce_recurring_get_recurring_orders_on_an_order",
- *   label = @Translation("Get all the recurrings on an order"),
+ *   id = "commerce_recurring_get_recurring_order_items_from_order",
+ *   label = @Translation("Get all the order items containing recurring products from an order"),
  *   category = @Translation("Commerce Recurring"),
  *   context = {
  *     "commerce_order" = @ContextDefinition("commerce_order",
@@ -20,14 +20,14 @@ use Drupal\rules\Core\RulesActionBase;
  *     )
  *   },
  *   provides = {
- *     "commerce_recurrings" = @ContextDefinition(
- *       "list<commerce_recurring>",
- *       label = @Translation("Commerce Recurring entities")
+ *     "recurring_commerce_order_items" = @ContextDefinition(
+ *       "list<commerce_order_item>",
+ *       label = @Translation("Order Items")
  *     )
  *   }
  * )
  */
-class GetRecurringsOnAnOrder extends RulesActionBase {
+class GetRecurringOrderItemsFromOrder extends RulesActionBase {
 
   /**
    * The main commerce recurring controller.
@@ -46,15 +46,15 @@ class GetRecurringsOnAnOrder extends RulesActionBase {
   }
 
   /**
-   * Get all the recurrings on a order.
+   * Get all the order items containing recurring products from an order.
    *
    * @param \Drupal\commerce_order\Entity\OrderInterface $order
    *   The order entity.
    */
   protected function doExecute(OrderInterface $order) {
-    $commerce_recurrings = $this->recurringController->getRecurringsOnAnOrder($order);
+    $recurring_commerce_order_items = RecurringController::getRecurringOrderItemsFromOrder($order);
 
-    $this->setProvidedValue('commerce_recurrings', $commerce_recurrings);
+    $this->setProvidedValue('recurring_commerce_order_items', $recurring_commerce_order_items);
   }
 
 }

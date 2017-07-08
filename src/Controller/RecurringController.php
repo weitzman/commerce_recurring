@@ -2,26 +2,18 @@
 
 namespace Drupal\commerce_recurring\Controller;
 
-use Drupal\commerce_order\Entity\LineItemInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\commerce_order\Entity\OrderItemInterface;
 use Drupal\commerce_product\Entity\ProductVariationInterface;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Entity\Query\QueryFactory;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Provides a main commerce recurring controller.
  */
 class RecurringController extends ControllerBase implements RecurringControllerInterface {
-
-  /**
-   * The entity query factory service.
-   *
-   * @var \Drupal\Core\Entity\Query\QueryFactory
-   */
-  protected $entityQuery;
 
   /**
    * The recurring storage.
@@ -35,12 +27,9 @@ class RecurringController extends ControllerBase implements RecurringControllerI
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
-   * @param \Drupal\Core\Entity\Query\QueryFactory $entity_query
-   *   The entity query factory.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager, QueryFactory $entity_query) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager) {
     $this->recurringStorage = $entity_type_manager->getStorage('commerce_recurring');
-    $this->entityQuery = $entity_query;
   }
 
   /**
@@ -48,35 +37,34 @@ class RecurringController extends ControllerBase implements RecurringControllerI
    */
   public static function create(ContainerInterface $container) {
     return new static(
-      $container->get('entity_type.manager'),
-      $container->get('entity.query')
+      $container->get('entity_type.manager')
     );
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function getRecurringLineItemsFromOrder(OrderInterface $order) {
-    $recurring_line_items = [];
-    // Get all order line items.
-    $line_items = $order->getLineItems();
+  public static function getRecurringOrderItemsFromOrder(OrderInterface $order) {
+    $recurring_order_items = [];
+    // Get all order order items.
+    $order_items = $order->getItems();
 
-    foreach ($line_items as $line_item) {
-      // Evaluate every line item.
-      if (self::lineItemContainsRecurringProduct($line_item) == TRUE) {
-        $recurring_line_items[$line_item->id()] = $line_item;
+    foreach ($order_items as $order_item) {
+      // Evaluate every order item.
+      if (self::orderItemContainsRecurringProduct($order_item) == TRUE) {
+        $recurring_order_items[$order_item->id()] = $order_item;
       }
     }
 
-    return $recurring_line_items;
+    return $recurring_order_items;
   }
 
   /**
    * {@inheritdoc}
    */
-  public static function lineItemContainsRecurringProduct(LineItemInterface $line_item) {
+  public static function orderItemContainsRecurringProduct(OrderItemInterface $order_item) {
     /* @var \Drupal\commerce_product\Entity\ProductVariationInterface $product */
-    $product = $line_item->getPurchasedEntity();
+    $product = $order_item->getPurchasedEntity();
 
     return self::productVariationIsRecurring($product);
   }
@@ -85,12 +73,12 @@ class RecurringController extends ControllerBase implements RecurringControllerI
    * {@inheritdoc}
    */
   public static function orderContainsRecurringProduct(OrderInterface $order) {
-    // Get all order line items.
-    $line_items = $order->getLineItems();
+    // Get all order order items.
+    $order_items = $order->getItems();
 
-    foreach ($line_items as $line_item) {
-      // Evaluate every line item.
-      if (self::lineItemContainsRecurringProduct($line_item) == TRUE) {
+    foreach ($order_items as $order_item) {
+      // Evaluate every order item.
+      if (self::orderItemContainsRecurringProduct($order_item) == TRUE) {
         return TRUE;
       }
     }
@@ -120,7 +108,7 @@ class RecurringController extends ControllerBase implements RecurringControllerI
       $timestamp = $timestamp->getTimestamp();
     }
 
-    $result = $this->entityQuery->get('commerce_recurring')
+    $result = $this->recurringStorage->getQuery()
       ->condition('status', TRUE)
       ->condition('due_date', $timestamp, '<=')
       ->range(0, $number_items)
@@ -134,6 +122,7 @@ class RecurringController extends ControllerBase implements RecurringControllerI
    */
   public function getRecurringsOnAnOrder(OrderInterface $order) {
     // Look for all commerce recurring orders that reference to this order.
+    // @TODO: This needs work as commerce_recurring_order no longer exists.
     $result = $this->entityQuery->get('commerce_recurring_order')
       ->condition('type', $order->getEntityType())
       ->condition('recurring_orders.target_id', $order->id())
@@ -148,7 +137,7 @@ class RecurringController extends ControllerBase implements RecurringControllerI
   public function orderIsRecurring(OrderInterface $order) {
     // Look for all commerce recurrings that reference to this order.
     // @todo Only enabled recurring orders??
-    $result = $this->entityQuery->get('commerce_recurring')
+    $result = $this->recurringStorage->getQuery()
       ->condition('type', $order->getEntityType())
       ->condition('recurring_orders.target_id', $order->id())
       ->execute();
