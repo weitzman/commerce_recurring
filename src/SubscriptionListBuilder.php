@@ -40,7 +40,7 @@ class SubscriptionListBuilder extends EntityListBuilder {
     /* @var $entity \Drupal\commerce_recurring\Entity\SubscriptionInterface */
     $row = [
       'label' => $entity->label(),
-      'user' => $entity->getOwner()->getDisplayName(),
+      'user' => $entity->getCustomer()->getDisplayName(),
       'state' => $entity->getState()->getLabel(),
     ];
 
