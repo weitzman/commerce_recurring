@@ -79,10 +79,10 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
     $order_item_storage = \Drupal::entityTypeManager()
       ->getStorage('commerce_order_item');
 
-    $start_time = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
+    $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
     $initial_billing_cycle = $subscription->getBillingSchedule()
       ->getPlugin()
-      ->getFirstBillingCycle($start_time);
+      ->generateFirstBillingCycle($start_date);
     $initial_charges = $subscription->getType()->collectCharges($initial_billing_cycle, $subscription);
 
     // Create a recurring order.
@@ -94,13 +94,6 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
       'started' => $initial_billing_cycle->getStartDate()->format('U'),
       'ended' => $initial_billing_cycle->getEndDate()->format('U'),
     ]);
-
-    $start_time = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
-    $initial_billing_cycle = $subscription->getBillingSchedule()
-      ->getPlugin()
-      ->getFirstBillingCycle($start_time);
-
-    $initial_charges = $subscription->getType()->collectCharges($initial_billing_cycle, $subscription);
 
     foreach ($initial_charges as $charge) {
       // Create the initial order item.
@@ -130,8 +123,9 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
     /** @var \Drupal\commerce_order\OrderItemStorageInterface $order_item_storage */
     $order_item_storage = \Drupal::entityTypeManager()->getStorage('commerce_order_item');
 
+    $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
     $current_billing_cycle = new BillingCycle(DrupalDateTime::createFromTimestamp($previous_recurring_order->get('started')->value), DrupalDateTime::createFromTimestamp($previous_recurring_order->get('ended')->value));
-    $next_billing_cycle = $subscription->getBillingSchedule()->getPlugin()->getNextBillingCycle($current_billing_cycle);
+    $next_billing_cycle = $subscription->getBillingSchedule()->getPlugin()->generateNextBillingCycle($start_date, $current_billing_cycle);
 
     // Create the order for the next billing cycles.
     $next_order = Order::create([

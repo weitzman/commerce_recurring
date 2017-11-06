@@ -5,6 +5,7 @@ namespace Drupal\commerce_recurring\Form;
 use Drupal\commerce\Form\CommercePluginEntityFormBase;
 use Drupal\commerce_recurring\BillingScheduleManager;
 use Drupal\commerce_recurring\Entity\BillingSchedule;
+use Drupal\commerce_recurring\Entity\BillingScheduleInterface;
 use Drupal\Component\Utility\Html;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -78,11 +79,21 @@ class BillingScheduleForm extends CommercePluginEntityFormBase {
         'source' => ['label'],
       ],
     ];
-    $form['display_label'] = [
+    $form['displayLabel'] = [
       '#type' => 'textfield',
       '#title' => t('Display label'),
       '#description' => t('Used to identify the billing schedule on the frontend.'),
       '#default_value' => $billing_schedule->getDisplayLabel(),
+      '#required' => TRUE,
+    ];
+    $form['billingType'] = [
+      '#type' => 'radios',
+      '#title' => $this->t('Billing type'),
+      '#options' => [
+        BillingScheduleInterface::BILLING_TYPE_PREPAID => $this->t('Prepaid'),
+        BillingScheduleInterface::BILLING_TYPE_POSTPAID => $this->t('Postpaid'),
+      ],
+      '#default_value' => $billing_schedule->getBillingType(),
     ];
     $form['plugin'] = [
       '#type' => 'radios',

@@ -8,9 +8,12 @@ commerce_recurring.commerce_billing_schedule.*:
     label:
       type: label
       label: 'Label'
-    display_label:
+    displayLabel:
       type: label
       label: 'Display label'
+    billingType:
+      type: string
+      label: Billing type
     plugin:
       type: string
       label: 'Plugin'

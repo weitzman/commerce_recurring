@@ -2,12 +2,11 @@
 
 namespace Drupal\commerce_recurring\Plugin\Commerce\BillingSchedule;
 
-use Drupal\commerce_recurring\BillingCycle;
-use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\commerce\Interval;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Base class to share code between fixed and rolling billing schedules.
+ * Base class for interval-based billing schedules.
  */
 abstract class IntervalBase extends BillingScheduleBase {
 
@@ -32,16 +31,15 @@ abstract class IntervalBase extends BillingScheduleBase {
       '#title' => $this->t('Number'),
       '#default_value' => $this->configuration['number'],
     ];
-
     $form['unit'] = [
       '#type' => 'select',
-      '#title' => $this->t('Period'),
+      '#title' => $this->t('Unit'),
       '#options' => [
-        'hour' => 'Hour',
-        'day' => 'Day',
-        'week' => 'Week',
-        'month' => 'Month',
-        'year' => 'Year',
+        'hour' => $this->t('Hour'),
+        'day' => $this->t('Day'),
+        'week' => $this->t('Week'),
+        'month' => $this->t('Month'),
+        'year' => $this->t('Year'),
       ],
       '#default_value' => $this->configuration['unit'],
     ];
@@ -55,60 +53,23 @@ abstract class IntervalBase extends BillingScheduleBase {
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
     parent::submitConfigurationForm($form, $form_state);
 
-    $this->configuration['number'] = $form_state->getValue('number');
-    $this->configuration['unit'] = $form_state->getValue('unit');
-  }
+    if (!$form_state->getErrors()) {
+      $values = $form_state->getValue($form['#parents']);
 
-  /**
-   * Modifies a time by a certain number of units.
-   *
-   * @param \Drupal\Core\Datetime\DrupalDateTime $date
-   *   The date and time.
-   * @param int $number
-   *   The amount of units.
-   * @param string $unit
-   *   The actual unit.
-   * @return \Drupal\Core\Datetime\DrupalDateTime
-   *   THe changed date object.
-   *
-   * @throws \Exception
-   *   Thrown when an invalid unit got passed in.
-   */
-  protected function modifyTime(DrupalDateTime $date, $number, $unit) {
-    $date = clone $date;
-    switch ($unit) {
-      case 'hour':
-        $date->modify("+{$number} hour");
-        break;
-
-      case 'day':
-        $date->modify("+{$number} day");
-        break;
-
-      case 'week':
-        $date->modify("+{$number} week");
-        break;
-
-      case 'month':
-        $date->modify("+{$number} month");
-        break;
-
-      case 'year':
-        $date->modify("+{$number} year");
-        break;
-
-      default:
-        throw new \Exception('You missed a case ...');
+      $this->configuration = [];
+      $this->configuration['number'] = $values['number'];
+      $this->configuration['unit'] = $values['unit'];
     }
-    return $date;
   }
 
   /**
-   * {@inheritdoc}
+   * Gets the current interval.
+   *
+   * @return \Drupal\commerce\Interval
+   *   The interval.
    */
-  public function getNextBillingCycle(BillingCycle $cycle) {
-    // @todo Should we have some + / - second offset?
-    return new BillingCycle($cycle->getEndDate(), $this->modifyTime($cycle->getEndDate(), $this->configuration['number'], $this->configuration['unit']));
+  protected function getInterval() {
+    return new Interval($this->configuration['number'], $this->configuration['unit']);
   }
 
 }

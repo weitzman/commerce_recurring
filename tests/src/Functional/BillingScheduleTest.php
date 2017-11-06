@@ -5,7 +5,7 @@ namespace Drupal\Tests\commerce_recurring\Functional;
 use Drupal\Tests\BrowserTestBase;
 
 /**
- * Tests billing schedules
+ * Tests billing schedules.
  */
 class BillingScheduleTest extends BrowserTestBase {
 
@@ -20,11 +20,10 @@ class BillingScheduleTest extends BrowserTestBase {
   ];
 
   public function testCrudUiTest() {
-    $admin_user = $this->drupalCreateUser(['administer commerce_billing_schedules']);
+    $admin_user = $this->drupalCreateUser(['administer commerce_billing_schedule']);
     $this->drupalLogin($admin_user);
     $this->placeBlock('local_actions_block');
 
-    // 1. Create an entity
     $this->drupalGet('admin/commerce/config/billing-schedule');
     $this->assertSession()->statusCodeEquals(200);
 
@@ -32,7 +31,7 @@ class BillingScheduleTest extends BrowserTestBase {
     $this->submitForm([
       'label' => 'My admin label',
       'id' => 'test_id',
-      'display_label' => 'My display label',
+      'displayLabel' => 'My display label',
       'plugin' => 'test_plugin',
     ], 'Save');
     $this->clickLink('Edit');
@@ -40,7 +39,7 @@ class BillingScheduleTest extends BrowserTestBase {
       'configuration[test_plugin][key]' => 'value1',
     ], 'Save');
     $this->assertSession()->addressEquals('admin/commerce/config/billing-schedule');
-    $this->assertSession()->pageTextContains('Billing schedule My admin label created');
+    $this->assertSession()->pageTextContains('Saved the My admin label billing schedule.');
 
     // 2. Ensure the entity is listed
     $this->assertSession()->pageTextContains('My admin label');

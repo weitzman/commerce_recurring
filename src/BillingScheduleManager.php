@@ -2,6 +2,8 @@
 
 namespace Drupal\commerce_recurring;
 
+use Drupal\commerce_recurring\Annotation\CommerceBillingSchedule;
+use Drupal\commerce_recurring\Plugin\Commerce\BillingSchedule\BillingScheduleInterface;
 use Drupal\Component\Plugin\Exception\PluginException;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
@@ -27,16 +29,10 @@ class BillingScheduleManager extends DefaultPluginManager {
    *   The module handler.
    */
   public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
-    parent::__construct(
-      'Plugin/Commerce/BillingSchedule',
-      $namespaces,
-      $module_handler,
-      'Drupal\commerce_recurring\Plugin\Commerce\BillingSchedule\BillingScheduleInterface',
-      'Drupal\commerce_recurring\Annotation\CommerceBillingSchedule'
-    );
+    parent::__construct('Plugin/Commerce/BillingSchedule', $namespaces, $module_handler, BillingScheduleInterface::class, CommerceBillingSchedule::class);
 
-    $this->alterInfo('commerce_billing_schedule');
-    $this->setCacheBackend($cache_backend, 'commerce_recurring_billing_schedule');
+    $this->alterInfo('commerce_billing_schedule_info');
+    $this->setCacheBackend($cache_backend, 'commerce_billing_schedule_plugins');
   }
 
   /**
@@ -47,7 +43,7 @@ class BillingScheduleManager extends DefaultPluginManager {
 
     foreach (['id', 'label'] as $required_property) {
       if (empty($definition[$required_property])) {
-        throw new PluginException(sprintf('The billing schedule %s must define the %s property.', $plugin_id, $required_property));
+        throw new PluginException(sprintf('The billing schedule "%s" must define the "%s" property.', $plugin_id, $required_property));
       }
     }
   }

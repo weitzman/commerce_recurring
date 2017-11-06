@@ -18,19 +18,19 @@ class TestPlugin extends BillingScheduleBase {
   /**
    * {@inheritdoc}
    */
-  public function getFirstBillingCycle(DrupalDateTime $start_time) {
-    $end = clone $start_time;
-    $end->modify('+50 seconds');
-    return new BillingCycle($start_time, $end);
+  public function generateFirstBillingCycle(DrupalDateTime $start_date) {
+    $end_date = clone $start_date;
+    $end_date->modify('+50 seconds');
+    return new BillingCycle($start_date, $end_date);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getNextBillingCycle(BillingCycle $cycle) {
-    $end = clone $cycle->getEndDate();
-    $end->modify('+50 seconds');
-    return new BillingCycle($cycle->getEndDate(), $end);
+  public function generateNextBillingCycle(DrupalDateTime $start_date, BillingCycle $billing_cycle) {
+    $end_date = clone $billing_cycle->getEndDate();
+    $end_date->modify('+50 seconds');
+    return new BillingCycle($billing_cycle->getEndDate(), $end_date);
   }
 
   /**

@@ -30,7 +30,7 @@ use Drupal\Core\Config\Entity\ConfigEntityBase;
  *       "default" = "Drupal\Core\Entity\Routing\DefaultHtmlRouteProvider",
  *     },
  *   },
- *   admin_permission = "administer commerce_billing_schedules",
+ *   admin_permission = "administer commerce_billing_schedule",
  *   config_prefix = "commerce_billing_schedule",
  *   entity_keys = {
  *     "id" = "id",
@@ -41,15 +41,16 @@ use Drupal\Core\Config\Entity\ConfigEntityBase;
  *   config_export = {
  *     "id",
  *     "label",
- *     "display_label",
+ *     "displayLabel",
+ *     "billingType",
  *     "status",
  *     "plugin",
  *     "configuration",
  *   },
  *   links = {
- *     "add-form" = "/admin/commerce/config/payment/billing-schedule/add",
- *     "edit-form" = "/admin/commerce/config/payment/billing-schedule/manage/{commerce_billing_schedule}",
- *     "delete-form" = "/admin/commerce/config/payment/billing-schedule/manage/{commerce_billing_schedule}/delete",
+ *     "add-form" = "/admin/commerce/config/billing-schedule/add",
+ *     "edit-form" = "/admin/commerce/config/billing-schedule/manage/{commerce_billing_schedule}",
+ *     "delete-form" = "/admin/commerce/config/billing-schedule/manage/{commerce_billing_schedule}/delete",
  *     "collection" =  "/admin/commerce/config/billing-schedule"
  *   }
  * )
@@ -71,18 +72,27 @@ class BillingSchedule extends ConfigEntityBase implements BillingScheduleInterfa
   protected $label;
 
   /**
-   * The label displayed to the customer.
+   * The billing schedule display label.
    *
    * @var string
    */
-  protected $display_label;
+  protected $displayLabel;
+
+  /**
+   * The billing type.
+   *
+   * One of the BillingScheduleInterface::BILLING_TYPE_ constants.
+   *
+   * @var string
+   */
+  protected $billingType = self::BILLING_TYPE_PREPAID;
 
   /**
    * The plugin ID.
    *
    * @var string
    */
-  protected $plugin = 'fixed';
+  protected $plugin;
 
   /**
    * The plugin configuration.
@@ -92,7 +102,7 @@ class BillingSchedule extends ConfigEntityBase implements BillingScheduleInterfa
   protected $configuration = [];
 
   /**
-   * The plugin collection that holds the recurring engine plugin.
+   * The plugin collection that holds the billing schedule plugin.
    *
    * @var \Drupal\commerce\CommerceSinglePluginCollection
    */
@@ -102,14 +112,34 @@ class BillingSchedule extends ConfigEntityBase implements BillingScheduleInterfa
    * {@inheritdoc}
    */
   public function getDisplayLabel() {
-    return $this->display_label;
+    return $this->displayLabel;
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getPlugin() {
-    return $this->getPluginCollection()->get($this->plugin);
+  public function setDisplayLabel($display_label) {
+    $this->displayLabel = $display_label;
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getBillingType() {
+    return $this->billingType;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setBillingType($billing_type) {
+    if (!in_array($billing_type, [self::BILLING_TYPE_PREPAID, self::BILLING_TYPE_POSTPAID])) {
+      throw new \InvalidArgumentException(sprintf('Invalid billing type "%s" provided.'));
+    }
+    $this->billingType = $billing_type;
+
+    return $this;
   }
 
   /**
@@ -148,6 +178,13 @@ class BillingSchedule extends ConfigEntityBase implements BillingScheduleInterfa
   /**
    * {@inheritdoc}
    */
+  public function getPlugin() {
+    return $this->getPluginCollection()->get($this->plugin);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getPluginCollections() {
     return [
       'configuration' => $this->getPluginCollection(),
@@ -171,7 +208,7 @@ class BillingSchedule extends ConfigEntityBase implements BillingScheduleInterfa
   }
 
   /**
-   * Gets the plugin collection that holds the recurring engine plugin.
+   * Gets the plugin collection that holds the billing schedule plugin.
    *
    * Ensures the plugin collection is initialized before returning it.
    *

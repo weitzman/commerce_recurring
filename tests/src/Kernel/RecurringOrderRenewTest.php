@@ -69,7 +69,7 @@ class RecurringOrderRenewTest extends CommerceRecurringKernelTestBase {
 
     // Fast forward in time and run cron.
     
-    \Drupal::time()->setTime($subscription->get('started')->value + 100);
+    \Drupal::time()->setTime($subscription->get('starts')->value + 100);
     // We don't trigger the cron directly as this processes the queue items
     // already.
     RecurringCron::create(\Drupal::getContainer())->cron();

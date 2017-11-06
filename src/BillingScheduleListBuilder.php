@@ -6,7 +6,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Entity\EntityListBuilder;
 
 /**
- * List builder for billing schedules.
+ * Defines the list builder for billing schedules.
  */
 class BillingScheduleListBuilder extends EntityListBuilder {
 
@@ -14,17 +14,8 @@ class BillingScheduleListBuilder extends EntityListBuilder {
    * {@inheritdoc}
    */
   public function buildHeader() {
-    $header = [
-      'label' => [
-        'data' => $this->t('Label'),
-        'class' => [RESPONSIVE_PRIORITY_MEDIUM],
-      ],
-      'type' => [
-        'data' => $this->t('Type'),
-        'class' => [RESPONSIVE_PRIORITY_MEDIUM],
-      ],
-    ];
-
+    $header['label'] = $this->t('Billing schedule');
+    $header['type'] = $this->t('Type');
     return $header + parent::buildHeader();
   }
 
@@ -32,12 +23,12 @@ class BillingScheduleListBuilder extends EntityListBuilder {
    * {@inheritdoc}
    */
   public function buildRow(EntityInterface $entity) {
-    /* @var $entity \Drupal\commerce_recurring\Entity\BillingScheduleInterface */
-    $row = [
-      'label' => $entity->label(),
-      'type' => $entity->getPlugin()->getPluginDefinition()['label'],
-    ];
-
+    /* @var \Drupal\commerce_recurring\Entity\BillingScheduleInterface $entity */
+    $row['label'] = $entity->label();
+    if (!$entity->status()) {
+      $row['label'] .= ' (' . $this->t('Disabled') . ')';
+    }
+    $row['type'] = $entity->getPlugin()->getLabel();
     return $row + parent::buildRow($entity);
   }
 

@@ -7,28 +7,47 @@ use Drupal\Component\Plugin\ConfigurablePluginInterface;
 use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Plugin\PluginFormInterface;
-use Drupal\Core\Session\AccountInterface;
 
 /**
- * Plugin for billing cycle types.
+ * Provides the interface for billing schedules.
  *
- * The plugin is responsible for calculating billing cycles, aka. when is the
- * next time someone should pay again.
+ * Responsible for generating billing cycles, used to determine when the
+ * customer should be charged.
+ *
+ * @see \Drupal\commerce_recurring\BillingCycle
  */
 interface BillingScheduleInterface extends ConfigurablePluginInterface, PluginFormInterface, PluginInspectionInterface {
 
   /**
-   * @param \Drupal\Core\Datetime\DrupalDateTime $start_time
+   * Gets the billing schedule label.
    *
-   * @return \Drupal\commerce_recurring\BillingCycle
+   * @return string
+   *   The billing schedule label.
    */
-  public function getFirstBillingCycle(DrupalDateTime $start_time);
+  public function getLabel();
 
   /**
-   * @param \Drupal\commerce_recurring\BillingCycle $cycle
+   * Generates the first billing cycle.
+   *
+   * @param \Drupal\Core\Datetime\DrupalDateTime $start_date
+   *   The billing start date/time.
    *
    * @return \Drupal\commerce_recurring\BillingCycle
+   *   The billing cycle.
    */
-  public function getNextBillingCycle(BillingCycle $cycle);
+  public function generateFirstBillingCycle(DrupalDateTime $start_date);
+
+  /**
+   * Generates the next billing cycle.
+   *
+   * @param \Drupal\Core\Datetime\DrupalDateTime $start_date
+   *   The billing start date/time.
+   * @param \Drupal\commerce_recurring\BillingCycle $billing_cycle
+   *   The current billing cycle.
+   *
+   * @return \Drupal\commerce_recurring\BillingCycle
+   *   The billing cycle.
+   */
+  public function generateNextBillingCycle(DrupalDateTime $start_date, BillingCycle $billing_cycle);
 
 }

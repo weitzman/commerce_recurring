@@ -1,4 +1,4 @@
-administer commerce_billing_schedules:
+administer commerce_billing_schedule:
   title: 'Administer billing schedules'
   'restrict access': TRUE
 

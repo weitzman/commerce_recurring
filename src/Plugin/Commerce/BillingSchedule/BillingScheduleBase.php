@@ -6,10 +6,20 @@ use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Plugin\PluginBase;
 
+/**
+ * Provides the base class for billing schedules.
+ */
 abstract class BillingScheduleBase extends PluginBase implements BillingScheduleInterface {
 
   /**
-   * {@inheritdoc}
+   * Constructs a new BillingScheduleBase object.
+   *
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin_id for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
    */
   public function __construct(array $configuration, $plugin_id, $plugin_definition) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
@@ -19,6 +29,13 @@ abstract class BillingScheduleBase extends PluginBase implements BillingSchedule
       unset($configuration['_entity_id']);
     }
     $this->setConfiguration($configuration);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function calculateDependencies() {
+    return [];
   }
 
   /**
@@ -45,13 +62,6 @@ abstract class BillingScheduleBase extends PluginBase implements BillingSchedule
   /**
    * {@inheritdoc}
    */
-  public function calculateDependencies() {
-    return [];
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
     return $form;
   }
@@ -59,13 +69,18 @@ abstract class BillingScheduleBase extends PluginBase implements BillingSchedule
   /**
    * {@inheritdoc}
    */
-  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {
-  }
+  public function validateConfigurationForm(array &$form, FormStateInterface $form_state) {}
 
   /**
    * {@inheritdoc}
    */
-  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {
+  public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {}
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getLabel() {
+    return (string) $this->pluginDefinition['label'];
   }
 
 }

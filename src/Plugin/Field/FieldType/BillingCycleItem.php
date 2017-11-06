@@ -5,7 +5,7 @@ namespace Drupal\commerce_recurring\Plugin\Field\FieldType;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Field\FieldItemBase;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
-use Drupal\commerce_recurring\BillingCycle as BillingCycleObject;
+use Drupal\commerce_recurring\BillingCycle;
 use Drupal\Core\TypedData\DataDefinition;
 
 /**
@@ -26,11 +26,11 @@ class BillingCycleItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public static function propertyDefinitions(FieldStorageDefinitionInterface $field_definition) {
-    $properties['start_date'] = DataDefinition::create('datetime_iso8601')
-      ->setLabel(t('Start date value'))
+    $properties['starts'] = DataDefinition::create('timestamp')
+      ->setLabel(t('Start date'))
       ->setRequired(TRUE);
-    $properties['end_date'] = DataDefinition::create('datetime_iso8601')
-      ->setLabel(t('End date value'))
+    $properties['ends'] = DataDefinition::create('timestamp')
+      ->setLabel(t('End date'))
       ->setRequired(TRUE);
 
     return $properties;
@@ -42,19 +42,15 @@ class BillingCycleItem extends FieldItemBase {
   public static function schema(FieldStorageDefinitionInterface $field_definition) {
     return [
       'columns' => [
-        'start_date' => [
-          'description' => 'The start date value.',
-          'type' => 'varchar',
-          'length' => 20,
+        'starts' => [
+          'type' => 'int',
         ],
-        'end_date' => [
-          'description' => 'The end date value.',
-          'type' => 'varchar',
-          'length' => 20,
+        'ends' => [
+          'type' => 'int',
         ],
       ],
       'indexes' => [
-        'range' => ['start_date', 'end_date'],
+        'range' => ['starts', 'ends'],
       ],
     ];
   }
@@ -70,28 +66,29 @@ class BillingCycleItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public function isEmpty() {
-    $start_value = $this->get('start_date')->getValue();
-    $end_value = $this->get('start_date')->getValue();
-    return ($start_value === NULL || $start_value === '') && ($end_value === NULL || $end_value === '');
+    return empty($this->starts) || empty($this->ends);
   }
 
   /**
    * {@inheritdoc}
    */
   public function setValue($values, $notify = TRUE) {
-    // Allow callers to pass a Price value object as the field item value.
-    if ($values instanceof BillingCycleObject) {
+    // Allow callers to pass a BillingCycle value object.
+    if ($values instanceof BillingCycle) {
       $values = [
-        'start_date' => $values->getStartDate()->format('c'),
-        'end_date' => $values->getEndDate()->format('c'),
+        'starts' => $values->getStartDate(),
+        'ends' => $values->getEndDate(),
       ];
     }
 
-    if (isset($values['start_date']) && ($values['start_date'] instanceof DrupalDateTime || $values['start_date'] instanceof \DateTime)) {
-      $values['start_date'] = $values['start_date']->format('c');
+    // DrupalDateTime values passed by the caller or taken via BillingCycle.
+    if (isset($values['starts']) && ($values['starts'] instanceof DrupalDateTime)) {
+      $values['starts']->setTimezone(new \DateTimezone('UTC'));
+      $values['starts'] = $values['starts']->format('U');
     }
-    if (isset($values['end_date']) && ($values['end_date'] instanceof DrupalDateTime || $values['end_date'] instanceof \DateTime)) {
-      $values['end_date'] = $values['end_date']->format('c');
+    if (isset($values['ends']) && ($values['ends'] instanceof DrupalDateTime)) {
+      $values['ends']->setTimezone(new \DateTimezone('UTC'));
+      $values['ends'] = $values['ends']->format('U');
     }
 
     parent::setValue($values, $notify);
@@ -100,11 +97,12 @@ class BillingCycleItem extends FieldItemBase {
   /**
    * Gets the billing cycle value object for the current field item.
    *
-   * @reutrn \Drupal\commerce_recurring\BillingCycle
+   * @return \Drupal\commerce_recurring\BillingCycle
    *   The billing cycle object.
    */
   public function toBillingCycle() {
-    return new BillingCycleObject(new DrupalDateTime($this->start_date), new DrupalDateTime($this->end_date));
+    // @todo Set the timezones on both DrupalDateTime objects.
+    return new BillingCycle($this->get('starts')->getDateTime(), $this->get('ends')->getDateTime());
   }
 
 }

@@ -2,6 +2,8 @@
 
 namespace Drupal\commerce_recurring;
 
+use Drupal\commerce_recurring\Annotation\CommerceSubscriptionType;
+use Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType\SubscriptionTypeInterface;
 use Drupal\Component\Plugin\Exception\PluginException;
 use Drupal\Core\Cache\CacheBackendInterface;
 use Drupal\Core\Extension\ModuleHandlerInterface;
@@ -27,13 +29,7 @@ class SubscriptionTypeManager extends DefaultPluginManager {
    *   The module handler.
    */
   public function __construct(\Traversable $namespaces, CacheBackendInterface $cache_backend, ModuleHandlerInterface $module_handler) {
-    parent::__construct(
-      'Plugin/Commerce/SubscriptionType',
-      $namespaces,
-      $module_handler,
-      'Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType\SubscriptionTypeInterface',
-      'Drupal\commerce_recurring\Annotation\CommerceSubscriptionType'
-    );
+    parent::__construct('Plugin/Commerce/SubscriptionType', $namespaces, $module_handler, SubscriptionTypeInterface::class, CommerceSubscriptionType::class);
 
     $this->alterInfo('commerce_subscription_type_info');
     $this->setCacheBackend($cache_backend, 'commerce_subscription_type_plugins');
@@ -47,7 +43,7 @@ class SubscriptionTypeManager extends DefaultPluginManager {
 
     foreach (['id', 'label'] as $required_property) {
       if (empty($definition[$required_property])) {
-        throw new PluginException(sprintf('The subscription type %s must define the %s property.', $plugin_id, $required_property));
+        throw new PluginException(sprintf('The subscription type "%s" must define the "%s" property.', $plugin_id, $required_property));
       }
     }
   }

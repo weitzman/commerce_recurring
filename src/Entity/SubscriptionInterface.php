@@ -25,6 +25,7 @@ interface SubscriptionInterface extends ContentEntityInterface, PurchasableEntit
    * Gets the billing schedule.
    *
    * @return \Drupal\commerce_recurring\Entity\BillingScheduleInterface
+   *   The billing schedule.
    */
   public function getBillingSchedule();
 

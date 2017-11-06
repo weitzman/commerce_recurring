@@ -7,24 +7,58 @@ use Drupal\Core\Entity\EntityWithPluginCollectionInterface;
 
 /**
  * Defines the interface for billing schedules.
+ *
+ * This configuration entity stores configuration for billing schedule plugins.
  */
 interface BillingScheduleInterface extends ConfigEntityInterface, EntityWithPluginCollectionInterface {
 
   /**
-   * Gets the customer facing label.
+   * Available billing types.
+   */
+  const BILLING_TYPE_PREPAID = 'prepaid';
+  const BILLING_TYPE_POSTPAID = 'postpaid';
+
+  /**
+   * Gets the billing schedule display label.
+   *
+   * This label is customer-facing.
    *
    * @return string
-   *   The display label.
+   *   The billing schedule display label.
    */
   public function getDisplayLabel();
 
   /**
-   * Gets the billing schedule engine plugin.
+   * Sets the billing schedule display label.
    *
-   * @return \Drupal\commerce_recurring\Plugin\Commerce\BillingSchedule\BillingScheduleInterface
-   *   The billing schedule plugin.
+   * @param string $display_label
+   *   The billing schedule display label.
+   *
+   * @return $this
    */
-  public function getPlugin();
+  public function setDisplayLabel($display_label);
+
+  /**
+   * Gets the billing schedule billing type.
+   *
+   * The billing type can be either:
+   * - Prepaid: Subscription is paid at the beginning of the cycle.
+   * - Postpaid: Subscription is paid at the end of the cycle.
+   *
+   * @return string
+   *   The billing schedule billing type, one of the BILLING_TYPE_ constants.
+   */
+  public function getBillingType();
+
+  /**
+   * Sets the billing schedule billing type.
+   *
+   * @param string $billing_type
+   *   The billing schedule billing type.
+   *
+   * @return $this
+   */
+  public function setBillingType($billing_type);
 
   /**
    * Gets the billing schedule plugin ID.
@@ -56,10 +90,18 @@ interface BillingScheduleInterface extends ConfigEntityInterface, EntityWithPlug
    * Sets the billing schedule plugin configuration.
    *
    * @param array $configuration
-   *   The recurring engine plugin configuration.
+   *   The billing schedule plugin configuration.
    *
    * @return $this
    */
   public function setPluginConfiguration(array $configuration);
+
+  /**
+   * Gets the billing schedule plugin.
+   *
+   * @return \Drupal\commerce_recurring\Plugin\Commerce\BillingSchedule\BillingScheduleInterface
+   *   The billing schedule plugin.
+   */
+  public function getPlugin();
 
 }

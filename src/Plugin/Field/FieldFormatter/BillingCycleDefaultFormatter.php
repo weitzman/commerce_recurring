@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\commerce_recurring\Field\FieldFormatter;
+namespace Drupal\commerce_recurring\Plugin\Field\FieldFormatter;
 
 use Drupal\Core\Field\FieldItemListInterface;
 use Drupal\Core\Field\FormatterBase;
@@ -28,13 +28,13 @@ class BillingCycleDefaultFormatter extends FormatterBase {
   public function viewElements(FieldItemListInterface $items, $langcode) {
     $build = [];
     /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingCycleItem $item */
-    foreach ($items as $item) {
-      $build[] = [
-        '#theme' => 'item_list',
-        '#items' => [
-          $item->toBillingCycle()->getStartDate()->format('c'),
-          $item->toBillingCycle()->getEndDate()->format('c'),
-        ],
+    foreach ($items as $delta => $item) {
+      $billing_cycle = $item->toBillingCycle();
+      $start_date = $billing_cycle->getStartDate()->format('M jS Y H:i:s');
+      $end_date = $billing_cycle->getEndDate()->format('M jS Y H:i:s');
+
+      $build[$delta] = [
+        '#plain_text' => $start_date . ' - ' . $end_date,
       ];
     }
     return $build;

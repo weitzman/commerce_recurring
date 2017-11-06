@@ -30,7 +30,7 @@ class SubscriptionTest extends BrowserTestBase {
     $billing_schedule = BillingSchedule::create([
       'id' => 'test_id',
       'label' => 'Test label',
-      'display_label' => 'Test customer label',
+      'displayLabel' => 'Test customer label',
       'plugin' => 'test_plugin',
       'configuration' => [
         'key' => 'value',

@@ -19,8 +19,8 @@ class SubscriptionActivateTest extends CommerceRecurringKernelTestBase {
       'purchased_entity' => $this->variation,
       'amount' => new Price('2', 'USD'),
       'state' => 'pending',
-      'started' => \Drupal::time()->getRequestTime() - 5,
-      'ended' => \Drupal::time()->getRequestTime() + 1000,
+      'starts' => \Drupal::time()->getRequestTime() - 5,
+      'ends' => \Drupal::time()->getRequestTime() + 1000,
     ]);
     $subscription->save();
 
@@ -49,10 +49,10 @@ class SubscriptionActivateTest extends CommerceRecurringKernelTestBase {
     $this->assertEquals(2, $order_item->getTotalPrice()->getNumber());
     $this->assertEquals('commerce_subscription', $order_item->getPurchasedEntity()->getEntityTypeId());
     $this->assertEquals($subscription->id(), $order_item->getPurchasedEntity()->id());
-    $this->assertEquals($subscription->get('started')->value, $order->get('started')->value);
-    $this->assertEquals($subscription->get('started')->value + 50, $order->get('ended')->value);
-    $this->assertEquals($subscription->get('started')->value, $order_item->get('started')->value);
-    $this->assertEquals($subscription->get('started')->value + 50, $order_item->get('ended')->value);
+    $this->assertEquals($subscription->get('starts')->value, $order->get('started')->value);
+    $this->assertEquals($subscription->get('starts')->value + 50, $order->get('ended')->value);
+    $this->assertEquals($subscription->get('starts')->value, $order_item->get('started')->value);
+    $this->assertEquals($subscription->get('starts')->value + 50, $order_item->get('ended')->value);
   }
 
 }

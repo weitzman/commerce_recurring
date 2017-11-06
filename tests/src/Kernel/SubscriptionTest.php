@@ -58,7 +58,7 @@ class SubscriptionTest extends KernelTestBase {
     $billing_schedule = BillingSchedule::create([
       'id' => 'test_id',
       'label' => 'Test label',
-      'display_label' => 'Test customer label',
+      'displayLabel' => 'Test customer label',
       'plugin' => 'test_plugin',
       'configuration' => [
         'key' => 'value',
@@ -104,8 +104,8 @@ class SubscriptionTest extends KernelTestBase {
       'amount' => new Price('2', 'USD'),
       'state' => 'active',
       'created' => 1507642328,
-      'started' => 1507642328 + 10,
-      'ended' => 1507642328 + 50,
+      'starts' => 1507642328 + 10,
+      'ends' => 1507642328 + 50,
     ]);
     $subscription
       ->save();

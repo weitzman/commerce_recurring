@@ -206,14 +206,14 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
    * {@inheritdoc}
    */
   public function getStartTime() {
-    return $this->get('started')->value;
+    return $this->get('starts')->value;
   }
 
   /**
    * {@inheritdoc}
    */
   public function setStartTime($timestamp) {
-    $this->set('started', $timestamp);
+    $this->set('starts', $timestamp);
     return $this;
   }
 
@@ -221,14 +221,14 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
    * {@inheritdoc}
    */
   public function getEndTime() {
-    return $this->get('ended')->value;
+    return $this->get('ends')->value;
   }
 
   /**
    * {@inheritdoc}
    */
   public function setEndTime($timestamp) {
-    $this->set('ended', $timestamp);
+    $this->set('ends', $timestamp);
     return $this;
   }
 
@@ -382,9 +382,9 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
       ])
       ->setDisplayConfigurable('form', TRUE);
 
-    $fields['started'] = BaseFieldDefinition::create('timestamp')
+    $fields['starts'] = BaseFieldDefinition::create('timestamp')
       ->setLabel(t('Started'))
-      ->setDescription(t('The time when the subscription was/will be started.'))
+      ->setDescription(t('The time when the subscription was/will be starts.'))
       ->setRequired(TRUE)
       ->setDisplayOptions('view', [
         'label' => 'hidden',
@@ -397,9 +397,9 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
       ])
       ->setDisplayConfigurable('form', TRUE);
 
-    $fields['ended'] = BaseFieldDefinition::create('timestamp')
+    $fields['ends'] = BaseFieldDefinition::create('timestamp')
       ->setLabel(t('Ended'))
-      ->setDescription(t('The time when the subscription was/will be ended.'))
+      ->setDescription(t('The time when the subscription was/will be ends.'))
       ->setRequired(TRUE)
       ->setDefaultValue(0)
       ->setDisplayOptions('view', [
