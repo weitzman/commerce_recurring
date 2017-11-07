@@ -86,7 +86,7 @@ class RecurringCron {
     $result = $this->orderStorage->getQuery()
       ->condition('type', 'recurring')
       // @todo Should we filter by the state of the order?
-      ->condition('ended', $this->time->getRequestTime(), '<')
+      ->condition('billing_cycle.ends', $this->time->getRequestTime(), '<=')
       ->condition('state', 'canceled', '<>')
       ->execute();
     /** @var \Drupal\commerce_order\Entity\OrderItemInterface[] $order_items */

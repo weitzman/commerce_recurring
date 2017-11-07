@@ -40,8 +40,12 @@ class SubscriptionActivateTest extends CommerceRecurringKernelTestBase {
       ->pager(1)
       ->execute();
     $this->assertNotEmpty($result);
-    /** @var \Drupal\commerce_order\Entity\OrderInterface  $order */
+    /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $order_storage->load(reset($result));
+    /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingCycleItem $billing_cycle_item */
+    $billing_cycle_item = $order->get('billing_cycle')->first();
+    $billing_cycle = $billing_cycle_item->toBillingCycle();
+
     $this->assertEquals($currentUser->id(), $order->getCustomer()->id());
     $this->assertEquals('recurring', $order->bundle());
     $order_item = $order->getItems()[0];
@@ -49,8 +53,8 @@ class SubscriptionActivateTest extends CommerceRecurringKernelTestBase {
     $this->assertEquals(2, $order_item->getTotalPrice()->getNumber());
     $this->assertEquals('commerce_subscription', $order_item->getPurchasedEntity()->getEntityTypeId());
     $this->assertEquals($subscription->id(), $order_item->getPurchasedEntity()->id());
-    $this->assertEquals($subscription->get('starts')->value, $order->get('started')->value);
-    $this->assertEquals($subscription->get('starts')->value + 50, $order->get('ended')->value);
+    $this->assertEquals($subscription->get('starts')->value, $billing_cycle->getStartDate()->format('U'));
+    $this->assertEquals($subscription->get('starts')->value + 50, $billing_cycle->getEndDate()->format('U'));
     $this->assertEquals($subscription->get('starts')->value, $order_item->get('started')->value);
     $this->assertEquals($subscription->get('starts')->value + 50, $order_item->get('ended')->value);
   }

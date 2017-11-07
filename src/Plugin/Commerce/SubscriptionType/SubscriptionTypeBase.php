@@ -80,8 +80,7 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
       'uid' => $subscription->getCustomer(),
       // @todo Is this the right store?
       'store_id' => \Drupal::service('commerce_store.current_store')->getStore(),
-      'started' => $initial_billing_cycle->getStartDate()->format('U'),
-      'ended' => $initial_billing_cycle->getEndDate()->format('U'),
+      'billing_cycle' => $initial_billing_cycle,
     ]);
 
     foreach ($initial_charges as $charge) {
@@ -114,7 +113,9 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
     $order_item_storage = $this->entityTypeManager->getStorage('commerce_order_item');
 
     $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
-    $current_billing_cycle = new BillingCycle(DrupalDateTime::createFromTimestamp($previous_recurring_order->get('started')->value), DrupalDateTime::createFromTimestamp($previous_recurring_order->get('ended')->value));
+    /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingCycleItem $billing_cycle_item */
+    $billing_cycle_item = $previous_recurring_order->get('billing_cycle')->first();
+    $current_billing_cycle = $billing_cycle_item->toBillingCycle();
     $next_billing_cycle = $subscription->getBillingSchedule()->getPlugin()->generateNextBillingCycle($start_date, $current_billing_cycle);
 
     /** @var \Drupal\commerce_order\Entity\OrderInterface $next_order */
@@ -122,8 +123,7 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
       'type' => 'recurring',
       'uid' => $subscription->getCustomerId(),
       'store_id' => $previous_recurring_order->getStore(),
-      'started' => $next_billing_cycle->getStartDate()->format('U'),
-      'ended' => $next_billing_cycle->getEndDate()->format('U'),
+      'billing_cycle' => $next_billing_cycle,
     ]);
 
     $charges = $this->collectCharges($next_billing_cycle, $subscription);

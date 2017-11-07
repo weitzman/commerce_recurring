@@ -34,8 +34,8 @@ class RecurringOrderRenewTest extends CommerceRecurringKernelTestBase {
       'purchased_entity' => $this->variation,
       'amount' => new Price('2', 'USD'),
       'state' => 'pending',
-      'started' => \Drupal::time()->getRequestTime() - 5,
-      'ended' => \Drupal::time()->getRequestTime() + 1000,
+      'starts' => \Drupal::time()->getRequestTime() - 5,
+      'ends' => \Drupal::time()->getRequestTime() + 1000,
     ]);
     $subscription->save();
 
@@ -96,10 +96,13 @@ class RecurringOrderRenewTest extends CommerceRecurringKernelTestBase {
     /** @var \Drupal\commerce_order\Entity\OrderInterface $next_order */
     $next_order = $subscription->getType()->renewRecurringOrder($subscription, $order);
     $this->assertNotEquals($next_order->id(), $order->id());
+    /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingCycleItem $billing_cycle_item */
+    $billing_cycle_item = $next_order->get('billing_cycle')->first();
+    $billing_cycle = $billing_cycle_item->toBillingCycle();
 
     $this->assertEquals('recurring', $next_order->bundle());
-    $this->assertEquals(\Drupal::time()->getRequestTime() + 45, $next_order->get('started')->value);
-    $this->assertEquals(\Drupal::time()->getRequestTime() + 95, $next_order->get('ended')->value);
+    $this->assertEquals(\Drupal::time()->getRequestTime() + 45, $billing_cycle->getStartDate()->format('U'));
+    $this->assertEquals(\Drupal::time()->getRequestTime() + 95, $billing_cycle->getEndDate()->format('U'));
     $this->assertCount(1, $next_order->getItems());
     $this->assertEquals(2, $next_order->getItems()[0]->getUnitPrice()->getNumber());
     $this->assertEquals('recurring', $next_order->getItems()[0]->bundle());
