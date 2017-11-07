@@ -2,17 +2,56 @@
 
 namespace Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType;
 
-use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_recurring\BillingCycle;
 use Drupal\commerce_recurring\Entity\SubscriptionInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Drupal\Core\Plugin\PluginBase;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Defines the subscription base class.
  */
-abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTypeInterface {
+abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTypeInterface, ContainerFactoryPluginInterface {
+
+  /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * Constructs a new SubscriptionTypeBase object.
+   *
+   * @param array $configuration
+   *   A configuration array containing information about the plugin instance.
+   * @param string $plugin_id
+   *   The plugin_id for the plugin instance.
+   * @param mixed $plugin_definition
+   *   The plugin implementation definition.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   The entity type manager.
+   */
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+
+    $this->entityTypeManager = $entity_type_manager;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition) {
+    return new static(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('entity_type.manager')
+    );
+  }
 
   /**
    * {@inheritdoc}
@@ -23,13 +62,11 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
 
   /**
    * {@inheritdoc}
-   *
-   * @todo Should we inform the billing schedule plugin for close and renewing?
    */
   public function createRecurringOrder(SubscriptionInterface $subscription) {
+    $order_storage = $this->entityTypeManager->getStorage('commerce_order');
     /** @var \Drupal\commerce_order\OrderItemStorageInterface $order_item_storage */
-    $order_item_storage = \Drupal::entityTypeManager()
-      ->getStorage('commerce_order_item');
+    $order_item_storage = $this->entityTypeManager->getStorage('commerce_order_item');
 
     $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
     $initial_billing_cycle = $subscription->getBillingSchedule()
@@ -37,8 +74,8 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
       ->generateFirstBillingCycle($start_date);
     $initial_charges = $subscription->getType()->collectCharges($initial_billing_cycle, $subscription);
 
-    // Create a recurring order.
-    $order = Order::create([
+    /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
+    $order = $order_storage->create([
       'type' => 'recurring',
       'uid' => $subscription->getCustomer(),
       // @todo Is this the right store?
@@ -72,15 +109,16 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
    * {@inheritdoc}
    */
   public function renewRecurringOrder(SubscriptionInterface $subscription, OrderInterface $previous_recurring_order) {
+    $order_storage = $this->entityTypeManager->getStorage('commerce_order');
     /** @var \Drupal\commerce_order\OrderItemStorageInterface $order_item_storage */
-    $order_item_storage = \Drupal::entityTypeManager()->getStorage('commerce_order_item');
+    $order_item_storage = $this->entityTypeManager->getStorage('commerce_order_item');
 
     $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
     $current_billing_cycle = new BillingCycle(DrupalDateTime::createFromTimestamp($previous_recurring_order->get('started')->value), DrupalDateTime::createFromTimestamp($previous_recurring_order->get('ended')->value));
     $next_billing_cycle = $subscription->getBillingSchedule()->getPlugin()->generateNextBillingCycle($start_date, $current_billing_cycle);
 
-    // Create the order for the next billing cycles.
-    $next_order = Order::create([
+    /** @var \Drupal\commerce_order\Entity\OrderInterface $next_order */
+    $next_order = $order_storage->create([
       'type' => 'recurring',
       'uid' => $subscription->getCustomerId(),
       'store_id' => $previous_recurring_order->getStore(),
