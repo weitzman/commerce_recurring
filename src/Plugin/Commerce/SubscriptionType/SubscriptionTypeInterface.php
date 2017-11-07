@@ -14,7 +14,7 @@ use Drupal\Core\Plugin\PluginFormInterface;
  *
  * @todo What needs to be done on subscription types ...
  */
-interface SubscriptionTypeInterface extends BundlePluginInterface, ConfigurablePluginInterface, PluginFormInterface {
+interface SubscriptionTypeInterface extends BundlePluginInterface {
 
   /**
    * Returns charges needed for a given billing cycle.
