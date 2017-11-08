@@ -1,1 +1,23 @@
 <?php
+
+/**
+ * @file
+ * Provides recurring billing for Drupal Commerce.
+ */
+
+use Drupal\Core\Entity\EntityTypeInterface;
+use Drupal\commerce\PurchasableEntityInterface;
+
+/**
+ * Implements hook_commerce_entity_trait_info_alter().
+ */
+function commerce_recurring_commerce_entity_trait_info_alter(array &$definitions) {
+  // Expose the purchasable entity trait for every purchasable entity type.
+  $entity_types = \Drupal::entityTypeManager()->getDefinitions();
+  $entity_types = array_filter($entity_types, function (EntityTypeInterface $entity_type) {
+    return $entity_type->entityClassImplements(PurchasableEntityInterface::class);
+  });
+  $entity_type_ids = array_keys($entity_types);
+
+  $definitions['purchasable_entity_subscription']['entity_types'] = $entity_type_ids;
+}
