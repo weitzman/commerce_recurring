@@ -27,7 +27,7 @@ class Charge {
    * @var \Drupal\Core\Datetime\DrupalDateTime
    */
   protected $startTime;
-  
+
   /**
    * The end time.
    *

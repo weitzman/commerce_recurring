@@ -4,14 +4,13 @@ namespace Drupal\commerce_recurring\Plugin\Commerce\EntityTrait;
 
 use Drupal\commerce\BundleFieldDefinition;
 use Drupal\commerce\Plugin\Commerce\EntityTrait\EntityTraitBase;
-use Drupal\Core\Field\FieldStorageDefinitionInterface;
 
 /**
  * Provides a trait to enable purchasing of subscriptions.
  *
  * @CommerceEntityTrait(
  *   id = "purchasable_entity_subscription",
- *   label = @Translation("Purchasable entity subscription"),
+ *   label = @Translation("Allow subscriptions"),
  *   entity_types = {"commerce_product_variation"}
  * )
  */
@@ -23,12 +22,12 @@ class PurchasableEntitySubscriptionTrait extends EntityTraitBase {
   public function buildFieldDefinitions() {
     $fields = [];
     $fields['billing_schedule'] = BundleFieldDefinition::create('entity_reference')
-      ->setLabel(t('Billing schedules'))
-      ->setCardinality(FieldStorageDefinitionInterface::CARDINALITY_UNLIMITED)
+      ->setLabel(t('Billing schedule'))
+      ->setCardinality(1)
       ->setRevisionable(TRUE)
       ->setSetting('target_type', 'commerce_billing_schedule')
       ->setDisplayOptions('form', [
-        'type' => 'options_buttons',
+        'type' => 'options_select',
       ])
       ->setDisplayConfigurable('form', TRUE);
 
