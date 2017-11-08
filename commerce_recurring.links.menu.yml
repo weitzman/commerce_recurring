@@ -1,0 +1,5 @@
+entity.commerce_billing_schedule.collection:
+  title: 'Billing schedules'
+  route_name: 'entity.commerce_billing_schedule.collection'
+  parent: 'commerce_payment.configuration'
+  description: 'Configure the available billing schedules'

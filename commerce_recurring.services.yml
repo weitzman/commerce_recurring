@@ -1,0 +1,4 @@
+services:
+  plugin.manager.commerce_billing_schedule:
+    class: Drupal\commerce_recurring\BillingScheduleManager
+    parent: default_plugin_manager
