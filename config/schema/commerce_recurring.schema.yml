@@ -42,3 +42,14 @@ commerce_recurring.commerce_billing_schedule.plugin.rolling:
     unit:
       type: string
       label: Unit
+
+field.value.commerce_billing_cycle:
+ type: mapping
+ label: 'Default value'
+ mapping:
+   starts:
+     type: integer
+     label: 'Starts'
+   ends:
+     type: int
+     label: 'Ends'
