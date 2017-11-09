@@ -12,6 +12,15 @@ use Drupal\Core\Plugin\PluginBase;
 abstract class BillingScheduleBase extends PluginBase implements BillingScheduleInterface {
 
   /**
+   * The ID of the parent config entity.
+   *
+   * Not available while the plugin is being configured.
+   *
+   * @var string
+   */
+  protected $entityId;
+
+  /**
    * Constructs a new BillingScheduleBase object.
    *
    * @param array $configuration
