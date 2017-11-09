@@ -22,6 +22,22 @@ interface SubscriptionInterface extends ContentEntityInterface, PurchasableEntit
   public function getType();
 
   /**
+   * Gets the store.
+   *
+   * @return \Drupal\commerce_store\Entity\StoreInterface
+   *   The store.
+   */
+  public function getStore();
+
+  /**
+   * Gets the store ID.
+   *
+   * @return int
+   *   The store ID.
+   */
+  public function getStoreId();
+
+  /**
    * Gets the billing schedule.
    *
    * @return \Drupal\commerce_recurring\Entity\BillingScheduleInterface

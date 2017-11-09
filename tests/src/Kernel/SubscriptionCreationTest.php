@@ -58,10 +58,11 @@ class SubscriptionCreationTest extends CommerceRecurringKernelTestBase {
     /** @var \Drupal\commerce_recurring\Entity\SubscriptionInterface $subscription */
     $subscription = reset($subscriptions);
 
+    $this->assertEquals($this->store->id(), $subscription->getStoreId());
     $this->assertEquals($this->paymentMethod->id(), $subscription->getPaymentMethod()->id());
-    $this->assertEquals($this->variation->id(), $subscription->getPurchasedEntity()->id());
+    $this->assertEquals($this->variation->id(), $subscription->getPurchasedEntityId());
     $this->assertEquals($this->billingSchedule->id(), $subscription->getBillingSchedule()->id());
-    $this->assertEquals($currentUser->id(), $subscription->getCustomer()->id());
+    $this->assertEquals($currentUser->id(), $subscription->getCustomerId());
     $this->assertEquals(10, (int) $subscription->getAmount()->getNumber());
   }
 

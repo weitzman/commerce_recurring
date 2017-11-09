@@ -28,6 +28,7 @@ class RecurringOrderRenewTest extends CommerceRecurringKernelTestBase {
 
     $subscription = Subscription::create([
       'type' => 'license',
+      'store_id' => $this->store->id(),
       'billing_schedule' => $this->billingSchedule,
       'uid' => $currentUser,
       'payment_method' => $this->paymentMethod,

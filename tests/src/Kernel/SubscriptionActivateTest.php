@@ -13,6 +13,7 @@ class SubscriptionActivateTest extends CommerceRecurringKernelTestBase {
 
     $subscription = Subscription::create([
       'type' => 'license',
+      'store_id' => $this->store->id(),
       'billing_schedule' => $this->billingSchedule,
       'uid' => $currentUser,
       'payment_method' => $this->paymentMethod,
@@ -46,6 +47,7 @@ class SubscriptionActivateTest extends CommerceRecurringKernelTestBase {
     $billing_cycle_item = $order->get('billing_cycle')->first();
     $billing_cycle = $billing_cycle_item->toBillingCycle();
 
+    $this->assertEquals($subscription->getStoreId(), $order->getStoreId());
     $this->assertEquals($currentUser->id(), $order->getCustomer()->id());
     $this->assertEquals('recurring', $order->bundle());
     $order_item = $order->getItems()[0];

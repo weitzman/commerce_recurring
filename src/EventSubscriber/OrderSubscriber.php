@@ -61,6 +61,7 @@ class OrderSubscriber implements EventSubscriberInterface {
 
       $subscription = $subscription_storage->create([
         'type' => $subscription_type_item->target_plugin_id,
+        'store_id' => $order->getStoreId(),
         'billing_schedule' => $billing_schedule_item->entity,
         'uid' => $order->getCustomerId(),
         'payment_method' => $payment_method,

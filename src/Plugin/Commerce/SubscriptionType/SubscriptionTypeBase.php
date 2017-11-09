@@ -77,9 +77,8 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
     /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $order_storage->create([
       'type' => 'recurring',
-      'uid' => $subscription->getCustomer(),
-      // @todo Is this the right store?
-      'store_id' => \Drupal::service('commerce_store.current_store')->getStore(),
+      'store_id' => $subscription->getStoreId(),
+      'uid' => $subscription->getCustomerId(),
       'billing_cycle' => $initial_billing_cycle,
     ]);
 
@@ -121,8 +120,8 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
     /** @var \Drupal\commerce_order\Entity\OrderInterface $next_order */
     $next_order = $order_storage->create([
       'type' => 'recurring',
+      'store_id' => $subscription->getStoreId(),
       'uid' => $subscription->getCustomerId(),
-      'store_id' => $previous_recurring_order->getStore(),
       'billing_cycle' => $next_billing_cycle,
     ]);
 

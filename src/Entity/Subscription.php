@@ -70,6 +70,35 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
   /**
    * {@inheritdoc}
    */
+  public function getStore() {
+    return $this->get('store_id')->entity;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getStoreId() {
+    return $this->get('store_id')->target_id;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getBillingSchedule() {
+    return $this->get('billing_schedule')->entity;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setBillingSchedule(BillingScheduleInterface $billing_schedule) {
+    $this->set('billing_schedule', $billing_schedule);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getCustomer() {
     return $this->get('uid')->entity;
   }
@@ -94,21 +123,6 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
    */
   public function setCustomerId($uid) {
     $this->set('uid', $uid);
-    return $this;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getBillingSchedule() {
-    return $this->get('billing_schedule')->entity;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setBillingSchedule(BillingScheduleInterface $billing_schedule) {
-    $this->set('billing_schedule', $billing_schedule);
     return $this;
   }
 
@@ -295,6 +309,20 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
    */
   public static function baseFieldDefinitions(EntityTypeInterface $entity_type) {
     $fields = parent::baseFieldDefinitions($entity_type);
+
+    $fields['store_id'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(t('Store'))
+      ->setDescription(t('The store to which the subscription belongs.'))
+      ->setCardinality(1)
+      ->setRequired(TRUE)
+      ->setSetting('target_type', 'commerce_store')
+      ->setSetting('handler', 'default')
+      ->setDisplayOptions('form', [
+        'type' => 'commerce_entity_select',
+        'weight' => 2,
+      ])
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
 
     $fields['billing_schedule'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(t('Billing schedule'))
