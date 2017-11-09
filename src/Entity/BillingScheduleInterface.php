@@ -19,42 +19,42 @@ interface BillingScheduleInterface extends ConfigEntityInterface, EntityWithPlug
   const BILLING_TYPE_POSTPAID = 'postpaid';
 
   /**
-   * Gets the billing schedule display label.
+   * Gets the display label.
    *
    * This label is customer-facing.
    *
    * @return string
-   *   The billing schedule display label.
+   *   The display label.
    */
   public function getDisplayLabel();
 
   /**
-   * Sets the billing schedule display label.
+   * Sets the display label.
    *
    * @param string $display_label
-   *   The billing schedule display label.
+   *   The display label.
    *
    * @return $this
    */
   public function setDisplayLabel($display_label);
 
   /**
-   * Gets the billing schedule billing type.
+   * Gets the billing type.
    *
    * The billing type can be either:
    * - Prepaid: Subscription is paid at the beginning of the cycle.
    * - Postpaid: Subscription is paid at the end of the cycle.
    *
    * @return string
-   *   The billing schedule billing type, one of the BILLING_TYPE_ constants.
+   *   The billing type, one of the BILLING_TYPE_ constants.
    */
   public function getBillingType();
 
   /**
-   * Sets the billing schedule billing type.
+   * Sets the billing type.
    *
    * @param string $billing_type
-   *   The billing schedule billing type.
+   *   The billing type.
    *
    * @return $this
    */

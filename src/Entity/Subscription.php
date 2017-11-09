@@ -247,18 +247,6 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
   }
 
   /**
-   * Default value callback for 'uid' base field definition.
-   *
-   * @see ::baseFieldDefinitions()
-   *
-   * @return array
-   *   An array of default values.
-   */
-  public static function getCurrentUserId() {
-    return [\Drupal::currentUser()->id()];
-  }
-
-  /**
    * {@inheritdoc}
    */
   public function getStores() {
@@ -298,9 +286,6 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
       if (empty($this->getStartTime())) {
         $this->setStartTime(\Drupal::time()->getRequestTime());
       }
-      if (empty($this->getEndTime())) {
-        $this->setEndTime(0);
-      }
     }
   }
 
@@ -329,7 +314,6 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
       ->setDescription(t('The billing schedule.'))
       ->setSetting('target_type', 'commerce_billing_schedule')
       ->setSetting('handler', 'default')
-      ->setTranslatable(TRUE)
       ->setDisplayConfigurable('view', TRUE)
       ->setDisplayOptions('form', [
         'type' => 'entity_reference_autocomplete',
@@ -342,8 +326,6 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
       ->setDescription(t('The subscribed customer.'))
       ->setSetting('target_type', 'user')
       ->setSetting('handler', 'default')
-      ->setDefaultValueCallback('\Drupal\commerce_recurring\Entity\Subscription::getCurrentUserId')
-      ->setTranslatable(TRUE)
       ->setDisplayConfigurable('view', TRUE)
       ->setDisplayOptions('form', [
         'type' => 'entity_reference_autocomplete',
@@ -382,7 +364,7 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
 
     $fields['amount'] = BaseFieldDefinition::create('commerce_price')
       ->setLabel(t('Amount'))
-      ->setDescription(t('The payment amount.'))
+      ->setDescription(t('The subscription amount.'))
       ->setRequired(TRUE)
       ->setDisplayConfigurable('view', TRUE);
 
@@ -411,8 +393,8 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
       ->setDisplayConfigurable('form', TRUE);
 
     $fields['starts'] = BaseFieldDefinition::create('timestamp')
-      ->setLabel(t('Started'))
-      ->setDescription(t('The time when the subscription was/will be starts.'))
+      ->setLabel(t('Starts'))
+      ->setDescription(t('The time when the subscription starts.'))
       ->setRequired(TRUE)
       ->setDisplayOptions('view', [
         'label' => 'hidden',
@@ -426,8 +408,8 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
       ->setDisplayConfigurable('form', TRUE);
 
     $fields['ends'] = BaseFieldDefinition::create('timestamp')
-      ->setLabel(t('Ended'))
-      ->setDescription(t('The time when the subscription was/will be ends.'))
+      ->setLabel(t('Ends'))
+      ->setDescription(t('The time when the subscription ends.'))
       ->setRequired(TRUE)
       ->setDefaultValue(0)
       ->setDisplayOptions('view', [

@@ -9,7 +9,7 @@ use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\user\UserInterface;
 
 /**
- * Defines the interface for payments.
+ * Defines the interface for subscriptions.
  */
 interface SubscriptionInterface extends ContentEntityInterface, PurchasableEntityInterface {
 
@@ -56,17 +56,54 @@ interface SubscriptionInterface extends ContentEntityInterface, PurchasableEntit
   public function setBillingSchedule(BillingScheduleInterface $billing_schedule);
 
   /**
+   * Gets the customer.
+   *
+   * @return \Drupal\user\UserInterface
+   *   The customer.
+   */
+  public function getCustomer();
+
+  /**
+   * Sets the customer.
+   *
+   * @param \Drupal\user\UserInterface $account
+   *   The customer.
+   *
+   * @return $this
+   */
+  public function setCustomer(UserInterface $account);
+
+  /**
+   * Gets the customer ID.
+   *
+   * @return int
+   *   The customer ID.
+   */
+  public function getCustomerId();
+
+  /**
+   * Sets the customer ID.
+   *
+   * @param int $uid
+   *   The customer ID.
+   *
+   * @return $this
+   */
+  public function setCustomerId($uid);
+
+  /**
    * Gets the payment method.
    *
    * @return \Drupal\commerce_payment\Entity\PaymentMethodInterface|null
-   *   The payment method entity, or null if unknown.
+   *   The payment method, or NULL.
    */
   public function getPaymentMethod();
 
   /**
-   * Sets the payment method
+   * Sets the payment method.
    *
    * @param \Drupal\commerce_payment\Entity\PaymentMethodInterface $payment_method
+   *   The payment method.
    *
    * @return $this
    */
@@ -76,15 +113,15 @@ interface SubscriptionInterface extends ContentEntityInterface, PurchasableEntit
    * Gets the payment method ID.
    *
    * @return int|null
-   *   The payment method ID, or null if unknown.
+   *   The payment method ID, or NULL.
    */
   public function getPaymentMethodId();
 
   /**
-   * Gets whether the order item has a purchased entity.
+   * Gets whether the subscription has a purchased entity.
    *
    * @return bool
-   *   TRUE if the order item has a purchased entity, FALSE otherwise.
+   *   TRUE if the subscription has a purchased entity, FALSE otherwise.
    */
   public function hasPurchasedEntity();
 
@@ -109,72 +146,36 @@ interface SubscriptionInterface extends ContentEntityInterface, PurchasableEntit
   /**
    * Gets the purchased entity ID.
    *
-   * @return int
-   *   The purchased entity ID.
+   * @return int|null
+   *   The purchased entity ID, or NULL.
    */
   public function getPurchasedEntityId();
 
   /**
-   * Gets the payment amount.
+   * Gets the subscription amount.
    *
-   * @return \Drupal\commerce_price\Price|null
-   *   The payment amount, or NULL.
+   * @return \Drupal\commerce_price\Price
+   *   The subscription amount.
    */
   public function getAmount();
 
   /**
-   * Sets the payment amount.
+   * Sets the subscription amount.
    *
    * @param \Drupal\commerce_price\Price $amount
-   *   The payment amount.
+   *   The subscription amount.
    *
    * @return $this
    */
   public function setAmount(Price $amount);
 
   /**
-   * Gets the order state.
+   * Gets the subscription state.
    *
    * @return \Drupal\state_machine\Plugin\Field\FieldType\StateItemInterface
-   *   The order state.
+   *   The subscription state.
    */
   public function getState();
-
-  /**
-   * Gets the customer user.
-   *
-   * @return \Drupal\user\UserInterface
-   *   The customer user entity.
-   */
-  public function getCustomer();
-
-  /**
-   * Sets the customer user.
-   *
-   * @param \Drupal\user\UserInterface $account
-   *   The customer user entity.
-   *
-   * @return $this
-   */
-  public function setCustomer(UserInterface $account);
-
-  /**
-   * Gets the customer user ID.
-   *
-   * @return int|null
-   *   The customer user ID, or NULL in case the order is anonymous.
-   */
-  public function getCustomerId();
-
-  /**
-   * Sets the customer user ID.
-   *
-   * @param int $uid
-   *   The customer user ID.
-   *
-   * @return $this
-   */
-  public function setCustomerId($uid);
 
   /**
    * Gets the created timestamp.
@@ -195,7 +196,7 @@ interface SubscriptionInterface extends ContentEntityInterface, PurchasableEntit
   public function setCreatedTime($timestamp);
 
   /**
-   * Gets the timestamp the subscription starts.
+   * Gets the start timestamp.
    *
    * @return int
    *   The start timestamp.
@@ -203,7 +204,7 @@ interface SubscriptionInterface extends ContentEntityInterface, PurchasableEntit
   public function getStartTime();
 
   /**
-   * Sets the timestamp the subscription starts.
+   * Sets the start timestamp.
    *
    * @param int $timestamp
    *   The start timestamp.
@@ -213,7 +214,7 @@ interface SubscriptionInterface extends ContentEntityInterface, PurchasableEntit
   public function setStartTime($timestamp);
 
   /**
-   * Gets the timestamp the subscription end, 0 if there none.
+   * Gets the end timestamp.
    *
    * @return int
    *   The end timestamp.
@@ -221,7 +222,7 @@ interface SubscriptionInterface extends ContentEntityInterface, PurchasableEntit
   public function getEndTime();
 
   /**
-   * Sets the timestamp the subscription ends, 0 if there is none.
+   * Sets the end timestamp.
    *
    * @param int $timestamp
    *   The end timestamp.
