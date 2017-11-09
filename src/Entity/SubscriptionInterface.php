@@ -118,6 +118,16 @@ interface SubscriptionInterface extends ContentEntityInterface, PurchasableEntit
   public function getPaymentMethodId();
 
   /**
+   * Sets the payment method ID.
+   *
+   * @param int $payment_method_id
+   *   The payment method ID.
+   *
+   * @return $this
+   */
+  public function setPaymentMethodId($payment_method_id);
+
+  /**
    * Gets whether the subscription has a purchased entity.
    *
    * @return bool

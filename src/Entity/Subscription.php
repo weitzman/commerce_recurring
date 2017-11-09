@@ -6,6 +6,7 @@ use Drupal\commerce\PurchasableEntityInterface;
 use Drupal\commerce_payment\Entity\PaymentMethodInterface;
 use Drupal\commerce_price\Price;
 use Drupal\Core\Entity\ContentEntityBase;
+use Drupal\Core\Entity\EntityMalformedException;
 use Drupal\Core\Entity\EntityStorageInterface;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\Core\Field\BaseFieldDefinition;
@@ -151,6 +152,14 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
   /**
    * {@inheritdoc}
    */
+  public function setPaymentMethodId($payment_method_id) {
+    $this->set('payment_method', $payment_method_id);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function hasPurchasedEntity() {
     return !$this->get('purchased_entity')->isEmpty();
   }
@@ -280,6 +289,12 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
   public function preSave(EntityStorageInterface $storage) {
     parent::preSave($storage);
 
+    foreach (['store_id', 'billing_schedule', 'uid', 'amount'] as $field) {
+      if ($this->get($field)->isEmpty()) {
+        throw new EntityMalformedException(sprintf('Required subscription field "%s" is empty.', $field));
+      }
+    }
+
     $state = $this->getState()->value;
     $original_state = isset($this->original) ? $this->original->getState()->value : '';
     if ($state === 'active' && $original_state !== 'active') {
@@ -324,6 +339,7 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
     $fields['uid'] = BaseFieldDefinition::create('entity_reference')
       ->setLabel(t('Customer'))
       ->setDescription(t('The subscribed customer.'))
+      ->setRequired(TRUE)
       ->setSetting('target_type', 'user')
       ->setSetting('handler', 'default')
       ->setDisplayConfigurable('view', TRUE)
@@ -384,13 +400,11 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
     $fields['created'] = BaseFieldDefinition::create('created')
       ->setLabel(t('Created'))
       ->setDescription(t('The time when the subscription was created.'))
-      ->setRequired(TRUE)
       ->setDisplayOptions('view', [
         'label' => 'hidden',
         'type' => 'timestamp',
         'weight' => 0,
-      ])
-      ->setDisplayConfigurable('form', TRUE);
+      ]);
 
     $fields['starts'] = BaseFieldDefinition::create('timestamp')
       ->setLabel(t('Starts'))
