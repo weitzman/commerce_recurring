@@ -69,8 +69,12 @@ class SubscriptionTest extends CommerceKernelTestBase {
    * @covers ::getPaymentMethod
    * @covers ::setPaymentMethod
    * @covers ::getPaymentMethodId
-   * @covers ::getAmount
-   * @covers ::setAmount
+   * @covers ::getTitle
+   * @covers ::setTitle
+   * @covers ::getQuantity
+   * @covers ::setQuantity
+   * @covers ::getUnitPrice
+   * @covers ::setUnitPrice
    * @covers ::getState
    * @covers ::getCreatedTime
    * @covers ::setCreatedTime
@@ -120,13 +124,15 @@ class SubscriptionTest extends CommerceKernelTestBase {
     $variation = $this->reloadEntity($variation);
 
     $subscription = Subscription::create([
-      'type' => 'license',
+      'type' => 'product_variation',
       'store_id' => $this->store->id(),
       'billing_schedule' => $billing_schedule,
       'uid' => 0,
       'payment_method' => $payment_method,
+      'title' => 'My subscription',
       'purchased_entity' => $variation,
-      'amount' => new Price('2', 'USD'),
+      'quantity' => 2,
+      'unit_price' => new Price('2', 'USD'),
       'state' => 'active',
       'created' => 1507642328,
       'starts' => 1507642328 + 10,
@@ -136,7 +142,7 @@ class SubscriptionTest extends CommerceKernelTestBase {
 
     $subscription = Subscription::load($subscription->id());
     $this->assertInstanceOf(SubscriptionTypeInterface::class, $subscription->getType());
-    $this->assertEquals('license', $subscription->getType()->getPluginId());
+    $this->assertEquals('product_variation', $subscription->getType()->getPluginId());
     $this->assertEquals($this->store, $subscription->getStore());
     $this->assertEquals($this->store->id(), $subscription->getStoreId());
 
@@ -149,9 +155,17 @@ class SubscriptionTest extends CommerceKernelTestBase {
     $this->assertEquals($variation, $subscription->getPurchasedEntity());
     $this->assertEquals($variation->id(), $subscription->getPurchasedEntityId());
 
-    $this->assertEquals(new Price('2', 'USD'), $subscription->getAmount());
-    $subscription->setAmount(new Price('3', 'USD'));
-    $this->assertEquals(new Price('3', 'USD'), $subscription->getAmount());
+    $this->assertEquals('My subscription', $subscription->getTitle());
+    $subscription->setTitle('My premium subscription');
+    $this->assertEquals('My premium subscription', $subscription->getTitle());
+
+    $this->assertEquals('2', $subscription->getQuantity());
+    $subscription->setQuantity('3');
+    $this->assertEquals('3', $subscription->getQuantity());
+
+    $this->assertEquals(new Price('2', 'USD'), $subscription->getUnitPrice());
+    $subscription->setUnitPrice(new Price('3', 'USD'));
+    $this->assertEquals(new Price('3', 'USD'), $subscription->getUnitPrice());
 
     $this->assertEquals(1507642328, $subscription->getCreatedTime());
     $subscription->setCreatedTime(1508002101);

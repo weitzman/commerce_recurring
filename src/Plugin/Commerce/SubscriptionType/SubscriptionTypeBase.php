@@ -3,7 +3,6 @@
 namespace Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType;
 
 use Drupal\commerce_order\Entity\OrderInterface;
-use Drupal\commerce_recurring\BillingCycle;
 use Drupal\commerce_recurring\Entity\SubscriptionInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -63,38 +62,50 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
   /**
    * {@inheritdoc}
    */
+  public function getLabel() {
+    return $this->pluginDefinition['label'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getPurchasableEntityTypeId() {
+    return $this->pluginDefinition['purchasable_entity_type'];
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function createRecurringOrder(SubscriptionInterface $subscription) {
     $order_storage = $this->entityTypeManager->getStorage('commerce_order');
     /** @var \Drupal\commerce_order\OrderItemStorageInterface $order_item_storage */
     $order_item_storage = $this->entityTypeManager->getStorage('commerce_order_item');
 
     $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
-    $initial_billing_cycle = $subscription->getBillingSchedule()
-      ->getPlugin()
-      ->generateFirstBillingCycle($start_date);
-    $initial_charges = $subscription->getType()->collectCharges($initial_billing_cycle, $subscription);
+    $billing_schedule_plugin = $subscription->getBillingSchedule()->getPlugin();
+    $billing_cycle = $billing_schedule_plugin->generateFirstBillingCycle($start_date);
+    $charges = $this->collectCharges($subscription, $billing_cycle);
 
     /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $order_storage->create([
       'type' => 'recurring',
       'store_id' => $subscription->getStoreId(),
       'uid' => $subscription->getCustomerId(),
-      'billing_cycle' => $initial_billing_cycle,
+      'billing_cycle' => $billing_cycle,
     ]);
-
-    foreach ($initial_charges as $charge) {
-      // Create the initial order item.
-      // @todo Take into account prepaid vs. postpaid
-      $order_item = $order_item_storage->createFromPurchasableEntity($subscription, [
-        'type' => 'recurring',
+    foreach ($charges as $charge) {
+      /** @var \Drupal\commerce_order\Entity\OrderItemInterface $order_item */
+      $order_item = $order_item_storage->create([
+        'type' => $this->getOrderItemTypeId(),
         'title' => $charge->getLabel(),
-        'billing_schedule' => $subscription->getBillingSchedule(),
-        'quantity' => 1,
+        'purchased_entity' => $subscription->getPurchasedEntity(),
+        'quantity' => $subscription->getQuantity(),
         'unit_price' => $charge->getAmount(),
-        'started' => $charge->getStartTime()->format('U'),
-        'ended' => $charge->getEndTime()->format('U'),
+        'overridden_unit_price' => TRUE,
+        'subscription' => $subscription->id(),
+        'starts' => $charge->getStartTime()->format('U'),
+        'ends' => $charge->getEndTime()->format('U'),
       ]);
-
       $order_item->save();
       $order->addItem($order_item);
     }
@@ -111,11 +122,13 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
     /** @var \Drupal\commerce_order\OrderItemStorageInterface $order_item_storage */
     $order_item_storage = $this->entityTypeManager->getStorage('commerce_order_item');
 
+    $billing_schedule_plugin = $subscription->getBillingSchedule()->getPlugin();
     $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
     /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingCycleItem $billing_cycle_item */
     $billing_cycle_item = $previous_recurring_order->get('billing_cycle')->first();
     $current_billing_cycle = $billing_cycle_item->toBillingCycle();
-    $next_billing_cycle = $subscription->getBillingSchedule()->getPlugin()->generateNextBillingCycle($start_date, $current_billing_cycle);
+    $next_billing_cycle = $billing_schedule_plugin->generateNextBillingCycle($start_date, $current_billing_cycle);
+    $charges = $this->collectCharges($subscription, $next_billing_cycle);
 
     /** @var \Drupal\commerce_order\Entity\OrderInterface $next_order */
     $next_order = $order_storage->create([
@@ -124,20 +137,40 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
       'uid' => $subscription->getCustomerId(),
       'billing_cycle' => $next_billing_cycle,
     ]);
-
-    $charges = $this->collectCharges($next_billing_cycle, $subscription);
     foreach ($charges as $charge) {
-      $order_item = $order_item_storage->createFromPurchasableEntity($subscription, [
-        'type' => 'recurring',
-        'billing_schedule' => $subscription->getBillingSchedule(),
-        'quantity' => 1,
+      /** @var \Drupal\commerce_order\Entity\OrderItemInterface $order_item */
+      $order_item = $order_item_storage->create([
+        'type' => $this->getOrderItemTypeId(),
+        'title' => $charge->getLabel(),
+        'purchased_entity' => $subscription->getPurchasedEntity(),
+        'quantity' => $subscription->getQuantity(),
         'unit_price' => $charge->getAmount(),
+        'overridden_unit_price' => TRUE,
+        'subscription' => $subscription->id(),
+        'starts' => $charge->getStartTime()->format('U'),
+        'ends' => $charge->getEndTime()->format('U'),
       ]);
       $order_item->save();
       $next_order->addItem($order_item);
     }
     $next_order->save();
+
     return $next_order;
+  }
+
+  /**
+   * Gets the order item type ID for the current subscription type.
+   *
+   * @return string
+   *   The order item type ID.
+   */
+  protected function getOrderItemTypeId() {
+    if ($purchasable_entity_type_id = $this->getPurchasableEntityTypeId()) {
+      return 'recurring_' . str_replace('commerce_', '', $purchasable_entity_type_id);
+    }
+    else {
+      return 'recurring_standalone';
+    }
   }
 
 }

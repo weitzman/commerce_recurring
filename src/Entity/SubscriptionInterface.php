@@ -11,7 +11,7 @@ use Drupal\user\UserInterface;
 /**
  * Defines the interface for subscriptions.
  */
-interface SubscriptionInterface extends ContentEntityInterface, PurchasableEntityInterface {
+interface SubscriptionInterface extends ContentEntityInterface {
 
   /**
    * Gets the subscription type.
@@ -162,22 +162,58 @@ interface SubscriptionInterface extends ContentEntityInterface, PurchasableEntit
   public function getPurchasedEntityId();
 
   /**
-   * Gets the subscription amount.
+   * Gets the subscription title.
    *
-   * @return \Drupal\commerce_price\Price
-   *   The subscription amount.
+   * @return string
+   *   The subscription title
    */
-  public function getAmount();
+  public function getTitle();
 
   /**
-   * Sets the subscription amount.
+   * Sets the subscription title.
    *
-   * @param \Drupal\commerce_price\Price $amount
-   *   The subscription amount.
+   * @param string $title
+   *   The subscription title.
    *
    * @return $this
    */
-  public function setAmount(Price $amount);
+  public function setTitle($title);
+
+  /**
+   * Gets the subscription quantity.
+   *
+   * @return string
+   *   The subscription quantity
+   */
+  public function getQuantity();
+
+  /**
+   * Sets the subscription quantity.
+   *
+   * @param string $quantity
+   *   The subscription quantity.
+   *
+   * @return $this
+   */
+  public function setQuantity($quantity);
+
+  /**
+   * Gets the subscription unit price.
+   *
+   * @return \Drupal\commerce_price\Price
+   *   The subscription unit price.
+   */
+  public function getUnitPrice();
+
+  /**
+   * Sets the subscription unit price.
+   *
+   * @param \Drupal\commerce_price\Price $unit_price
+   *   The subscription unit price.
+   *
+   * @return $this
+   */
+  public function setUnitPrice(Price $unit_price);
 
   /**
    * Gets the subscription state.

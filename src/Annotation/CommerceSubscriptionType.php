@@ -31,4 +31,11 @@ class CommerceSubscriptionType extends Plugin {
    */
   public $label;
 
+  /**
+   * The purchasable entity type ID.
+   *
+   * @var string
+   */
+  protected $purchasable_entity_type;
+
 }

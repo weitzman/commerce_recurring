@@ -19,6 +19,7 @@ class SubscriptionSubscriber implements EventSubscriberInterface {
    * Creates recurring orders when subscriptions are activated.
    *
    * @param \Drupal\state_machine\Event\WorkflowTransitionEvent $event
+   *   The workflow transition event.
    */
   public function onActivate(WorkflowTransitionEvent $event) {
     /** @var \Drupal\commerce_recurring\Entity\SubscriptionInterface $subscription */

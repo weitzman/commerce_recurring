@@ -1,15 +1,17 @@
 langcode: en
 status: true
-dependencies: {}
-id: commerce_order_item.started
-field_name: started
+dependencies:
+  module:
+    - commerce_order
+    - commerce_recurring
+id: commerce_order_item.ends
+field_name: ends
 entity_type: commerce_order_item
 type: timestamp
 settings: { }
 locked: true
-cardinality: -1
+cardinality: 1
 translatable: false
 indexes: {  }
 persist_with_no_fields: false
 custom_storage: false
-

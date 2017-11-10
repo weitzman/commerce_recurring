@@ -14,21 +14,9 @@ class SubscriptionListBuilder extends EntityListBuilder {
    * {@inheritdoc}
    */
   public function buildHeader() {
-    // @todo Which columns to show ...
-    $header = [
-      'label' => [
-        'data' => $this->t('Label'),
-        'class' => [RESPONSIVE_PRIORITY_MEDIUM],
-      ],
-      'user' => [
-        'data' => $this->t('User'),
-        'class' => [RESPONSIVE_PRIORITY_MEDIUM],
-      ],
-      'state' => [
-        'data' => $this->t('state'),
-        'class' => [RESPONSIVE_PRIORITY_MEDIUM],
-      ],
-    ];
+    $header['label'] = $this->t('Subscription');
+    $header['customer'] = $this->t('Customer');
+    $header['state'] = $this->t('State');
 
     return $header + parent::buildHeader();
   }
@@ -40,7 +28,7 @@ class SubscriptionListBuilder extends EntityListBuilder {
     /* @var $entity \Drupal\commerce_recurring\Entity\SubscriptionInterface */
     $row = [
       'label' => $entity->label(),
-      'user' => $entity->getCustomer()->getDisplayName(),
+      'customer' => $entity->getCustomer()->getDisplayName(),
       'state' => $entity->getState()->getLabel(),
     ];
 

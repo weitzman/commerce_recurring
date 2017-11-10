@@ -64,8 +64,8 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
    * {@inheritdoc}
    */
   public function getType() {
-    $payment_type_manager = \Drupal::service('plugin.manager.commerce_subscription_type');
-    return $payment_type_manager->createInstance($this->bundle());
+    $subscription_type_manager = \Drupal::service('plugin.manager.commerce_subscription_type');
+    return $subscription_type_manager->createInstance($this->bundle());
   }
 
   /**
@@ -189,17 +189,47 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
   /**
    * {@inheritdoc}
    */
-  public function getAmount() {
-    if (!$this->get('amount')->isEmpty()) {
-      return $this->get('amount')->first()->toPrice();
+  public function getTitle() {
+    return $this->get('title')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setTitle($title) {
+    $this->set('title', $title);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getQuantity() {
+    return (string) $this->get('quantity')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setQuantity($quantity) {
+    $this->set('quantity', (string) $quantity);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getUnitPrice() {
+    if (!$this->get('unit_price')->isEmpty()) {
+      return $this->get('unit_price')->first()->toPrice();
     }
   }
 
   /**
    * {@inheritdoc}
    */
-  public function setAmount(Price $amount) {
-    $this->set('amount', $amount);
+  public function setUnitPrice(Price $unit_price) {
+    $this->set('unit_price', $unit_price);
     return $this;
   }
 
@@ -258,38 +288,10 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
   /**
    * {@inheritdoc}
    */
-  public function getStores() {
-    return [];
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getOrderItemTypeId() {
-    return 'recurring';
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getOrderItemTitle() {
-    return 'Recurring order item';
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getPrice() {
-    return $this->getAmount();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function preSave(EntityStorageInterface $storage) {
     parent::preSave($storage);
 
-    foreach (['store_id', 'billing_schedule', 'uid', 'amount'] as $field) {
+    foreach (['store_id', 'billing_schedule', 'uid', 'title', 'unit_price'] as $field) {
       if ($this->get($field)->isEmpty()) {
         throw new EntityMalformedException(sprintf('Required subscription field "%s" is empty.', $field));
       }
@@ -364,11 +366,9 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
       ->setLabel(t('Purchased entity'))
       ->setDescription(t('The purchased entity.'))
       ->setRequired(TRUE)
-      ->setSetting('target_type', 'commerce_product_variation')
-      ->setSetting('handler', 'default')
       ->setDisplayOptions('form', [
         'type' => 'entity_reference_autocomplete',
-        'weight' => 0,
+        'weight' => -1,
         'settings' => [
           'match_operator' => 'CONTAINS',
           'size' => '60',
@@ -378,10 +378,44 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
       ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
 
-    $fields['amount'] = BaseFieldDefinition::create('commerce_price')
-      ->setLabel(t('Amount'))
-      ->setDescription(t('The subscription amount.'))
+    $fields['title'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Title'))
+      ->setDescription(t('The subscription title.'))
       ->setRequired(TRUE)
+      ->setSettings([
+        'default_value' => '',
+        'max_length' => 512,
+      ])
+      ->setDisplayOptions('form', [
+        'type' => 'string_textfield',
+        'weight' => -1,
+      ])
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+
+    $fields['quantity'] = BaseFieldDefinition::create('decimal')
+      ->setLabel(t('Quantity'))
+      ->setDescription(t('The subscription quantity.'))
+      ->setRequired(TRUE)
+      ->setSetting('unsigned', TRUE)
+      ->setSetting('min', 0)
+      ->setDefaultValue(1)
+      ->setDisplayOptions('form', [
+        'type' => 'number',
+        'weight' => 1,
+      ])
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE);
+
+    $fields['unit_price'] = BaseFieldDefinition::create('commerce_price')
+      ->setLabel(t('Unit price'))
+      ->setDescription(t('The subscription unit price.'))
+      ->setRequired(TRUE)
+      ->setDisplayOptions('form', [
+        'type' => 'commerce_price_default',
+        'weight' => 2,
+      ])
+      ->setDisplayConfigurable('form', TRUE)
       ->setDisplayConfigurable('view', TRUE);
 
     $fields['state'] = BaseFieldDefinition::create('state')
@@ -436,6 +470,48 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
         'weight' => 0,
       ])
       ->setDisplayConfigurable('form', TRUE);
+
+    return $fields;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function bundleFieldDefinitions(EntityTypeInterface $entity_type, $bundle, array $base_field_definitions) {
+    /** @var \Drupal\commerce_order\Entity\OrderItemTypeInterface $subscription_type */
+    $subscription_type_manager = \Drupal::service('plugin.manager.commerce_subscription_type');
+    $subscription_type = $subscription_type_manager->createInstance($bundle);
+    $purchasable_entity_type = $subscription_type->getPurchasableEntityTypeId();
+    $fields = [];
+    /** @var \Drupal\Core\Field\BaseFieldDefinition $original */
+    $original = $base_field_definitions['purchased_entity'];
+    // The field definition is recreated instead of cloned to get around
+    // core issue #2346329 (fixed in 8.5.x but not 8.4.x).
+    $fields['purchased_entity'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel($original->getLabel())
+      ->setDescription($original->getDescription())
+      ->setConstraints($original->getConstraints())
+      ->setDisplayOptions('view', $original->getDisplayOptions('view'))
+      ->setDisplayOptions('form', $original->getDisplayOptions('form'))
+      ->setDisplayConfigurable('view', $original->isDisplayConfigurable('view'))
+      ->setDisplayConfigurable('form', $original->isDisplayConfigurable('form'))
+      ->setRequired($original->isRequired());
+
+    if ($purchasable_entity_type) {
+      $fields['purchased_entity']->setSetting('target_type', $purchasable_entity_type);
+    }
+    else {
+      // This order item type won't reference a purchasable entity. The field
+      // can't be removed here, or converted to a configurable one, so it's
+      // hidden instead. https://www.drupal.org/node/2346347#comment-10254087.
+      $fields['purchased_entity']->setRequired(FALSE);
+      $fields['purchased_entity']->setDisplayOptions('form', [
+        'type' => 'hidden',
+      ]);
+      $fields['purchased_entity']->setDisplayConfigurable('form', FALSE);
+      $fields['purchased_entity']->setDisplayConfigurable('view', FALSE);
+      $fields['purchased_entity']->setReadOnly(TRUE);
+    }
 
     return $fields;
   }

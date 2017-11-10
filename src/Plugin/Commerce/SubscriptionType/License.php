@@ -2,31 +2,16 @@
 
 namespace Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType;
 
-use Drupal\commerce_recurring\BillingCycle;
-use Drupal\commerce_recurring\Charge;
-use Drupal\commerce_recurring\Entity\SubscriptionInterface;
-
 /**
+ * Provides the license subscription type.
+ *
+ * Differs from the product_variation subscription type by also tracking the
+ * related license, and ensuring its state reflects the subscription state.
+ *
  * @CommerceSubscriptionType(
  *   id = "license",
  *   label = @translation("License"),
+ *   purchasable_entity_type = "commerce_product_variation",
  * )
  */
-class License extends SubscriptionTypeBase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public function buildFieldDefinitions() {
-    $fields = [];
-    return $fields;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function collectCharges(BillingCycle $billing_cycle, SubscriptionInterface $subscription) {
-    return [new Charge($subscription->getAmount(), 'Label todo', $billing_cycle->getStartDate(), $billing_cycle->getEndDate())];
-  }
-
-}
+class License extends ProductVariation {}

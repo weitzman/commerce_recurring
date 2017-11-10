@@ -6,16 +6,16 @@ use Drupal\commerce_order\Entity\OrderItemType;
 use Drupal\commerce_order\Entity\OrderType;
 use Drupal\commerce_payment\Entity\PaymentGateway;
 use Drupal\commerce_payment\Entity\PaymentMethod;
-use Drupal\commerce_product\Entity\Product;
-use Drupal\commerce_product\Entity\ProductType;
 use Drupal\commerce_product\Entity\ProductVariation;
 use Drupal\commerce_product\Entity\ProductVariationType;
 use Drupal\commerce_recurring\Entity\BillingSchedule;
 use Drupal\field\Entity\FieldConfig;
-use Drupal\KernelTests\KernelTestBase;
 use Drupal\Tests\commerce\Kernel\CommerceKernelTestBase;
 
-class CommerceRecurringKernelTestBase extends CommerceKernelTestBase {
+/**
+ * Provides a base class for Recurring kernel tests.
+ */
+class RecurringKernelTestBase extends CommerceKernelTestBase {
 
   /**
    * {@inheritdoc}
@@ -23,49 +23,52 @@ class CommerceRecurringKernelTestBase extends CommerceKernelTestBase {
   public static $modules = [
     'action',
     'advancedqueue',
-    'address',
-    'commerce',
-    'commerce_order',
-    'commerce_payment',
-    'commerce_payment_example',
-    'commerce_price',
-    'commerce_product',
-    'commerce_recurring',
-    'commerce_recurring_test',
-    'commerce_store',
-    'entity',
-    'entity_reference_revisions',
-    'field',
-    'inline_entity_form',
-    'options',
     'path',
     'profile',
     'state_machine',
-    'system',
-    'text',
-    'user',
-    'views',
+    'commerce_order',
+    'commerce_payment',
+    'commerce_payment_example',
+    'commerce_product',
+    'commerce_recurring',
+    'commerce_recurring_test',
+    'entity_reference_revisions',
   ];
 
   /**
+   * The test billing schedule.
+   *
    * @var \Drupal\commerce_recurring\Entity\BillingScheduleInterface
    */
   protected $billingSchedule;
 
   /**
+   * The test payment gateway.
+   *
    * @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface
    */
   protected $paymentGateway;
 
   /**
+   * The test payment method.
+   *
    * @var \Drupal\commerce_payment\Entity\PaymentMethodInterface
    */
   protected $paymentMethod;
 
   /**
+   * The test variation.
+   *
    * @var \Drupal\commerce_product\Entity\ProductVariationInterface
    */
   protected $variation;
+
+  /**
+   * The test user.
+   *
+   * @var \Drupal\user\UserInterface
+   */
+  protected $user;
 
   /**
    * {@inheritdoc}
@@ -87,7 +90,11 @@ class CommerceRecurringKernelTestBase extends CommerceKernelTestBase {
     $this->installConfig('commerce_order');
     $this->installConfig('commerce_recurring');
 
-    $this->billingSchedule = $billing_schedule = BillingSchedule::create([
+    $user = $this->createUser();
+    $this->user = $this->reloadEntity($user);
+
+    /** @var \Drupal\commerce_recurring\Entity\BillingScheduleInterface $billing_schedule */
+    $billing_schedule = BillingSchedule::create([
       'id' => 'test_id',
       'label' => 'Test label',
       'displayLabel' => 'Test customer label',
@@ -97,77 +104,49 @@ class CommerceRecurringKernelTestBase extends CommerceKernelTestBase {
       ],
     ]);
     $billing_schedule->save();
+    $this->billingSchedule = $this->reloadEntity($billing_schedule);
 
-    /** @var \Drupal\commerce_payment\Entity\PaymentMethodInterface $payment_method */
-    $this->paymentGateway = $payment_gateway = PaymentGateway::create([
+    /** @var \Drupal\commerce_payment\Entity\PaymentGatewayInterface $payment_gateway */
+    $payment_gateway = PaymentGateway::create([
       'id' => 'example',
       'label' => 'Example',
       'plugin' => 'example_onsite',
     ]);
     $payment_gateway->save();
+    $this->paymentGateway = $this->reloadEntity($payment_gateway);
 
     /** @var \Drupal\commerce_payment\Entity\PaymentMethodInterface $payment_method */
-    $this->paymentMethod = $payment_method = PaymentMethod::create([
+    $payment_method = PaymentMethod::create([
       'type' => 'credit_card',
-      'payment_gateway' => $payment_gateway,
+      'payment_gateway' => $this->paymentGateway,
+      'uid' => $this->user->id(),
     ]);
     $payment_method->save();
+    $this->paymentMethod = $this->reloadEntity($payment_method);
 
-    ProductVariationType::create([
-      'id' => 'with_subscriptions',
-      'label' => 'Default',
-      'traits' => ['purchasable_entity_subscription'],
-    ])->save();
-
+    /** @var \Drupal\commerce_product\Entity\ProductVariationTypeInterface $product_variation_type */
+    $product_variation_type = ProductVariationType::load('default');
+    $product_variation_type->setGenerateTitle(FALSE);
+    $product_variation_type->save();
+    // Install the variation trait.
     $trait_manager = \Drupal::service('plugin.manager.commerce_entity_trait');
     $trait = $trait_manager->createInstance('purchasable_entity_subscription');
-    $trait_manager->installTrait($trait, 'commerce_product_variation', 'with_subscriptions');
+    $trait_manager->installTrait($trait, 'commerce_product_variation', 'default');
 
-    $this->variation = $variation = ProductVariation::create([
-      'type' => 'with_subscriptions',
+    $variation = ProductVariation::create([
+      'type' => 'default',
+      'title' => $this->randomMachineName(),
       'sku' => strtolower($this->randomMachineName()),
       'price' => [
         'number' => '10.00',
         'currency_code' => 'USD',
       ],
-      'billing_schedule' => $billing_schedule,
-      'subscription_type' => ['target_plugin_id' => 'license'],
+      'billing_schedule' => $this->billingSchedule,
+      'subscription_type' => [
+        'target_plugin_id' => 'product_variation',
+      ],
     ]);
     $variation->save();
-
-    ProductType::create([
-      'id' => 'with_subscriptions',
-      'variationType' => $variation->id(),
-    ])->save();
-
-    FieldConfig::create([
-      'entity_type'=> 'commerce_product',
-      'bundle' => 'with_subscriptions',
-      'field_name' => 'variations',
-    ])->save();
-
-    $product = Product::create([
-      'title' => 'Product with subscriptions',
-      'type' => 'with_subscriptions',
-    ]);
-    $product->addVariation($variation);
-    $product->save();
-
-    OrderType::create([
-      'id' => 'with_subscriptions',
-      'workflow'=> 'order_default',
-    ])->save();
-
-    OrderItemType::create([
-      'id' => 'with_subscriptions',
-      'purchasableEntityType' => 'commerce_product_variation',
-      'orderType' => 'with_subscriptions',
-    ])->save();
-
-    FieldConfig::create([
-      'entity_type' => 'commerce_order',
-      'field_name' => 'order_items',
-      'bundle' => 'with_subscriptions',
-    ])->save();
+    $this->variation = $this->reloadEntity($variation);
   }
 }

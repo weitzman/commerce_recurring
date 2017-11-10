@@ -66,7 +66,15 @@ class OrderSubscriber implements EventSubscriberInterface {
         'uid' => $order->getCustomerId(),
         'payment_method' => $payment_method,
         'purchased_entity' => $purchased_entity,
-        'amount' => $order_item->getUnitPrice(),
+        'title' => $order_item->getTitle(),
+        'quantity' => $order_item->getQuantity(),
+        // The subscription unit price is populated from the resolved
+        // order item unit price, then used for all future recurring orders.
+        // This allows regular Commerce pricing to be used to select a price
+        // per currency, customer group, etc. It also allows the purchased
+        // entity price to change in the future without automatically
+        // affecting existing subscriptions.
+        'unit_price' => $order_item->getUnitPrice(),
         'state' => 'active',
       ]);
       $subscription->save();

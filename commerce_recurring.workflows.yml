@@ -4,21 +4,14 @@ subscription_default:
   label: 'Default'
   states:
     pending:
-      # A subscription which has been created but for some reason not yet
-      # attached to an order.
       label: Pending
     active:
-      # A subscription which is active and attached to an order.
       label: Active
     suspended:
-      # A subscription which is suspended, meaning that it will renew normally
-      # but not attach order items to an order.
       label: Suspended
     expired:
-      # A subscription which has expired naturally.
       label: Expired
     canceled:
-      # A subscription which was canceled (i.e. before automatic expiration, by the user or an administrator.)
       label: Canceled
   transitions:
     activate:
@@ -41,5 +34,3 @@ subscription_default:
       label: Cancel
       from: [active, suspended]
       to: canceled
-    
-

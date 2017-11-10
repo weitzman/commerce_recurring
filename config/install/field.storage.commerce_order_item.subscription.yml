@@ -3,18 +3,17 @@ status: true
 dependencies:
   module:
     - commerce_recurring
-id: commerce_order.order_subscriptions
-field_name: order_subscriptions
-entity_type: commerce_order
+id: commerce_order_item.subscription
+field_name: subscription
+entity_type: commerce_order_item
 type: entity_reference
 settings:
   target_type: commerce_subscription
 module: core
 locked: true
-cardinality: -1
+cardinality: 1
 translatable: false
 indexes: {  }
 settings: {  }
 persist_with_no_fields: false
 custom_storage: false
-
