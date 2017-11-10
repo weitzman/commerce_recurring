@@ -1,0 +1,13 @@
+langcode: en
+status: true
+label: Recurring
+id: recurring
+dependencies:
+  module:
+    - commerce_recurring
+workflow: order_default
+traits: {  }
+refresh_mode: customer
+refresh_frequency: 300
+sendReceipt: true
+receiptBcc: ''

@@ -1,0 +1,17 @@
+langcode: en
+status: true
+dependencies:
+  module:
+    - commerce_order
+    - commerce_recurring
+id: commerce_order_item.ends
+field_name: ends
+entity_type: commerce_order_item
+type: timestamp
+settings: { }
+locked: true
+cardinality: 1
+translatable: false
+indexes: {  }
+persist_with_no_fields: false
+custom_storage: false

@@ -1,0 +1,20 @@
+langcode: en
+status: true
+dependencies:
+  config:
+    - commerce_order.commerce_order_item_type.recurring_standalone
+    - field.storage.commerce_order_item.starts
+  module:
+    - commerce_recurring
+id: commerce_order_item.recurring_standalone.starts
+field_name: starts
+entity_type: commerce_order_item
+bundle: recurring_standalone
+label: 'Starts'
+description: ''
+required: true
+translatable: false
+settings: {  }
+default_value: {  }
+default_value_callback: ''
+field_type: timestamp
