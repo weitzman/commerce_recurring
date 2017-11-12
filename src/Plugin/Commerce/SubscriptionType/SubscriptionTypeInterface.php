@@ -2,7 +2,7 @@
 
 namespace Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType;
 
-use Drupal\commerce\BundlePluginInterface;
+use Drupal\entity\BundlePlugin\BundlePluginInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_order\Entity\OrderItemInterface;
 use Drupal\commerce_recurring\BillingCycle;

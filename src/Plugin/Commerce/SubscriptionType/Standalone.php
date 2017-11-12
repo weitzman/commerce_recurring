@@ -2,10 +2,6 @@
 
 namespace Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType;
 
-use Drupal\commerce_recurring\BillingCycle;
-use Drupal\commerce_recurring\Charge;
-use Drupal\commerce_recurring\Entity\SubscriptionInterface;
-
 /**
  * Provides the standalone subscription type (not backed by a purchased entity).
  *
@@ -14,14 +10,4 @@ use Drupal\commerce_recurring\Entity\SubscriptionInterface;
  *   label = @translation("standalone"),
  * )
  */
-class Standalone extends SubscriptionTypeBase {
-
-  /**
-   * {@inheritdoc}
-   */
-  public function collectCharges(SubscriptionInterface $subscription, BillingCycle $billing_cycle) {
-    $base_charge = new Charge($subscription->getUnitPrice(), $subscription->getTitle(), $billing_cycle->getStartDate(), $billing_cycle->getEndDate());
-    return [$base_charge];
-  }
-
-}
+class Standalone extends SubscriptionTypeBase {}

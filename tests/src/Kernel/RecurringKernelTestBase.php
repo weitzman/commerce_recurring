@@ -98,6 +98,7 @@ class RecurringKernelTestBase extends CommerceKernelTestBase {
       'id' => 'test_id',
       'label' => 'Test label',
       'displayLabel' => 'Test customer label',
+      'billingType' => BillingSchedule::BILLING_TYPE_POSTPAID,
       'plugin' => 'test_plugin',
       'configuration' => [
         'key' => 'value',
