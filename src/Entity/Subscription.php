@@ -29,7 +29,7 @@ use Drupal\user\UserInterface;
  *   bundle_plugin_type = "commerce_subscription_type",
  *   handlers = {
  *     "list_builder" = "Drupal\commerce_recurring\SubscriptionListBuilder",
- *     "storage" = "\Drupal\Core\Entity\Sql\SqlContentEntityStorage",
+ *     "storage" = "\Drupal\commerce_recurring\SubscriptionStorage",
  *     "form" = {
  *       "default" = "\Drupal\commerce_recurring\Form\SubscriptionForm",
  *       "edit" = "\Drupal\commerce_recurring\Form\SubscriptionForm",

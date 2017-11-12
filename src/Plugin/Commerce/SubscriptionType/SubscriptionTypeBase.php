@@ -3,6 +3,7 @@
 namespace Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType;
 
 use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\commerce_order\Entity\OrderItemInterface;
 use Drupal\commerce_recurring\Entity\SubscriptionInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
@@ -72,6 +73,11 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
   public function getPurchasableEntityTypeId() {
     return $this->pluginDefinition['purchasable_entity_type'];
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function onSubscriptionCreate(SubscriptionInterface $subscription, OrderItemInterface $order_item) {}
 
   /**
    * {@inheritdoc}

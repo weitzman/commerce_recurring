@@ -4,6 +4,7 @@ namespace Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType;
 
 use Drupal\commerce\BundlePluginInterface;
 use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\commerce_order\Entity\OrderItemInterface;
 use Drupal\commerce_recurring\BillingCycle;
 use Drupal\commerce_recurring\Entity\SubscriptionInterface;
 
@@ -48,6 +49,18 @@ interface SubscriptionTypeInterface extends BundlePluginInterface {
    *   The charges.
    */
   public function collectCharges(SubscriptionInterface $subscription, BillingCycle $billing_cycle);
+
+  /**
+   * Acts on a subscription after it was created from an order item.
+   *
+   * Called before the subscription is saved.
+   *
+   * @param \Drupal\commerce_recurring\Entity\SubscriptionInterface $subscription
+   *   The subscription.
+   * @param \Drupal\commerce_order\Entity\OrderItemInterface $order_item
+   *   The order item.
+   */
+  public function onSubscriptionCreate(SubscriptionInterface $subscription, OrderItemInterface $order_item);
 
   /**
    * Creates a recurring order for the given subscription.

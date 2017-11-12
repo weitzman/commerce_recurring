@@ -40,6 +40,7 @@ class OrderSubscriber implements EventSubscriberInterface {
    *   The transition event.
    */
   public function onPlaceTransition(WorkflowTransitionEvent $event) {
+    /** @var \Drupal\commerce_recurring\SubscriptionStorageInterface $subscription_storage */
     $subscription_storage = $this->entityTypeManager->getStorage('commerce_subscription');
     /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $event->getEntity();
@@ -59,22 +60,10 @@ class OrderSubscriber implements EventSubscriberInterface {
         return;
       }
 
-      $subscription = $subscription_storage->create([
+      $subscription = $subscription_storage->createFromOrderItem($order_item, [
         'type' => $subscription_type_item->target_plugin_id,
-        'store_id' => $order->getStoreId(),
         'billing_schedule' => $billing_schedule_item->entity,
-        'uid' => $order->getCustomerId(),
         'payment_method' => $payment_method,
-        'purchased_entity' => $purchased_entity,
-        'title' => $order_item->getTitle(),
-        'quantity' => $order_item->getQuantity(),
-        // The subscription unit price is populated from the resolved
-        // order item unit price, then used for all future recurring orders.
-        // This allows regular Commerce pricing to be used to select a price
-        // per currency, customer group, etc. It also allows the purchased
-        // entity price to change in the future without automatically
-        // affecting existing subscriptions.
-        'unit_price' => $order_item->getUnitPrice(),
         'state' => 'active',
       ]);
       $subscription->save();
