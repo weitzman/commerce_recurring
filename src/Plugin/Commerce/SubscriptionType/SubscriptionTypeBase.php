@@ -74,7 +74,9 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
    * {@inheritdoc}
    */
   public function getPurchasableEntityTypeId() {
-    return $this->pluginDefinition['purchasable_entity_type'];
+    if (!empty($this->pluginDefinition['purchasable_entity_type'])) {
+      return $this->pluginDefinition['purchasable_entity_type'];
+    }
   }
 
   /**

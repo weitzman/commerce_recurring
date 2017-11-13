@@ -7,7 +7,7 @@ namespace Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType;
  *
  * @CommerceSubscriptionType(
  *   id = "product_variation",
- *   label = @translation("Product variation"),
+ *   label = @Translation("Product variation"),
  *   purchasable_entity_type = "commerce_product_variation",
  * )
  */

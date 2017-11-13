@@ -7,7 +7,7 @@ namespace Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType;
  *
  * @CommerceSubscriptionType(
  *   id = "standalone",
- *   label = @translation("standalone"),
+ *   label = @Translation("Standalone"),
  * )
  */
 class Standalone extends SubscriptionTypeBase {}
