@@ -5,7 +5,6 @@ namespace Drupal\Tests\commerce_recurring\Kernel;
 use Drupal\advancedqueue\Entity\Queue;
 use Drupal\commerce_price\Price;
 use Drupal\commerce_recurring\Entity\Subscription;
-use Drupal\commerce_recurring\RecurringCron;
 use Drupal\Component\Datetime\TimeInterface;
 
 /**
@@ -63,14 +62,11 @@ class RecurringOrderRenewTest extends RecurringKernelTestBase {
   public function testRecurringOrderRenewQueue() {
     list($subscription, $order) = $this->createBasicSubscriptionAndOrder();
 
-    // Ensure the refresh queue is empty.
-    $this->assertEquals(0, \Drupal::queue('commerce_recurring_refresh')->numberOfItems());
-
     // Fast forward in time and run cron.
     \Drupal::time()->setTime($subscription->get('starts')->value + 100);
     // We don't trigger the cron directly as this processes the queue items
     // already.
-    RecurringCron::create(\Drupal::getContainer())->cron();
+    $this->container->get('commerce_recurring.cron')->run();
 
     /** @var \Drupal\advancedqueue\Entity\QueueInterface $queue */
     $queue = Queue::load('commerce_recurring');
@@ -83,28 +79,6 @@ class RecurringOrderRenewTest extends RecurringKernelTestBase {
     $this->assertEquals('commerce_recurring_order_close', $job1->getType());
     $this->assertArraySubset(['order_id' => $order->id()], $job2->getPayload());
     $this->assertEquals('commerce_recurring_order_renew', $job2->getType());
-  }
-
-  /**
-   * Tests the actual logic of recurring a recurring order.
-   */
-  public function testRecurringOrderRenewLogic() {
-    list($subscription, $order) = $this->createBasicSubscriptionAndOrder();
-
-    /** @var \Drupal\commerce_order\Entity\OrderInterface $next_order */
-    $next_order = $this->container->get('commerce_recurring.order_manager')->renewOrder($order);
-    $this->assertNotEquals($next_order->id(), $order->id());
-    /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingCycleItem $billing_cycle_item */
-    $billing_cycle_item = $next_order->get('billing_cycle')->first();
-    $billing_cycle = $billing_cycle_item->toBillingCycle();
-
-    $this->assertEquals('recurring', $next_order->bundle());
-    $this->assertEquals(\Drupal::time()->getRequestTime() + 45, $billing_cycle->getStartDate()->format('U'));
-    $this->assertEquals(\Drupal::time()->getRequestTime() + 95, $billing_cycle->getEndDate()->format('U'));
-    $this->assertCount(1, $next_order->getItems());
-    $this->assertEquals(2, $next_order->getItems()[0]->getUnitPrice()->getNumber());
-    $this->assertEquals('recurring_product_variation', $next_order->getItems()[0]->bundle());
-    $this->assertEquals(1, $next_order->getItems()[0]->getQuantity());
   }
 
 }
