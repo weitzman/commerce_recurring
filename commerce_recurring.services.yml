@@ -10,6 +10,10 @@ services:
     tags:
       - { name: event_subscriber }
 
+  commerce_recurring.order_manager:
+    class: \Drupal\commerce_recurring\RecurringOrderManager
+    arguments: ['@entity_type.manager', '@datetime.time']
+
   plugin.manager.commerce_billing_schedule:
     class: Drupal\commerce_recurring\BillingScheduleManager
     parent: default_plugin_manager

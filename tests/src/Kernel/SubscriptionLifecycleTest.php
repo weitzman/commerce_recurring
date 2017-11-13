@@ -4,7 +4,6 @@ namespace Drupal\Tests\commerce_recurring\Kernel;
 
 use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderItem;
-use Drupal\commerce_price\Price;
 use Drupal\commerce_recurring\Entity\Subscription;
 
 /**
@@ -53,6 +52,17 @@ class SubscriptionLifecycleTest extends RecurringKernelTestBase {
     $this->assertEquals('3', $subscription->getQuantity());
     $this->assertEquals($this->variation->getPrice(), $subscription->getUnitPrice());
     $this->assertEquals('active', $subscription->getState()->value);
+
+    // Confirm that a recurring order is present.
+    $order_storage = \Drupal::entityTypeManager()->getStorage('commerce_order');
+    $result = $order_storage->getQuery()
+      ->condition('type', 'recurring')
+      ->pager(1)
+      ->execute();
+    $this->assertNotEmpty($result);
+    /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
+    $order = $order_storage->load(reset($result));
+    $this->assertNotEmpty($order);
   }
 
 }
