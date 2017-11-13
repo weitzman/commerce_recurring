@@ -2,8 +2,7 @@
 
 namespace Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType;
 
-use Drupal\commerce\BundlePluginInterface;
-use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\entity\BundlePlugin\BundlePluginInterface;
 use Drupal\commerce_recurring\BillingCycle;
 use Drupal\commerce_recurring\Entity\SubscriptionInterface;
 
@@ -44,7 +43,7 @@ interface SubscriptionTypeInterface extends BundlePluginInterface {
    * @param \Drupal\commerce_recurring\BillingCycle $billing_cycle
    *   The billing cycle.
    *
-   * @return array
+   * @return \Drupal\commerce_recurring\Charge[]
    *   The charges.
    */
   public function collectCharges(SubscriptionInterface $subscription, BillingCycle $billing_cycle);
