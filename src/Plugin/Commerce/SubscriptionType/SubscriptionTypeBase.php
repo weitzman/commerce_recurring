@@ -2,6 +2,7 @@
 
 namespace Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType;
 
+use Drupal\commerce_order\Entity\OrderItemInterface;
 use Drupal\commerce_recurring\BillingCycle;
 use Drupal\commerce_recurring\Charge;
 use Drupal\commerce_recurring\Entity\BillingScheduleInterface;
@@ -113,5 +114,10 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
 
     return [$base_charge];
   }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function onSubscriptionCreate(SubscriptionInterface $subscription, OrderItemInterface $order_item) {}
 
 }
