@@ -21,3 +21,10 @@ function commerce_recurring_commerce_entity_trait_info_alter(array &$definitions
 
   $definitions['purchasable_entity_subscription']['entity_types'] = $entity_type_ids;
 }
+
+/**
+ * Implements hook_cron().
+ */
+function commerce_recurring_cron() {
+  \Drupal::service('commerce_recurring.cron')->run();
+}
