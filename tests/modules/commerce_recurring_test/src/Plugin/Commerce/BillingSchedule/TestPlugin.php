@@ -18,24 +18,6 @@ class TestPlugin extends BillingScheduleBase {
   /**
    * {@inheritdoc}
    */
-  public function generateFirstBillingCycle(DrupalDateTime $start_date) {
-    $end_date = clone $start_date;
-    $end_date->modify('+50 seconds');
-    return new BillingCycle($start_date, $end_date);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function generateNextBillingCycle(DrupalDateTime $start_date, BillingCycle $billing_cycle) {
-    $end_date = clone $billing_cycle->getEndDate();
-    $end_date->modify('+50 seconds');
-    return new BillingCycle($billing_cycle->getEndDate(), $end_date);
-  }
-
-  /**
-   * {@inheritdoc}
-   */
   public function defaultConfiguration() {
     return ['key' => 'value'];
   }
@@ -60,6 +42,24 @@ class TestPlugin extends BillingScheduleBase {
       $values = $form_state->getValue($form['#parents']);
       $this->configuration['key'] = $values['key'];
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function generateFirstBillingCycle(DrupalDateTime $start_date) {
+    $end_date = clone $start_date;
+    $end_date->modify('+50 seconds');
+    return new BillingCycle($start_date, $end_date);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function generateNextBillingCycle(DrupalDateTime $start_date, BillingCycle $billing_cycle) {
+    $end_date = clone $billing_cycle->getEndDate();
+    $end_date->modify('+50 seconds');
+    return new BillingCycle($billing_cycle->getEndDate(), $end_date);
   }
 
 }
