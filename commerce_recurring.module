@@ -1,5 +1,10 @@
 <?php
 
+/**
+ * @file
+ * Provides recurring billing for Drupal Commerce.
+ */
+
 use Drupal\commerce_recurring\RecurringCron;
 use Drupal\Core\Entity\EntityTypeInterface;
 use Drupal\commerce\PurchasableEntityInterface;

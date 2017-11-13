@@ -60,14 +60,13 @@ class RecurringOrderRenewTest extends RecurringKernelTestBase {
   /**
    * Tests the logic to fill up the recurring order queue for refresh and close.
    */
-  public function testRecurringOrderRefreshQueue() {
+  public function testRecurringOrderRenewQueue() {
     list($subscription, $order) = $this->createBasicSubscriptionAndOrder();
 
     // Ensure the refresh queue is empty.
     $this->assertEquals(0, \Drupal::queue('commerce_recurring_refresh')->numberOfItems());
 
     // Fast forward in time and run cron.
-    
     \Drupal::time()->setTime($subscription->get('starts')->value + 100);
     // We don't trigger the cron directly as this processes the queue items
     // already.
@@ -89,11 +88,11 @@ class RecurringOrderRenewTest extends RecurringKernelTestBase {
   /**
    * Tests the actual logic of recurring a recurring order.
    */
-  public function testRecurringOrderRefreshLogic() {
+  public function testRecurringOrderRenewLogic() {
     list($subscription, $order) = $this->createBasicSubscriptionAndOrder();
 
     /** @var \Drupal\commerce_order\Entity\OrderInterface $next_order */
-    $next_order = $subscription->getType()->renewRecurringOrder($subscription, $order);
+    $next_order = $this->container->get('commerce_recurring.order_manager')->renewOrder($order);
     $this->assertNotEquals($next_order->id(), $order->id());
     /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingCycleItem $billing_cycle_item */
     $billing_cycle_item = $next_order->get('billing_cycle')->first();

@@ -1,5 +1,5 @@
 services:
-  commerce_recurring.event_subscriber.plugin_item:
+  commerce_recurring.referenceable_plugin_types_subscriber:
     class: \Drupal\commerce_recurring\EventSubscriber\ReferenceablePluginTypesSubscriber
     tags:
       - { name: event_subscriber }
@@ -10,11 +10,9 @@ services:
     tags:
       - { name: event_subscriber }
 
-  commerce_recurring.event_subscriber.subscription_subscriber:
-    class: \Drupal\commerce_recurring\EventSubscriber\SubscriptionSubscriber
-    arguments: ['@entity_type.manager']
-    tags:
-      - { name: event_subscriber }
+  commerce_recurring.order_manager:
+    class: \Drupal\commerce_recurring\RecurringOrderManager
+    arguments: ['@entity_type.manager', '@datetime.time']
 
   plugin.manager.commerce_billing_schedule:
     class: Drupal\commerce_recurring\BillingScheduleManager

@@ -242,6 +242,24 @@ interface SubscriptionInterface extends ContentEntityInterface {
   public function setCreatedTime($timestamp);
 
   /**
+   * Gets the renewal timestamp.
+   *
+   * @return int
+   *   The renewal timestamp.
+   */
+  public function getRenewedTime();
+
+  /**
+   * Sets the renewal timestamp.
+   *
+   * @param int $timestamp
+   *   The renewal timestamp.
+   *
+   * @return $this
+   */
+  public function setRenewedTime($timestamp);
+
+  /**
    * Gets the start timestamp.
    *
    * @return int

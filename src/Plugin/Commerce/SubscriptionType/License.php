@@ -1,6 +1,7 @@
 <?php
 
 namespace Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType;
+
 use Drupal\commerce_order\Entity\OrderItemInterface;
 use Drupal\commerce_recurring\Entity\SubscriptionInterface;
 use Drupal\entity\BundleFieldDefinition;

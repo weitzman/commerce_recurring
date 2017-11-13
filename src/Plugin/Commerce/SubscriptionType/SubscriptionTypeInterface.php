@@ -51,7 +51,7 @@ interface SubscriptionTypeInterface extends BundlePluginInterface {
   public function collectCharges(SubscriptionInterface $subscription, BillingCycle $billing_cycle);
 
   /**
-   * Acts on a subscription after it was created from an order item.
+   * Acts on a subscription after it has been created from an order item.
    *
    * Called before the subscription is saved.
    *
@@ -63,24 +63,29 @@ interface SubscriptionTypeInterface extends BundlePluginInterface {
   public function onSubscriptionCreate(SubscriptionInterface $subscription, OrderItemInterface $order_item);
 
   /**
-   * Creates a recurring order for the given subscription.
+   * Acts on a subscription after it has been activated.
+   *
+   * Called before the subscription and recurring order are saved.
    *
    * @param \Drupal\commerce_recurring\Entity\SubscriptionInterface $subscription
    *   The subscription.
-   *
-   * @return \Drupal\commerce_order\Entity\OrderInterface
-   *   The created and saved order.
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The recurring order.
    */
-  public function createRecurringOrder(SubscriptionInterface $subscription);
+  public function onSubscriptionActivate(SubscriptionInterface $subscription, OrderInterface $order);
 
   /**
-   * Renews the recurring order for the given subscription..
+   * Acts on a subscription after it has been renewed.
+   *
+   * Called before the subscription and next recurring order are saved.
    *
    * @param \Drupal\commerce_recurring\Entity\SubscriptionInterface $subscription
    *   The subscription.
-   * @param \Drupal\commerce_order\Entity\OrderInterface $previous_recurring_order
-   *   The previous recurring order.
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The recurring order.
+   * @param \Drupal\commerce_order\Entity\OrderInterface $next_order
+   *   The next recurring order.
    */
-  public function renewRecurringOrder(SubscriptionInterface $subscription, OrderInterface $previous_recurring_order);
+  public function onSubscriptionRenew(SubscriptionInterface $subscription, OrderInterface $order, OrderInterface $next_order);
 
 }

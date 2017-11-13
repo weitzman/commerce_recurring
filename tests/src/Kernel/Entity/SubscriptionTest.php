@@ -78,6 +78,8 @@ class SubscriptionTest extends CommerceKernelTestBase {
    * @covers ::getState
    * @covers ::getCreatedTime
    * @covers ::setCreatedTime
+   * @covers ::getRenewedTime
+   * @covers ::setRenewedTime
    * @covers ::getStartTime
    * @covers ::setStartTime
    * @covers ::getEndTime
@@ -133,7 +135,7 @@ class SubscriptionTest extends CommerceKernelTestBase {
       'purchased_entity' => $variation,
       'quantity' => 2,
       'unit_price' => new Price('2', 'USD'),
-      'state' => 'active',
+      'state' => 'pending',
       'created' => 1507642328,
       'starts' => 1507642328 + 10,
       'ends' => 1507642328 + 50,
@@ -167,9 +169,15 @@ class SubscriptionTest extends CommerceKernelTestBase {
     $subscription->setUnitPrice(new Price('3', 'USD'));
     $this->assertEquals(new Price('3', 'USD'), $subscription->getUnitPrice());
 
+    $this->assertEquals('pending', $subscription->getState()->value);
+
     $this->assertEquals(1507642328, $subscription->getCreatedTime());
     $subscription->setCreatedTime(1508002101);
     $this->assertEquals(1508002101, $subscription->getCreatedTime());
+
+    $this->assertEquals(0, $subscription->getRenewedTime());
+    $subscription->setRenewedTime(123456);
+    $this->assertEquals(123456, $subscription->getRenewedTime());
 
     $this->assertEquals(1507642328 + 10, $subscription->getStartTime());
     $subscription->setStartTime(1508002120);

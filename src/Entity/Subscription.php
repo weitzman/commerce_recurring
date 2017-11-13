@@ -258,6 +258,21 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
   /**
    * {@inheritdoc}
    */
+  public function getRenewedTime() {
+    return $this->get('renewed')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setRenewedTime($timestamp) {
+    $this->set('renewed', $timestamp);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getStartTime() {
     return $this->get('starts')->value;
   }
@@ -303,6 +318,9 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
       if (empty($this->getStartTime())) {
         $this->setStartTime(\Drupal::time()->getRequestTime());
       }
+      /** @var \Drupal\commerce_recurring\RecurringOrderManagerInterface $recurring_order_manager */
+      $recurring_order_manager = \Drupal::service('commerce_recurring.order_manager');
+      $recurring_order_manager->ensureOrder($this);
     }
   }
 
@@ -434,6 +452,16 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
     $fields['created'] = BaseFieldDefinition::create('created')
       ->setLabel(t('Created'))
       ->setDescription(t('The time when the subscription was created.'))
+      ->setDisplayOptions('view', [
+        'label' => 'hidden',
+        'type' => 'timestamp',
+        'weight' => 0,
+      ]);
+
+    $fields['renewed'] = BaseFieldDefinition::create('timestamp')
+      ->setLabel(t('Renewed'))
+      ->setDescription(t('The time when the subscription was last renewed.'))
+      ->setDefaultValue(0)
       ->setDisplayOptions('view', [
         'label' => 'hidden',
         'type' => 'timestamp',

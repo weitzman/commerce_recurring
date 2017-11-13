@@ -124,101 +124,11 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
   /**
    * {@inheritdoc}
    */
-  public function createRecurringOrder(SubscriptionInterface $subscription) {
-    $order_storage = $this->entityTypeManager->getStorage('commerce_order');
-    /** @var \Drupal\commerce_order\OrderItemStorageInterface $order_item_storage */
-    $order_item_storage = $this->entityTypeManager->getStorage('commerce_order_item');
-
-    $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
-    $billing_schedule_plugin = $subscription->getBillingSchedule()->getPlugin();
-    $billing_cycle = $billing_schedule_plugin->generateFirstBillingCycle($start_date);
-    $charges = $this->collectCharges($subscription, $billing_cycle);
-
-    /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
-    $order = $order_storage->create([
-      'type' => 'recurring',
-      'store_id' => $subscription->getStoreId(),
-      'uid' => $subscription->getCustomerId(),
-      'billing_cycle' => $billing_cycle,
-    ]);
-    foreach ($charges as $charge) {
-      /** @var \Drupal\commerce_order\Entity\OrderItemInterface $order_item */
-      $order_item = $order_item_storage->create([
-        'type' => $this->getOrderItemTypeId(),
-        'purchased_entity' => $charge->getPurchasedEntity(),
-        'title' => $charge->getTitle(),
-        'quantity' => $charge->getQuantity(),
-        'unit_price' => $charge->getUnitPrice(),
-        'overridden_unit_price' => TRUE,
-        'subscription' => $subscription->id(),
-        'starts' => $charge->getStartDate()->format('U'),
-        'ends' => $charge->getEndDate()->format('U'),
-      ]);
-      $order_item->save();
-      $order->addItem($order_item);
-    }
-
-    $order->save();
-    return $order;
-  }
+  public function onSubscriptionActivate(SubscriptionInterface $subscription, OrderInterface $order) {}
 
   /**
    * {@inheritdoc}
    */
-  public function renewRecurringOrder(SubscriptionInterface $subscription, OrderInterface $previous_recurring_order) {
-    $order_storage = $this->entityTypeManager->getStorage('commerce_order');
-    /** @var \Drupal\commerce_order\OrderItemStorageInterface $order_item_storage */
-    $order_item_storage = $this->entityTypeManager->getStorage('commerce_order_item');
-
-    $billing_schedule_plugin = $subscription->getBillingSchedule()->getPlugin();
-    $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
-    /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingCycleItem $billing_cycle_item */
-    $billing_cycle_item = $previous_recurring_order->get('billing_cycle')->first();
-    $current_billing_cycle = $billing_cycle_item->toBillingCycle();
-    $next_billing_cycle = $billing_schedule_plugin->generateNextBillingCycle($start_date, $current_billing_cycle);
-    $charges = $this->collectCharges($subscription, $next_billing_cycle);
-
-    /** @var \Drupal\commerce_order\Entity\OrderInterface $next_order */
-    $next_order = $order_storage->create([
-      'type' => 'recurring',
-      'store_id' => $subscription->getStoreId(),
-      'uid' => $subscription->getCustomerId(),
-      'billing_cycle' => $next_billing_cycle,
-    ]);
-    foreach ($charges as $charge) {
-      /** @var \Drupal\commerce_order\Entity\OrderItemInterface $order_item */
-      $order_item = $order_item_storage->create([
-        'type' => $this->getOrderItemTypeId(),
-        'purchased_entity' => $charge->getPurchasedEntity(),
-        'title' => $charge->getTitle(),
-        'quantity' => $charge->getQuantity(),
-        'unit_price' => $charge->getUnitPrice(),
-        'overridden_unit_price' => TRUE,
-        'subscription' => $subscription->id(),
-        'starts' => $charge->getStartDate()->format('U'),
-        'ends' => $charge->getEndDate()->format('U'),
-      ]);
-      $order_item->save();
-      $next_order->addItem($order_item);
-    }
-    $next_order->save();
-
-    return $next_order;
-  }
-
-  /**
-   * Gets the order item type ID for the current subscription type.
-   *
-   * @return string
-   *   The order item type ID.
-   */
-  protected function getOrderItemTypeId() {
-    if ($purchasable_entity_type_id = $this->getPurchasableEntityTypeId()) {
-      return 'recurring_' . str_replace('commerce_', '', $purchasable_entity_type_id);
-    }
-    else {
-      return 'recurring_standalone';
-    }
-  }
+  public function onSubscriptionRenew(SubscriptionInterface $subscription, OrderInterface $order, OrderInterface $next_order) {}
 
 }
