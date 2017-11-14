@@ -49,14 +49,15 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
     $order_storage = $this->entityTypeManager->getStorage('commerce_order');
 
     $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
-    $billing_schedule_plugin = $subscription->getBillingSchedule()->getPlugin();
-    $billing_cycle = $billing_schedule_plugin->generateFirstBillingCycle($start_date);
+    $billing_schedule = $subscription->getBillingSchedule();
+    $billing_cycle = $billing_schedule->getPlugin()->generateFirstBillingCycle($start_date);
     /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $order_storage->create([
       'type' => 'recurring',
       'store_id' => $subscription->getStoreId(),
       'uid' => $subscription->getCustomerId(),
       'billing_cycle' => $billing_cycle,
+      'billing_schedule' => $billing_schedule,
     ]);
     $this->applyCharges($order, $subscription, $billing_cycle);
     // Allow the subscription type to modify the order before it is saved.
@@ -86,12 +87,12 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
     $subscriptions = $this->collectSubscriptions($order);
     /** @var \Drupal\commerce_recurring\Entity\SubscriptionInterface $subscription */
     $subscription = reset($subscriptions);
-    $billing_schedule = $subscription->getBillingSchedule()->getPlugin();
+    $billing_schedule = $subscription->getBillingSchedule();
     $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
     /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingCycleItem $billing_cycle_item */
     $billing_cycle_item = $order->get('billing_cycle')->first();
     $current_billing_cycle = $billing_cycle_item->toBillingCycle();
-    $next_billing_cycle = $billing_schedule->generateNextBillingCycle($start_date, $current_billing_cycle);
+    $next_billing_cycle = $billing_schedule->getPlugin()->generateNextBillingCycle($start_date, $current_billing_cycle);
 
     /** @var \Drupal\commerce_order\Entity\OrderInterface $next_order */
     $order_storage = $this->entityTypeManager->getStorage('commerce_order');
@@ -100,6 +101,7 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
       'store_id' => $subscription->getStoreId(),
       'uid' => $subscription->getCustomerId(),
       'billing_cycle' => $next_billing_cycle,
+      'billing_schedule' => $billing_schedule,
     ]);
     $this->applyCharges($next_order, $subscription, $next_billing_cycle);
     // Allow the subscription type to modify the order before it is saved.

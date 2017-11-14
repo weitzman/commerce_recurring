@@ -63,6 +63,8 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
     $this->assertEquals('recurring', $order->bundle());
     $this->assertEquals($this->subscription->getStoreId(), $order->getStoreId());
     $this->assertEquals($this->user->id(), $order->getCustomerId());
+    $this->assertEquals($this->billingSchedule->id(), $order->get('billing_schedule')->target_id);
+
     $this->assertTrue($order->hasItems());
     $order_items = $order->getItems();
     $order_item = reset($order_items);
@@ -96,6 +98,7 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
     $this->assertEquals($order->bundle(), $next_order->bundle());
     $this->assertEquals($order->getStoreId(), $next_order->getStoreId());
     $this->assertEquals($order->getCustomerId(), $next_order->getCustomerId());
+    $this->assertEquals($order->get('billing_schedule')->target_id, $next_order->get('billing_schedule')->target_id);
     $this->assertTrue($next_order->hasItems());
     $order_items = $next_order->getItems();
     $order_item = reset($order_items);
