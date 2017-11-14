@@ -3,6 +3,7 @@
 namespace Drupal\commerce_recurring;
 
 use Drupal\commerce_order\Entity\OrderInterface;
+use Drupal\commerce_payment\Exception\HardDeclineException;
 use Drupal\commerce_recurring\Entity\SubscriptionInterface;
 use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
@@ -78,6 +79,35 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
     foreach ($subscriptions as $subscription) {
       $this->applyCharges($order, $subscription, $billing_cycle);
     }
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function closeOrder(OrderInterface $order) {
+    $payment_method = $this->selectPaymentMethod($order);
+    if (!$payment_method) {
+      throw new HardDeclineException('Payment method not found.');
+    }
+    $payment_gateway = $payment_method->getPaymentGateway();
+    /** @var \Drupal\commerce_payment\Plugin\Commerce\PaymentGateway\OnsitePaymentGatewayInterface $payment_gateway_plugin */
+    $payment_gateway_plugin = $payment_gateway->getPlugin();
+    $payment_storage = $this->entityTypeManager->getStorage('commerce_payment');
+    /** @var \Drupal\commerce_payment\Entity\PaymentInterface $payment */
+    $payment = $payment_storage->create([
+      'payment_gateway' => $payment_gateway->id(),
+      'payment_method' => $payment_method->id(),
+      'order_id' => $order->id(),
+      'amount' => $order->getTotalPrice(),
+      'state' => 'new',
+    ]);
+    // The createPayment() call might throw a decline exception, which is
+    // supposed to be handled by the caller, to allow for dunning.
+    $payment_gateway_plugin->createPayment($payment);
+
+    $transition = $order->getState()->getWorkflow()->getTransition('place');
+    $order->getState()->applyTransition($transition);
+    $order->save();
   }
 
   /**
@@ -163,6 +193,34 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
     if ($existing_order_items) {
       $order_item_storage->delete($existing_order_items);
     }
+  }
+
+  /**
+   * Selects the payment method for the given recurring order.
+   *
+   * It is assumed that even if the billing schedule allows multiple
+   * subscriptions per recurring order, there will still be a single enforced
+   * payment method per customer. In case multiple payment methods are found,
+   * the more recent one will be used.
+   *
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The recurring order.
+   *
+   * @return \Drupal\commerce_payment\Entity\PaymentMethodInterface|null
+   *   The payment method, or NULL if none were found.
+   */
+  protected function selectPaymentMethod(OrderInterface $order) {
+    $subscriptions = $this->collectSubscriptions($order);
+    $payment_methods = [];
+    foreach ($subscriptions as $subscription) {
+      if ($payment_method = $subscription->getPaymentMethod()) {
+        $payment_methods[$payment_method->id()] = $payment_method;
+      }
+    }
+    ksort($payment_methods, SORT_NUMERIC);
+    $payment_method = reset($payment_methods);
+
+    return $payment_method ?: NULL;
   }
 
   /**
