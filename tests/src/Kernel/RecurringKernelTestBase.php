@@ -2,14 +2,12 @@
 
 namespace Drupal\Tests\commerce_recurring\Kernel;
 
-use Drupal\commerce_order\Entity\OrderItemType;
-use Drupal\commerce_order\Entity\OrderType;
 use Drupal\commerce_payment\Entity\PaymentGateway;
 use Drupal\commerce_payment\Entity\PaymentMethod;
 use Drupal\commerce_product\Entity\ProductVariation;
 use Drupal\commerce_product\Entity\ProductVariationType;
 use Drupal\commerce_recurring\Entity\BillingSchedule;
-use Drupal\field\Entity\FieldConfig;
+use Drupal\Component\Datetime\TimeInterface;
 use Drupal\Tests\commerce\Kernel\CommerceKernelTestBase;
 
 /**
@@ -150,4 +148,18 @@ class RecurringKernelTestBase extends CommerceKernelTestBase {
     $variation->save();
     $this->variation = $this->reloadEntity($variation);
   }
+
+  /**
+   * Changes the current time.
+   *
+   * @param int $new_time
+   *   The new time.
+   */
+  protected function rewindTime($new_time) {
+    $mock_time = $this->prophesize(TimeInterface::class);
+    $mock_time->getCurrentTime()->willReturn($new_time);
+    $mock_time->getRequestTime()->willReturn($new_time);
+    $this->container->set('datetime.time', $mock_time->reveal());
+  }
+
 }

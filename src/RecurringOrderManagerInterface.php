@@ -33,6 +33,22 @@ interface RecurringOrderManagerInterface {
   public function refreshOrder(OrderInterface $order);
 
   /**
+   * Closes the given recurring order.
+   *
+   * A payment will be created and the order will be placed.
+   *
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The recurring order.
+   *
+   * @throws \Drupal\commerce_payment\Exception\HardDeclineException
+   *   Thrown when no payment method was found.
+   * @throws \Drupal\commerce_payment\Exception\PaymentGatewayException
+   *   Thrown when the transaction fails for any reason. This includes
+   *   child exceptions such as HardDeclineException and SoftDeclineException.
+   */
+  public function closeOrder(OrderInterface $order);
+
+  /**
    * Renews the given recurring order.
    *
    * @param \Drupal\commerce_order\Entity\OrderInterface $order

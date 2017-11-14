@@ -5,6 +5,8 @@ namespace Drupal\commerce_recurring\Plugin\AdvancedQueue\JobType;
 use Drupal\advancedqueue\Job;
 use Drupal\advancedqueue\JobResult;
 use Drupal\advancedqueue\Plugin\AdvancedQueue\JobType\JobTypeBase;
+use Drupal\commerce_payment\Exception\DeclineException;
+use Drupal\commerce_recurring\RecurringOrderManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -27,6 +29,13 @@ class RecurringOrderClose extends JobTypeBase implements ContainerFactoryPluginI
   protected $entityTypeManager;
 
   /**
+   * The recurring order manager.
+   *
+   * @var \Drupal\commerce_recurring\RecurringOrderManagerInterface
+   */
+  protected $recurringOrderManager;
+
+  /**
    * Constructs a new RecurringOrderClose object.
    *
    * @param array $configuration
@@ -37,11 +46,14 @@ class RecurringOrderClose extends JobTypeBase implements ContainerFactoryPluginI
    *   The plugin implementation definition.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\commerce_recurring\RecurringOrderManagerInterface $recurring_order_manager
+   *   The recurring order manager.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager) {
+  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_type_manager, RecurringOrderManagerInterface $recurring_order_manager) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
 
     $this->entityTypeManager = $entity_type_manager;
+    $this->recurringOrderManager = $recurring_order_manager;
   }
 
   /**
@@ -52,7 +64,8 @@ class RecurringOrderClose extends JobTypeBase implements ContainerFactoryPluginI
       $configuration,
       $plugin_id,
       $plugin_definition,
-      $container->get('entity_type.manager')
+      $container->get('entity_type.manager'),
+      $container->get('commerce_recurring.order_manager')
     );
   }
 
@@ -67,10 +80,12 @@ class RecurringOrderClose extends JobTypeBase implements ContainerFactoryPluginI
     if (!$order) {
       return JobResult::failure('Order not found.');
     }
-    // Place the order.
-    $transition = $order->getState()->getWorkflow()->getTransition('place');
-    $order->getState()->applyTransition($transition);
-    $order->save();
+    try {
+      $this->recurringOrderManager->closeOrder($order);
+    }
+    catch (DeclineException $e) {
+      // @todo Schedule a retry, do dunning, etc.
+    }
 
     return JobResult::success();
   }
