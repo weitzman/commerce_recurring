@@ -46,6 +46,8 @@ use Drupal\Core\Config\Entity\ConfigEntityBase;
  *     "status",
  *     "plugin",
  *     "configuration",
+ *     "dunningSchedule",
+ *     "dunningDisposition",
  *   },
  *   links = {
  *     "add-form" = "/admin/commerce/config/billing-schedule/add",
@@ -102,6 +104,22 @@ class BillingSchedule extends ConfigEntityBase implements BillingScheduleInterfa
   protected $configuration = [];
 
   /**
+   * The dunning schedule
+   *
+   * @var array
+   */
+  protected $dunningSchedule = [];
+
+  /**
+   * The dunning disposition.
+   *
+   * One of the BillingScheduleInterface::DUNNING_DISPOSITION_ constants.
+   *
+   * @var string
+   */
+  protected $dunningDisposition = self::DUNNING_DISPOSITION_SUSPEND;
+
+  /**
    * The plugin collection that holds the billing schedule plugin.
    *
    * @var \Drupal\commerce\CommerceSinglePluginCollection
@@ -138,6 +156,39 @@ class BillingSchedule extends ConfigEntityBase implements BillingScheduleInterfa
       throw new \InvalidArgumentException(sprintf('Invalid billing type "%s" provided.'));
     }
     $this->billingType = $billing_type;
+
+    return $this;
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public function getDunningSchedule() {
+    return $this->dunningSchedule;
+  }
+
+  /**
+   * @inheritdoc
+   */
+  public function setDunningSchedule($schedule) {
+    $this->dunningSchedule = $schedule;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getDunningDisposition() {
+    return $this->dunningDisposition;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setDunningDisposition($disposition) {
+    if (!in_array($disposition, [self::DUNNING_DISPOSITION_CANCEL, self::DUNNING_DISPOSITION_SUSPEND])) {
+      throw new \InvalidArgumentException(sprintf('Invalid dunning disposition "%s" provided.'));
+    }
+    $this->dunningDisposition = $disposition;
 
     return $this;
   }

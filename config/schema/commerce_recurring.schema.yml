@@ -14,6 +14,15 @@ commerce_recurring.commerce_billing_schedule.*:
     billingType:
       type: string
       label: Billing type
+    dunningDisposition:
+      type: string
+      label: Dunning disposition
+    dunningSchedule:
+      type: sequence
+      label: 'Dunning schedule'
+      sequence:
+        type: integer
+        label: 'Step'
     plugin:
       type: string
       label: 'Plugin'

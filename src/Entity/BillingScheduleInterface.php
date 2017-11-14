@@ -19,6 +19,12 @@ interface BillingScheduleInterface extends ConfigEntityInterface, EntityWithPlug
   const BILLING_TYPE_POSTPAID = 'postpaid';
 
   /**
+   * Available dunning dispositions.
+   */
+  const DUNNING_DISPOSITION_SUSPEND = 'suspend';
+  const DUNNING_DISPOSITION_CANCEL = 'cancel';
+
+  /**
    * Gets the display label.
    *
    * This label is customer-facing.
@@ -59,6 +65,46 @@ interface BillingScheduleInterface extends ConfigEntityInterface, EntityWithPlug
    * @return $this
    */
   public function setBillingType($billing_type);
+
+  /**
+   * Gets the dunning schedule.
+   *
+   * @return array
+   *   The dunning schedule steps.
+   */
+  public function getDunningSchedule();
+
+  /**
+   * Sets the dunning schedule.
+   *
+   * @param array $schedule
+   *   The schedule.
+   *
+   * @return $this
+   */
+  public function setDunningSchedule($schedule);
+
+  /**
+   * Gets the dunning disposition.
+   *
+   * The disposition can be either:
+   * - Suspend: Subscription is suspended but can be unsuspended.
+   * - Cancel: Subscription is cancelled and may not be reversed.
+   *
+   * @return string
+   *   The disposition, one of the DUNNING_DISPOSITION_ constants.
+   */
+  public function getDunningDisposition();
+
+  /**
+   * Sets the dunning disposition.
+   *
+   * @param string $disposition
+   *   The disposition.
+   *
+   * @return $this
+   */
+  public function setDunningDisposition($disposition);
 
   /**
    * Gets the billing schedule plugin ID.
