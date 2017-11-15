@@ -10,6 +10,11 @@ services:
     tags:
       - { name: event_subscriber }
 
+  commerce_recurring.initial_order_processor:
+    class: Drupal\commerce_recurring\InitialOrderProcessor
+    tags:
+      - { name: commerce_order.order_processor, priority: 90 }
+
   commerce_recurring.cron:
     class: \Drupal\commerce_recurring\Cron
     arguments: ['@entity_type.manager', '@datetime.time']
