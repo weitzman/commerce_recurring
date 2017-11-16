@@ -43,9 +43,10 @@ class StandaloneTest extends RecurringKernelTestBase {
       'title' => 'My donation',
       'quantity' => 1,
       'unit_price' => new Price('19', 'USD'),
+      'starts' => strtotime('2017-02-24 17:00:00'),
     ]);
     $subscription->save();
-    $start_date = new DrupalDateTime($subscription->getStartTime());
+    $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
     $billing_period = $this->billingSchedule->getPlugin()->generateFirstBillingPeriod($start_date);
 
     $charges = $subscription->getType()->collectCharges($subscription, $billing_period);

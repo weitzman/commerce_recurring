@@ -17,7 +17,11 @@ class FixedTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['commerce_recurring'];
+  public static $modules = [
+    'commerce',
+    'commerce_price',
+    'commerce_recurring',
+  ];
 
   /**
    * @covers ::generateFirstBillingPeriod

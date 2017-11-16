@@ -25,12 +25,13 @@ class SubscriptionTest extends CommerceKernelTestBase {
    * {@inheritdoc}
    */
   public static $modules = [
+    'commerce',
+    'commerce_price',
     'commerce_order',
     'commerce_product',
     'commerce_payment',
     'commerce_payment_example',
     'commerce_recurring',
-    'commerce_recurring_test',
     'entity_reference_revisions',
     'profile',
     'state_machine',
@@ -90,9 +91,10 @@ class SubscriptionTest extends CommerceKernelTestBase {
       'id' => 'test_id',
       'label' => 'Test label',
       'displayLabel' => 'Test customer label',
-      'plugin' => 'test_plugin',
+      'plugin' => 'fixed',
       'configuration' => [
-        'key' => 'value',
+        'number' => '2',
+        'unit' => 'year',
       ],
     ]);
     $billing_schedule->save();

@@ -27,8 +27,7 @@ class CronTest extends RecurringKernelTestBase {
       'title' => $this->variation->getOrderItemTitle(),
       'unit_price' => new Price('2', 'USD'),
       'state' => 'active',
-      'starts' => \Drupal::time()->getRequestTime(),
-      'ends' => 0,
+      'starts' => strtotime('2017-02-24 17:00'),
     ]);
     $first_subscription->save();
 
@@ -42,14 +41,13 @@ class CronTest extends RecurringKernelTestBase {
       'title' => $this->variation->getOrderItemTitle(),
       'unit_price' => new Price('2', 'USD'),
       'state' => 'active',
-      'starts' => \Drupal::time()->getRequestTime() + 200,
-      'ends' => 0,
+      'starts' => strtotime('2017-02-25 17:00:00'),
     ]);
     $second_subscription->save();
 
     // Rewind time to the end of the first subscription.
     // Confirm that only the first subscription's order was queued.
-    $this->rewindTime($first_subscription->get('starts')->value + 100);
+    $this->rewindTime(strtotime('2017-02-24 19:00'));
     $this->container->get('commerce_recurring.cron')->run();
 
     /** @var \Drupal\advancedqueue\Entity\QueueInterface $queue */

@@ -66,4 +66,14 @@ final class BillingPeriod {
     return $this->endDate;
   }
 
+  /**
+   * Gets the duration of the billing period, in seconds.
+   *
+   * @return int
+   *   The duration.
+   */
+  public function getDuration() {
+    return $this->endDate->format('U') - $this->startDate->format('U');
+  }
+
 }
