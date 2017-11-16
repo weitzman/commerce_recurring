@@ -61,7 +61,7 @@ class ChargeTest extends KernelTestBase {
    * @covers ::__construct
    */
   public function testInvalidBillingPeriod() {
-    $this->setExpectedException(\InvalidArgumentException::class, 'The "billing_period" property must be an instance of Drupal\Core\Datetime\DrupalDateTime.');
+    $this->setExpectedException(\InvalidArgumentException::class, 'The "billing_period" property must be an instance of Drupal\commerce_recurring\BillingPeriod.');
     $charge = new Charge([
       'title' => 'My subscription',
       'unit_price' => new Price('99.99', 'USD'),
