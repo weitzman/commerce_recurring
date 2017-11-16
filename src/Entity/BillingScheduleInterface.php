@@ -42,8 +42,8 @@ interface BillingScheduleInterface extends ConfigEntityInterface, EntityWithPlug
    * Gets the billing type.
    *
    * The billing type can be either:
-   * - Prepaid: Subscription is paid at the beginning of the cycle.
-   * - Postpaid: Subscription is paid at the end of the cycle.
+   * - Prepaid: Subscription is paid at the beginning of the period.
+   * - Postpaid: Subscription is paid at the end of the period.
    *
    * @return string
    *   The billing type, one of the BILLING_TYPE_ constants.

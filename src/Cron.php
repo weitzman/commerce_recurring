@@ -57,7 +57,7 @@ class Cron implements CronInterface {
     $order_ids = $order_storage->getQuery()
       ->condition('type', 'recurring')
       ->condition('state', 'draft')
-      ->condition('billing_cycle.ends', $this->time->getRequestTime(), '<=')
+      ->condition('billing_period.ends', $this->time->getRequestTime(), '<=')
       ->execute();
     if (!$order_ids) {
       return;

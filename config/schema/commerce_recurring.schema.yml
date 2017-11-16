@@ -43,7 +43,7 @@ commerce_recurring.commerce_billing_schedule.plugin.rolling:
       type: string
       label: Unit
 
-field.value.commerce_billing_cycle:
+field.value.commerce_billing_period:
  type: mapping
  label: 'Default value'
  mapping:

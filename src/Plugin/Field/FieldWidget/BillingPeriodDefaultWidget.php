@@ -7,17 +7,17 @@ use Drupal\Core\Field\WidgetBase;
 use Drupal\Core\Form\FormStateInterface;
 
 /**
- * Plugin implementation of the 'commerce_billing_cycle' widget.
+ * Plugin implementation of the 'commerce_billing_period' widget.
  *
  * @FieldWidget(
- *   id = "commerce_billing_cycle_default",
- *   label = @Translation("Billing cycle"),
+ *   id = "commerce_billing_period_default",
+ *   label = @Translation("Billing period"),
  *   field_types = {
- *     "commerce_billing_cycle"
+ *     "commerce_billing_period"
  *   },
  *  )
  */
-class BillingCycleDefaultWidget extends WidgetBase {
+class BillingPeriodDefaultWidget extends WidgetBase {
 
   /**
    * {@inheritdoc}
@@ -26,10 +26,10 @@ class BillingCycleDefaultWidget extends WidgetBase {
     $start_date = NULL;
     $end_date = NULL;
     if (!$items[$delta]->isEmpty()) {
-      /** @var \Drupal\commerce_recurring\BillingCycle $billing_cycle */
-      $billing_cycle = $items[$delta]->toBillingCycle();
-      $start_date = $billing_cycle->getStartDate();
-      $end_date = $billing_cycle->getEndDate();
+      /** @var \Drupal\commerce_recurring\BillingPeriod $billing_period */
+      $billing_period = $items[$delta]->toBillingPeriod();
+      $start_date = $billing_period->getStartDate();
+      $end_date = $billing_period->getEndDate();
     }
 
     $element['starts'] = [
