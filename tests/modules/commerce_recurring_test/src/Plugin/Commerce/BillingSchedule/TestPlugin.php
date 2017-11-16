@@ -2,7 +2,7 @@
 
 namespace Drupal\commerce_recurring_test\Plugin\Commerce\BillingSchedule;
 
-use Drupal\commerce_recurring\BillingCycle;
+use Drupal\commerce_recurring\BillingPeriod;
 use Drupal\commerce_recurring\Plugin\Commerce\BillingSchedule\BillingScheduleBase;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Form\FormStateInterface;
@@ -47,19 +47,19 @@ class TestPlugin extends BillingScheduleBase {
   /**
    * {@inheritdoc}
    */
-  public function generateFirstBillingCycle(DrupalDateTime $start_date) {
+  public function generateFirstBillingPeriod(DrupalDateTime $start_date) {
     $end_date = clone $start_date;
     $end_date->modify('+50 seconds');
-    return new BillingCycle($start_date, $end_date);
+    return new BillingPeriod($start_date, $end_date);
   }
 
   /**
    * {@inheritdoc}
    */
-  public function generateNextBillingCycle(DrupalDateTime $start_date, BillingCycle $billing_cycle) {
-    $end_date = clone $billing_cycle->getEndDate();
+  public function generateNextBillingPeriod(DrupalDateTime $start_date, BillingPeriod $billing_period) {
+    $end_date = clone $billing_period->getEndDate();
     $end_date->modify('+50 seconds');
-    return new BillingCycle($billing_cycle->getEndDate(), $end_date);
+    return new BillingPeriod($billing_period->getEndDate(), $end_date);
   }
 
 }

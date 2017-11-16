@@ -46,9 +46,9 @@ class StandaloneTest extends RecurringKernelTestBase {
     ]);
     $subscription->save();
     $start_date = new DrupalDateTime($subscription->getStartTime());
-    $billing_cycle = $this->billingSchedule->getPlugin()->generateFirstBillingCycle($start_date);
+    $billing_period = $this->billingSchedule->getPlugin()->generateFirstBillingPeriod($start_date);
 
-    $charges = $subscription->getType()->collectCharges($subscription, $billing_cycle);
+    $charges = $subscription->getType()->collectCharges($subscription, $billing_period);
     $this->assertCount(1, $charges);
     $base_charge = reset($charges);
     $this->assertInstanceOf(Charge::class, $base_charge);
@@ -56,8 +56,8 @@ class StandaloneTest extends RecurringKernelTestBase {
     $this->assertEquals($subscription->getTitle(), $base_charge->getTitle());
     $this->assertEquals($subscription->getQuantity(), $base_charge->getQuantity());
     $this->assertEquals($subscription->getUnitPrice(), $base_charge->getUnitPrice());
-    $this->assertEquals($billing_cycle->getStartDate(), $base_charge->getStartDate());
-    $this->assertEquals($billing_cycle->getEndDate(), $base_charge->getEndDate());
+    $this->assertEquals($billing_period->getStartDate(), $base_charge->getStartDate());
+    $this->assertEquals($billing_period->getEndDate(), $base_charge->getEndDate());
   }
 
 }

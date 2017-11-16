@@ -7,9 +7,9 @@ use Drupal\commerce_order\Entity\OrderItem;
 use Drupal\commerce_recurring\Entity\Subscription;
 
 /**
- * Tests the subscription lifecycle.
+ * Tests the subscription lifeperiod.
  */
-class SubscriptionLifecycleTest extends RecurringKernelTestBase {
+class SubscriptionLifeperiodTest extends RecurringKernelTestBase {
 
   /**
    * Tests the creation of subscriptions when the order is placed.

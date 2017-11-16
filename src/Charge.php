@@ -4,7 +4,6 @@ namespace Drupal\commerce_recurring;
 
 use Drupal\commerce\PurchasableEntityInterface;
 use Drupal\commerce_price\Price;
-use Drupal\Core\Datetime\DrupalDateTime;
 
 /**
  * Represents a charge.
@@ -44,18 +43,11 @@ final class Charge {
   protected $unitPrice;
 
   /**
-   * The start date.
+   * The billing period.
    *
-   * @var \Drupal\Core\Datetime\DrupalDateTime
+   * @var \Drupal\commerce_recurring\BillingPeriod
    */
-  protected $startDate;
-
-  /**
-   * The end date.
-   *
-   * @var \Drupal\Core\Datetime\DrupalDateTime
-   */
-  protected $endDate;
+  protected $billingPeriod;
 
   /**
    * Constructs a new Charge object.
@@ -64,7 +56,7 @@ final class Charge {
    *   The definition.
    */
   public function __construct(array $definition) {
-    foreach (['title', 'unit_price', 'start_date', 'end_date'] as $required_property) {
+    foreach (['title', 'unit_price', 'billing_period'] as $required_property) {
       if (empty($definition[$required_property])) {
         throw new \InvalidArgumentException(sprintf('Missing required property "%s".', $required_property));
       }
@@ -75,18 +67,15 @@ final class Charge {
     if (!$definition['unit_price'] instanceof Price) {
       throw new \InvalidArgumentException(sprintf('The "unit_price" property must be an instance of %s.', Price::class));
     }
-    foreach (['start_date', 'end_date'] as $property) {
-      if (!($definition[$property] instanceof DrupalDateTime)) {
-        throw new \InvalidArgumentException(sprintf('The "%s" property must be an instance of %s.', $property, DrupalDateTime::class));
-      }
+    if (!$definition['billing_period'] instanceof BillingPeriod) {
+      throw new \InvalidArgumentException(sprintf('The "billing_period" property must be an instance of %s.', BillingPeriod::class));
     }
 
     $this->purchasedEntity = isset($definition['purchased_entity']) ? $definition['purchased_entity'] : NULL;
     $this->title = $definition['title'];
     $this->quantity = isset($definition['quantity']) ? $definition['quantity'] : '1';
     $this->unitPrice = $definition['unit_price'];
-    $this->startDate = $definition['start_date'];
-    $this->endDate = $definition['end_date'];
+    $this->billingPeriod = $definition['billing_period'];
   }
 
   /**
@@ -130,23 +119,13 @@ final class Charge {
   }
 
   /**
-   * Gets the start date.
+   * Gets the billing period.
    *
-   * @return \Drupal\Core\Datetime\DrupalDateTime
-   *   The start date.
+   * @return \Drupal\commerce_recurring\BillingPeriod
+   *   The billing period.
    */
-  public function getStartDate() {
-    return $this->startDate;
-  }
-
-  /**
-   * Gets the end date.
-   *
-   * @return \Drupal\Core\Datetime\DrupalDateTime
-   *   The end date.
-   */
-  public function getEndDate() {
-    return $this->endDate;
+  public function getBillingPeriod() {
+    return $this->billingPeriod;
   }
 
 }

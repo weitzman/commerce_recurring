@@ -4,7 +4,7 @@ namespace Drupal\commerce_recurring\Plugin\Commerce\SubscriptionType;
 
 use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_order\Entity\OrderItemInterface;
-use Drupal\commerce_recurring\BillingCycle;
+use Drupal\commerce_recurring\BillingPeriod;
 use Drupal\commerce_recurring\Charge;
 use Drupal\commerce_recurring\Entity\BillingScheduleInterface;
 use Drupal\commerce_recurring\Entity\SubscriptionInterface;
@@ -82,34 +82,32 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
   /**
    * {@inheritdoc}
    */
-  public function collectCharges(SubscriptionInterface $subscription, BillingCycle $billing_cycle) {
+  public function collectCharges(SubscriptionInterface $subscription, BillingPeriod $billing_period) {
     $billing_type = $subscription->getBillingSchedule()->getBillingType();
     if ($billing_type == BillingScheduleInterface::BILLING_TYPE_PREPAID) {
       $start_date = new DrupalDateTime($subscription->getStartTime());
       $billing_schedule = $subscription->getBillingSchedule()->getPlugin();
-      $next_billing_cycle = $billing_schedule->generateNextBillingCycle($start_date, $billing_cycle);
+      $next_billing_period = $billing_schedule->generateNextBillingPeriod($start_date, $billing_period);
       // The initial order (which starts the subscription) pays the first
-      // billing cycle, so the base charge is always for the next one.
+      // billing period, so the base charge is always for the next one.
       // The October recurring order (ending on Nov 1st) charges for November.
       $base_charge = new Charge([
         'purchased_entity' => $subscription->getPurchasedEntity(),
         'title' => $subscription->getTitle(),
         'quantity' => $subscription->getQuantity(),
         'unit_price' => $subscription->getUnitPrice(),
-        'start_date' => $next_billing_cycle->getStartDate(),
-        'end_date' => $next_billing_cycle->getEndDate(),
+        'billing_period' => $next_billing_period,
       ]);
     }
     else {
-      // Postpaid means we're always charging for the current billing cycle.
+      // Postpaid means we're always charging for the current billing period.
       // The October recurring order (ending on Nov 1st) charges for October.
       $base_charge = new Charge([
         'purchased_entity' => $subscription->getPurchasedEntity(),
         'title' => $subscription->getTitle(),
         'quantity' => $subscription->getQuantity(),
         'unit_price' => $subscription->getUnitPrice(),
-        'start_date' => $billing_cycle->getStartDate(),
-        'end_date' => $billing_cycle->getEndDate(),
+        'billing_period' => $billing_period,
       ]);
     }
 
