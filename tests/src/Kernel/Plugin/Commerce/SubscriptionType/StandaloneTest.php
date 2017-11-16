@@ -56,8 +56,7 @@ class StandaloneTest extends RecurringKernelTestBase {
     $this->assertEquals($subscription->getTitle(), $base_charge->getTitle());
     $this->assertEquals($subscription->getQuantity(), $base_charge->getQuantity());
     $this->assertEquals($subscription->getUnitPrice(), $base_charge->getUnitPrice());
-    $this->assertEquals($billing_period->getStartDate(), $base_charge->getStartDate());
-    $this->assertEquals($billing_period->getEndDate(), $base_charge->getEndDate());
+    $this->assertEquals($billing_period, $base_charge->getBillingPeriod());
   }
 
 }
