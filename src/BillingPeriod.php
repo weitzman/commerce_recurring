@@ -37,9 +37,9 @@ final class BillingPeriod {
    * Constructs a new BillingPeriod object.
    *
    * @param \Drupal\Core\Datetime\DrupalDateTime $start_date
-   *   The start date.
+   *   The start date/time.
    * @param \Drupal\Core\Datetime\DrupalDateTime $end_date
-   *   The end date.
+   *   The end date/time.
    */
   public function __construct(DrupalDateTime $start_date, DrupalDateTime $end_date) {
     $this->startDate = $start_date;
@@ -74,6 +74,24 @@ final class BillingPeriod {
    */
   public function getDuration() {
     return $this->endDate->format('U') - $this->startDate->format('U');
+  }
+
+  /**
+   * Checks whether the given date/time is contained in the period.
+   *
+   * @param \Drupal\Core\Datetime\DrupalDateTime $date
+   *   The date/time.
+   *
+   * @return bool
+   *   TRUE if the date/time is contained in the period, FALSE otherwise.
+   */
+  public function contains(DrupalDateTime $date) {
+    // Unlike DateTime, DrupalDateTime objects can't be compared directly.
+    $timestamp = $date->format('U');
+    $starts = $this->startDate->format('U');
+    $ends = $this->endDate->format('U');
+
+    return $timestamp >= $starts && $timestamp < $ends;
   }
 
 }
