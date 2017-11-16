@@ -43,9 +43,10 @@ class ProductVariationTest extends RecurringKernelTestBase {
       'title' => 'My subscription',
       'quantity' => 2,
       'unit_price' => new Price('49.99', 'USD'),
+      'starts' => strtotime('2017-02-24 17:00:00'),
     ]);
     $subscription->save();
-    $start_date = new DrupalDateTime($subscription->getStartTime());
+    $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
     $billing_period = $this->billingSchedule->getPlugin()->generateFirstBillingPeriod($start_date);
     $next_billing_period = $this->billingSchedule->getPlugin()->generateNextBillingPeriod($start_date, $billing_period);
 

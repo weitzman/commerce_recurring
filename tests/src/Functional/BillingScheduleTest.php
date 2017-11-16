@@ -14,7 +14,6 @@ class BillingScheduleTest extends BrowserTestBase {
    */
   public static $modules = [
     'commerce_recurring',
-    'commerce_recurring_test',
     'block',
     'commerce_product',
   ];

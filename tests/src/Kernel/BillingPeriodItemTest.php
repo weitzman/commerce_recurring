@@ -20,6 +20,8 @@ class BillingPeriodItemTest extends KernelTestBase {
    * {@inheritdoc}
    */
   public static $modules = [
+    'commerce',
+    'commerce_price',
     'commerce_recurring',
     'field',
     'entity_test',

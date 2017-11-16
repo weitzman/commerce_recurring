@@ -43,8 +43,7 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
       'quantity' => '2',
       'unit_price' => new Price('2', 'USD'),
       'state' => 'pending',
-      'starts' => \Drupal::time()->getRequestTime() - 5,
-      'ends' => \Drupal::time()->getRequestTime() + 1000,
+      'starts' => strtotime('2017-02-24 17:00:00'),
     ]);
     $subscription->save();
     $this->subscription = $this->reloadEntity($subscription);
@@ -77,7 +76,7 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
     $this->assertEquals($this->subscription->getUnitPrice(), $order_item->getUnitPrice());
     $this->assertEquals($this->variation, $order_item->getPurchasedEntity());
     $this->assertEquals($billing_period, $order_item->get('billing_period')->first()->toBillingPeriod());
-    // @todo Confirm that the duration is 50.
+    $this->assertEquals(3600, $billing_period->getDuration());
   }
 
   /**
@@ -145,7 +144,7 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
     $this->assertEquals($this->subscription->getUnitPrice(), $order_item->getUnitPrice());
     $this->assertEquals($this->variation, $order_item->getPurchasedEntity());
     $this->assertEquals($next_billing_period, $order_item->get('billing_period')->first()->toBillingPeriod());
-    // @todo Confirm that the duration is 50.
+    $this->assertEquals(3600, $next_billing_period->getDuration());
   }
 
 }

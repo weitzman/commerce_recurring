@@ -79,8 +79,8 @@ class ChargeTest extends KernelTestBase {
   public function testCharge() {
     $purchased_entity = $this->prophesize(PurchasableEntityInterface::class)->reveal();
     $billing_period = new BillingPeriod(
-      DrupalDateTime::createFromFormat('Y-m-d', '2017-01-01'),
-      DrupalDateTime::createFromFormat('Y-m-d', '2017-01-31')
+      new DrupalDateTime('2017-01-01 00:00:00'),
+      new DrupalDateTime('2017-02-01 00:00:00')
     );
     $charge = new Charge([
       'purchased_entity' => $purchased_entity,
