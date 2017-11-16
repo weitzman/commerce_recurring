@@ -6,6 +6,8 @@ use Drupal\advancedqueue\Job;
 use Drupal\advancedqueue\JobResult;
 use Drupal\advancedqueue\Plugin\AdvancedQueue\JobType\JobTypeBase;
 use Drupal\commerce_payment\Exception\DeclineException;
+use Drupal\commerce_recurring\Event\PaymentDeclinedEvent;
+use Drupal\commerce_recurring\Event\RecurringEvents;
 use Drupal\commerce_recurring\RecurringOrderManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
@@ -84,7 +86,12 @@ class RecurringOrderClose extends JobTypeBase implements ContainerFactoryPluginI
       $this->recurringOrderManager->closeOrder($order);
     }
     catch (DeclineException $e) {
-      // @todo Schedule a retry, do dunning, etc.
+
+      $schedule = $order->get('billing_schedule')->entity->getDunningSchedule();
+      $days_until_next_try = $schedule[$job->getNumRetries()];
+      $dispatcher = \Drupal::service('event_dispatcher');
+      $dispatcher->dispatch(RecurringEvents::PAYMENT_DECLINED, new PaymentDeclinedEvent($order, $days_until_next_try, $job));
+      return JobResult::failure($e->getMessage(), $job->getNumRetries(), 86400*$days_until_next_try);
     }
 
     return JobResult::success();

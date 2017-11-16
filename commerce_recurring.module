@@ -28,3 +28,36 @@ function commerce_recurring_commerce_entity_trait_info_alter(array &$definitions
 function commerce_recurring_cron() {
   \Drupal::service('commerce_recurring.cron')->run();
 }
+
+/**
+ * Implements hook_mail().
+ *
+ * Captures the outgoing mail and sets appropriate message body and headers.
+ */
+function commerce_recurring_mail($key, &$message, $params) {
+  if (isset($params['headers'])) {
+    $message['headers'] = array_merge($message['headers'], $params['headers']);
+  }
+
+  $message['from'] = $params['from'];
+  $message['subject'] = $params['subject'];
+  $message['body'][] = $params['body'];
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_recurring_theme($existing, $type, $theme, $path) {
+  return [
+    'commerce_recurring_payment_declined' => [
+      'variables' => [
+        'order_entity' => NULL,
+        'billing_information' => NULL,
+        'shipping_information' => NULL,
+        'retry_num' => NULL,
+        'retry_days' => NULL,
+        'totals' => NULL,
+      ],
+    ],
+  ];
+}
