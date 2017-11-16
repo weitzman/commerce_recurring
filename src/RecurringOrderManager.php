@@ -24,6 +24,13 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
   protected $entityTypeManager;
 
   /**
+   * The order item prorater.
+   *
+   * @var \Drupal\commerce_recurring\OrderItemProraterInterface
+   */
+  protected $orderItemProrater;
+
+  /**
    * The time.
    *
    * @var \Drupal\Component\Datetime\TimeInterface
@@ -35,11 +42,14 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\commerce_recurring\OrderItemProraterInterface $order_item_prorater
+   *   The order item prorater.
    * @param \Drupal\Component\Datetime\TimeInterface $time
    *   The time.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager, TimeInterface $time) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, OrderItemProraterInterface $order_item_prorater, TimeInterface $time) {
     $this->entityTypeManager = $entity_type_manager;
+    $this->orderItemProrater = $order_item_prorater;
     $this->time = $time;
   }
 
@@ -180,8 +190,11 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
       $order_item->set('purchased_entity', $charge->getPurchasedEntity());
       $order_item->setTitle($charge->getTitle());
       $order_item->setQuantity($charge->getQuantity());
-      $order_item->setUnitPrice($charge->getUnitPrice(), TRUE);
       $order_item->set('billing_period', $charge->getBillingPeriod());
+      // Populate the initial unit price, then prorate it.
+      $order_item->setUnitPrice($charge->getUnitPrice());
+      $prorated_unit_price = $this->orderItemProrater->prorateRecurring($order_item, $billing_period);
+      $order_item->setUnitPrice($prorated_unit_price, TRUE);
       $order_item->save();
 
       $order_items[] = $order_item;

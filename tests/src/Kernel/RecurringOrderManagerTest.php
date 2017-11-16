@@ -4,7 +4,9 @@ namespace Drupal\Tests\commerce_recurring\Kernel;
 
 use Drupal\commerce_payment\Exception\HardDeclineException;
 use Drupal\commerce_price\Price;
+use Drupal\commerce_recurring\BillingPeriod;
 use Drupal\commerce_recurring\Entity\Subscription;
+use Drupal\Core\Datetime\DrupalDateTime;
 
 /**
  * @coversDefaultClass \Drupal\commerce_recurring\RecurringOrderManager
@@ -43,7 +45,7 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
       'quantity' => '2',
       'unit_price' => new Price('2', 'USD'),
       'state' => 'pending',
-      'starts' => strtotime('2017-02-24 17:00:00'),
+      'starts' => strtotime('2017-02-24 17:30:00'),
     ]);
     $subscription->save();
     $this->subscription = $this->reloadEntity($subscription);
@@ -70,12 +72,18 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
     $this->assertTrue($order->hasItems());
     $order_items = $order->getItems();
     $order_item = reset($order_items);
+    /** @var \Drupal\commerce_recurring\BillingPeriod $order_item_billing_period */
+    $order_item_billing_period = $order_item->get('billing_period')->first()->toBillingPeriod();
+
     $this->assertEquals('recurring_product_variation', $order_item->bundle());
     $this->assertEquals($this->subscription->getTitle(), $order_item->getTitle());
     $this->assertEquals($this->subscription->getQuantity(), $order_item->getQuantity());
-    $this->assertEquals($this->subscription->getUnitPrice(), $order_item->getUnitPrice());
     $this->assertEquals($this->variation, $order_item->getPurchasedEntity());
-    $this->assertEquals($billing_period, $order_item->get('billing_period')->first()->toBillingPeriod());
+    // The subscription was created mid-cycle, the unit price should be
+    // half the usual due to proration.
+    $this->assertEquals($this->subscription->getUnitPrice()->divide('2'), $order_item->getUnitPrice());
+    $this->assertEquals(new DrupalDateTime('2017-02-24 17:30:00'), $order_item_billing_period->getStartDate());
+    $this->assertEquals($billing_period->getEndDate(), $order_item_billing_period->getEndDate());
     $this->assertEquals(3600, $billing_period->getDuration());
   }
 

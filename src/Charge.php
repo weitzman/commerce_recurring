@@ -111,6 +111,9 @@ final class Charge {
   /**
    * Gets the unit price.
    *
+   * This is the price for a full billing period, and will be prorated on
+   * the order item based on the actual billing period ($this->billingPeriod).
+   *
    * @return \Drupal\commerce_price\Price
    *   The unit price.
    */
