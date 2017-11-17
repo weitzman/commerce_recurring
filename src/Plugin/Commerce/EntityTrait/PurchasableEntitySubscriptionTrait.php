@@ -23,8 +23,7 @@ class PurchasableEntitySubscriptionTrait extends EntityTraitBase {
     $fields = [];
     $fields['billing_schedule'] = BundleFieldDefinition::create('entity_reference')
       ->setLabel(t('Billing schedule'))
-      ->setCardinality(1)
-      ->setRevisionable(TRUE)
+      ->setRequired(TRUE)
       ->setSetting('target_type', 'commerce_billing_schedule')
       ->setDisplayOptions('form', [
         'type' => 'options_select',
@@ -33,7 +32,7 @@ class PurchasableEntitySubscriptionTrait extends EntityTraitBase {
 
     $fields['subscription_type'] = BundleFieldDefinition::create('commerce_plugin_item:commerce_subscription_type')
       ->setLabel(t('Subscription type'))
-      ->setCardinality(1)
+      ->setRequired(TRUE)
       ->setDisplayOptions('form', [
         'type' => 'commerce_plugin_select',
         'weight' => 0,
