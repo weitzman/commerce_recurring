@@ -247,7 +247,7 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
    * @return \Drupal\commerce_recurring\Entity\SubscriptionInterface[]
    *   The subscriptions.
    */
-  protected function collectSubscriptions(OrderInterface $order) {
+  public function collectSubscriptions(OrderInterface $order) {
     $subscriptions = [];
     foreach ($order->getItems() as $order_item) {
       if ($order_item->get('subscription')->isEmpty()) {

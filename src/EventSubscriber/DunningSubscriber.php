@@ -5,6 +5,7 @@ namespace Drupal\commerce_recurring\EventSubscriber;
 use Drupal\commerce_order\OrderTotalSummaryInterface;
 use Drupal\commerce_recurring\Event\PaymentDeclinedEvent;
 use Drupal\commerce_recurring\Event\RecurringEvents;
+use Drupal\commerce_recurring\RecurringOrderManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Language\LanguageManagerInterface;
 use Drupal\Core\Mail\MailManagerInterface;
@@ -57,6 +58,13 @@ class DunningSubscriber implements EventSubscriberInterface {
   protected $mailManager;
 
   /**
+   * The recurring order manager.
+   *
+   * @var RecurringOrderManagerInterface
+   */
+  protected $recurringOrderManager;
+
+  /**
    * The renderer.
    *
    * @var \Drupal\Core\Render\RendererInterface
@@ -77,12 +85,13 @@ class DunningSubscriber implements EventSubscriberInterface {
    * @param \Drupal\Core\Render\Renderer $renderer
    *   The renderer.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager, LanguageManagerInterface $language_manager, MailManagerInterface $mail_manager, OrderTotalSummaryInterface $order_total_summary, Renderer $renderer) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, LanguageManagerInterface $language_manager, MailManagerInterface $mail_manager, OrderTotalSummaryInterface $order_total_summary, RecurringOrderManagerInterface $recurring_order_manager, Renderer $renderer) {
     $this->orderTypeStorage = $entity_type_manager->getStorage('commerce_order_type');
     $this->orderTotalSummary = $order_total_summary;
     $this->profileViewBuilder = $entity_type_manager->getViewBuilder('profile');
     $this->languageManager = $language_manager;
     $this->mailManager = $mail_manager;
+    $this->recurringOrderManager = $recurring_order_manager;
     $this->renderer = $renderer;
   }
 
@@ -151,13 +160,16 @@ class DunningSubscriber implements EventSubscriberInterface {
 
     $this->mailManager->mail('commerce_recurring', 'payment-declined', $to, $langcode, $params);
 
+    // If needed, transition subscription to cancelled/suspended.
+    // @todo Test this.
     if ($retry_is_final) {
-      /**
-       * @todo
-       *   - Get subscription
-       *   - Perform the transition per the billing schedule's disposition.
-       */
       $disposition = $order->get('billing_schedule')->entity->getDunningDisposition();
+      $subscriptions = $this->recurringOrderManager->collectSubscriptions($order);
+      foreach ($subscriptions as $subscription) {
+        $subscription->getState()->applyTransition($disposition);
+        // @todo not needed?
+        // $subscription->save();
+      }
     }
   }
 
