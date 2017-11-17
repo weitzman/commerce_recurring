@@ -29,7 +29,6 @@ class RecurringKernelTestBase extends CommerceKernelTestBase {
     'commerce_payment_example',
     'commerce_product',
     'commerce_recurring',
-    'commerce_recurring_test',
     'entity_reference_revisions',
   ];
 
@@ -94,12 +93,13 @@ class RecurringKernelTestBase extends CommerceKernelTestBase {
     /** @var \Drupal\commerce_recurring\Entity\BillingScheduleInterface $billing_schedule */
     $billing_schedule = BillingSchedule::create([
       'id' => 'test_id',
-      'label' => 'Test label',
-      'displayLabel' => 'Test customer label',
+      'label' => 'Hourly schedule',
+      'displayLabel' => 'Hourly schedule',
       'billingType' => BillingSchedule::BILLING_TYPE_POSTPAID,
-      'plugin' => 'test_plugin',
+      'plugin' => 'fixed',
       'configuration' => [
-        'key' => 'value',
+        'number' => '1',
+        'unit' => 'hour',
       ],
       'dunningSchedule' => [0, 3, 7, 11],
       'dunningDisposition' => 'cancel',

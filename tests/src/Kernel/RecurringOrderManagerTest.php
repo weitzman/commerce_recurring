@@ -4,7 +4,9 @@ namespace Drupal\Tests\commerce_recurring\Kernel;
 
 use Drupal\commerce_payment\Exception\HardDeclineException;
 use Drupal\commerce_price\Price;
+use Drupal\commerce_recurring\BillingPeriod;
 use Drupal\commerce_recurring\Entity\Subscription;
+use Drupal\Core\Datetime\DrupalDateTime;
 
 /**
  * @coversDefaultClass \Drupal\commerce_recurring\RecurringOrderManager
@@ -43,8 +45,7 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
       'quantity' => '2',
       'unit_price' => new Price('2', 'USD'),
       'state' => 'pending',
-      'starts' => \Drupal::time()->getRequestTime() - 5,
-      'ends' => \Drupal::time()->getRequestTime() + 1000,
+      'starts' => strtotime('2017-02-24 17:30:00'),
     ]);
     $subscription->save();
     $this->subscription = $this->reloadEntity($subscription);
@@ -57,10 +58,11 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
    */
   public function testEnsureOrder() {
     $order = $this->recurringOrderManager->ensureOrder($this->subscription);
-    /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingCycleItem $billing_cycle_item */
-    $billing_cycle_item = $order->get('billing_cycle')->first();
-    $billing_cycle = $billing_cycle_item->toBillingCycle();
+    /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingPeriodItem $billing_period_item */
+    $billing_period_item = $order->get('billing_period')->first();
+    $billing_period = $billing_period_item->toBillingPeriod();
 
+    $this->assertTrue($this->subscription->hasOrder($order));
     $this->assertEmpty($this->subscription->getRenewedTime());
     $this->assertEquals('recurring', $order->bundle());
     $this->assertEquals($this->subscription->getStoreId(), $order->getStoreId());
@@ -71,14 +73,19 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
     $this->assertTrue($order->hasItems());
     $order_items = $order->getItems();
     $order_item = reset($order_items);
+    /** @var \Drupal\commerce_recurring\BillingPeriod $order_item_billing_period */
+    $order_item_billing_period = $order_item->get('billing_period')->first()->toBillingPeriod();
+
     $this->assertEquals('recurring_product_variation', $order_item->bundle());
     $this->assertEquals($this->subscription->getTitle(), $order_item->getTitle());
     $this->assertEquals($this->subscription->getQuantity(), $order_item->getQuantity());
-    $this->assertEquals($this->subscription->getUnitPrice(), $order_item->getUnitPrice());
     $this->assertEquals($this->variation, $order_item->getPurchasedEntity());
-    $this->assertEquals($billing_cycle->getStartDate()->format('U'), $order_item->get('starts')->value);
-    $this->assertEquals($billing_cycle->getEndDate()->format('U'), $order_item->get('ends')->value);
-    $this->assertEquals(50, $order_item->get('ends')->value - $order_item->get('starts')->value);
+    // The subscription was created mid-cycle, the unit price should be
+    // half the usual due to proration.
+    $this->assertEquals($this->subscription->getUnitPrice()->divide('2'), $order_item->getUnitPrice());
+    $this->assertEquals(new DrupalDateTime('2017-02-24 17:30:00'), $order_item_billing_period->getStartDate());
+    $this->assertEquals($billing_period->getEndDate(), $order_item_billing_period->getEndDate());
+    $this->assertEquals(3600, $billing_period->getDuration());
   }
 
   /**
@@ -120,17 +127,19 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
   public function testRenewOrder() {
     $order = $this->recurringOrderManager->ensureOrder($this->subscription);
     $next_order = $this->recurringOrderManager->renewOrder($order);
-    /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingCycleItem $billing_cycle_item */
-    $billing_cycle_item = $order->get('billing_cycle')->first();
-    $billing_cycle = $billing_cycle_item->toBillingCycle();
-    /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingCycleItem $next_billing_cycle_item */
-    $next_billing_cycle_item = $next_order->get('billing_cycle')->first();
-    $next_billing_cycle = $next_billing_cycle_item->toBillingCycle();
+    /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingPeriodItem $billing_period_item */
+    $billing_period_item = $order->get('billing_period')->first();
+    $billing_period = $billing_period_item->toBillingPeriod();
+    /** @var \Drupal\commerce_recurring\Plugin\Field\FieldType\BillingPeriodItem $next_billing_period_item */
+    $next_billing_period_item = $next_order->get('billing_period')->first();
+    $next_billing_period = $next_billing_period_item->toBillingPeriod();
 
     $this->subscription = $this->reloadEntity($this->subscription);
+    $this->assertTrue($this->subscription->hasOrder($order));
+    $this->assertTrue($this->subscription->hasOrder($next_order));
     $this->assertNotEmpty($this->subscription->getRenewedTime());
 
-    $this->assertEquals($billing_cycle->getEndDate(), $next_billing_cycle->getStartDate());
+    $this->assertEquals($billing_period->getEndDate(), $next_billing_period->getStartDate());
     $this->assertEquals($order->bundle(), $next_order->bundle());
     $this->assertEquals($order->getStoreId(), $next_order->getStoreId());
     $this->assertEquals($order->getCustomerId(), $next_order->getCustomerId());
@@ -145,9 +154,8 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
     $this->assertEquals($this->subscription->getQuantity(), $order_item->getQuantity());
     $this->assertEquals($this->subscription->getUnitPrice(), $order_item->getUnitPrice());
     $this->assertEquals($this->variation, $order_item->getPurchasedEntity());
-    $this->assertEquals($next_billing_cycle->getStartDate()->format('U'), $order_item->get('starts')->value);
-    $this->assertEquals($next_billing_cycle->getEndDate()->format('U'), $order_item->get('ends')->value);
-    $this->assertEquals(50, $order_item->get('ends')->value - $order_item->get('starts')->value);
+    $this->assertEquals($next_billing_period, $order_item->get('billing_period')->first()->toBillingPeriod());
+    $this->assertEquals(3600, $next_billing_period->getDuration());
   }
 
 }

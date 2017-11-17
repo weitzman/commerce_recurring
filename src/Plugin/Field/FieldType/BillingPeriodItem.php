@@ -5,22 +5,22 @@ namespace Drupal\commerce_recurring\Plugin\Field\FieldType;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Field\FieldItemBase;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
-use Drupal\commerce_recurring\BillingCycle;
+use Drupal\commerce_recurring\BillingPeriod;
 use Drupal\Core\TypedData\DataDefinition;
 
 /**
  * Plugin implementation of the 'commerce_price' field type.
  *
  * @FieldType(
- *   id = "commerce_billing_cycle",
- *   label = @Translation("Billing cycle"),
- *   description = @Translation("Stores a a billing cycle"),
+ *   id = "commerce_billing_period",
+ *   label = @Translation("Billing period"),
+ *   description = @Translation("Stores a a billing period"),
  *   category = @Translation("Commerce"),
- *   default_widget = "commerce_billing_cycle_default",
- *   default_formatter = "commerce_billing_cycle_default",
+ *   default_widget = "commerce_billing_period_default",
+ *   default_formatter = "commerce_billing_period_default",
  * )
  */
-class BillingCycleItem extends FieldItemBase {
+class BillingPeriodItem extends FieldItemBase {
 
   /**
    * {@inheritdoc}
@@ -73,15 +73,15 @@ class BillingCycleItem extends FieldItemBase {
    * {@inheritdoc}
    */
   public function setValue($values, $notify = TRUE) {
-    // Allow callers to pass a BillingCycle value object.
-    if ($values instanceof BillingCycle) {
+    // Allow callers to pass a BillingPeriod value object.
+    if ($values instanceof BillingPeriod) {
       $values = [
         'starts' => $values->getStartDate(),
         'ends' => $values->getEndDate(),
       ];
     }
 
-    // DrupalDateTime values passed by the caller or taken via BillingCycle.
+    // DrupalDateTime values passed by the caller or taken via BillingPeriod.
     if (isset($values['starts']) && ($values['starts'] instanceof DrupalDateTime)) {
       $values['starts']->setTimezone(new \DateTimezone('UTC'));
       $values['starts'] = $values['starts']->format('U');
@@ -95,14 +95,14 @@ class BillingCycleItem extends FieldItemBase {
   }
 
   /**
-   * Gets the billing cycle value object for the current field item.
+   * Gets the billing period value object for the current field item.
    *
-   * @return \Drupal\commerce_recurring\BillingCycle
-   *   The billing cycle object.
+   * @return \Drupal\commerce_recurring\BillingPeriod
+   *   The billing period object.
    */
-  public function toBillingCycle() {
+  public function toBillingPeriod() {
     // @todo Set the timezones on both DrupalDateTime objects.
-    return new BillingCycle($this->get('starts')->getDateTime(), $this->get('ends')->getDateTime());
+    return new BillingPeriod($this->get('starts')->getDateTime(), $this->get('ends')->getDateTime());
   }
 
 }

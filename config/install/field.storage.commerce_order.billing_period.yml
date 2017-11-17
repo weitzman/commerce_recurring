@@ -4,13 +4,15 @@ dependencies:
   module:
     - commerce_order
     - commerce_recurring
-id: commerce_order_item.starts
-field_name: starts
-entity_type: commerce_order_item
-type: timestamp
-settings: { }
+dependencies: {}
+id: commerce_order.billing_period
+field_name: billing_period
+entity_type: commerce_order
+type: commerce_billing_period
+settings: {  }
+module: commerce_recurring
 locked: true
-cardinality: -1
+cardinality: 1
 translatable: false
 indexes: {  }
 persist_with_no_fields: false

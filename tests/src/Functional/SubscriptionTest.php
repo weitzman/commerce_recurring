@@ -19,7 +19,7 @@ class SubscriptionTest extends BrowserTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['commerce_recurring', 'commerce_recurring_test', 'block', 'commerce_product', 'commerce_payment_example'];
+  public static $modules = ['commerce_recurring', 'block', 'commerce_product', 'commerce_payment_example'];
 
   /**
    * {@inheritdoc}

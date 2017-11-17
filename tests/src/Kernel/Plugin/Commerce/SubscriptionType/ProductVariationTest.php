@@ -3,6 +3,7 @@
 namespace Drupal\Tests\commerce_recurring\Plugin\Commerce\SubscriptionType;
 
 use Drupal\commerce_price\Price;
+use Drupal\commerce_recurring\BillingPeriod;
 use Drupal\commerce_recurring\Charge;
 use Drupal\commerce_recurring\Entity\BillingSchedule;
 use Drupal\commerce_recurring\Entity\Subscription;
@@ -43,14 +44,15 @@ class ProductVariationTest extends RecurringKernelTestBase {
       'title' => 'My subscription',
       'quantity' => 2,
       'unit_price' => new Price('49.99', 'USD'),
+      'starts' => strtotime('2017-02-24 17:30:00'),
     ]);
     $subscription->save();
-    $start_date = new DrupalDateTime($subscription->getStartTime());
-    $billing_cycle = $this->billingSchedule->getPlugin()->generateFirstBillingCycle($start_date);
-    $next_billing_cycle = $this->billingSchedule->getPlugin()->generateNextBillingCycle($start_date, $billing_cycle);
+    $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
+    $billing_period = $this->billingSchedule->getPlugin()->generateFirstBillingPeriod($start_date);
+    $next_billing_period = $this->billingSchedule->getPlugin()->generateNextBillingPeriod($start_date, $billing_period);
 
     // Postpaid.
-    $charges = $subscription->getType()->collectCharges($subscription, $billing_cycle);
+    $charges = $subscription->getType()->collectCharges($subscription, $billing_period);
     $this->assertCount(1, $charges);
     $base_charge = reset($charges);
     $this->assertInstanceOf(Charge::class, $base_charge);
@@ -58,13 +60,12 @@ class ProductVariationTest extends RecurringKernelTestBase {
     $this->assertEquals($subscription->getTitle(), $base_charge->getTitle());
     $this->assertEquals($subscription->getQuantity(), $base_charge->getQuantity());
     $this->assertEquals($subscription->getUnitPrice(), $base_charge->getUnitPrice());
-    $this->assertEquals($billing_cycle->getStartDate(), $base_charge->getStartDate());
-    $this->assertEquals($billing_cycle->getEndDate(), $base_charge->getEndDate());
+    $this->assertEquals(new BillingPeriod($start_date, $billing_period->getEndDate()), $base_charge->getBillingPeriod());
 
     // Prepaid.
     $this->billingSchedule->setBillingType(BillingSchedule::BILLING_TYPE_PREPAID);
     $this->billingSchedule->save();
-    $charges = $subscription->getType()->collectCharges($subscription, $billing_cycle);
+    $charges = $subscription->getType()->collectCharges($subscription, $billing_period);
     $this->assertCount(1, $charges);
     $base_charge = reset($charges);
     $this->assertInstanceOf(Charge::class, $base_charge);
@@ -72,8 +73,7 @@ class ProductVariationTest extends RecurringKernelTestBase {
     $this->assertEquals($subscription->getTitle(), $base_charge->getTitle());
     $this->assertEquals($subscription->getQuantity(), $base_charge->getQuantity());
     $this->assertEquals($subscription->getUnitPrice(), $base_charge->getUnitPrice());
-    $this->assertEquals($next_billing_cycle->getStartDate(), $base_charge->getStartDate());
-    $this->assertEquals($next_billing_cycle->getEndDate(), $base_charge->getEndDate());
+    $this->assertEquals($next_billing_period, $base_charge->getBillingPeriod());
   }
 
 }

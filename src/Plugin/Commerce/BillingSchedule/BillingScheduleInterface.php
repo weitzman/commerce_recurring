@@ -2,7 +2,7 @@
 
 namespace Drupal\commerce_recurring\Plugin\Commerce\BillingSchedule;
 
-use Drupal\commerce_recurring\BillingCycle;
+use Drupal\commerce_recurring\BillingPeriod;
 use Drupal\Component\Plugin\ConfigurablePluginInterface;
 use Drupal\Component\Plugin\PluginInspectionInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
@@ -11,10 +11,10 @@ use Drupal\Core\Plugin\PluginFormInterface;
 /**
  * Provides the interface for billing schedules.
  *
- * Responsible for generating billing cycles, used to determine when the
+ * Responsible for generating billing periods, used to determine when the
  * customer should be charged.
  *
- * @see \Drupal\commerce_recurring\BillingCycle
+ * @see \Drupal\commerce_recurring\BillingPeriod
  */
 interface BillingScheduleInterface extends ConfigurablePluginInterface, PluginFormInterface, PluginInspectionInterface {
 
@@ -27,27 +27,27 @@ interface BillingScheduleInterface extends ConfigurablePluginInterface, PluginFo
   public function getLabel();
 
   /**
-   * Generates the first billing cycle.
+   * Generates the first billing period.
    *
    * @param \Drupal\Core\Datetime\DrupalDateTime $start_date
    *   The billing start date/time.
    *
-   * @return \Drupal\commerce_recurring\BillingCycle
-   *   The billing cycle.
+   * @return \Drupal\commerce_recurring\BillingPeriod
+   *   The billing period.
    */
-  public function generateFirstBillingCycle(DrupalDateTime $start_date);
+  public function generateFirstBillingPeriod(DrupalDateTime $start_date);
 
   /**
-   * Generates the next billing cycle.
+   * Generates the next billing period.
    *
    * @param \Drupal\Core\Datetime\DrupalDateTime $start_date
    *   The billing start date/time.
-   * @param \Drupal\commerce_recurring\BillingCycle $billing_cycle
-   *   The current billing cycle.
+   * @param \Drupal\commerce_recurring\BillingPeriod $billing_period
+   *   The current billing period.
    *
-   * @return \Drupal\commerce_recurring\BillingCycle
-   *   The billing cycle.
+   * @return \Drupal\commerce_recurring\BillingPeriod
+   *   The billing period.
    */
-  public function generateNextBillingCycle(DrupalDateTime $start_date, BillingCycle $billing_cycle);
+  public function generateNextBillingPeriod(DrupalDateTime $start_date, BillingPeriod $billing_period);
 
 }

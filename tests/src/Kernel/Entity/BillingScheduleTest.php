@@ -4,7 +4,7 @@ namespace Drupal\Tests\commerce_recurring\Kernel\Entity;
 
 use Drupal\commerce_recurring\Entity\BillingSchedule;
 use Drupal\commerce_recurring\Entity\BillingScheduleInterface;
-use Drupal\commerce_recurring_test\Plugin\Commerce\BillingSchedule\TestPlugin;
+use Drupal\commerce_recurring\Plugin\Commerce\BillingSchedule\Rolling;
 use Drupal\KernelTests\KernelTestBase;
 
 /**
@@ -20,8 +20,9 @@ class BillingScheduleTest extends KernelTestBase {
    * {@inheritdoc}
    */
   public static $modules = [
+    'commerce',
+    'commerce_price',
     'commerce_recurring',
-    'commerce_recurring_test',
   ];
 
   /**
@@ -40,9 +41,10 @@ class BillingScheduleTest extends KernelTestBase {
       'label' => 'Test label',
       'displayLabel' => 'Test customer label',
       'billingType' => BillingScheduleInterface::BILLING_TYPE_POSTPAID,
-      'plugin' => 'test_plugin',
+      'plugin' => 'rolling',
       'configuration' => [
-        'key' => 'value',
+        'number' => '1',
+        'unit' => 'month',
       ],
     ])->save();
 
@@ -52,13 +54,13 @@ class BillingScheduleTest extends KernelTestBase {
     $this->assertEquals('Test customer label', $billing_schedule->getDisplayLabel());
     $this->assertEquals(BillingScheduleInterface::BILLING_TYPE_POSTPAID, $billing_schedule->getBillingType());
 
-    $this->assertEquals('test_plugin', $billing_schedule->getPluginId());
-    $this->assertEquals(['key' => 'value'], $billing_schedule->getPluginConfiguration());
-    $billing_schedule->setPluginConfiguration(['key' => 'value2']);
-    $this->assertEquals(['key' => 'value2'], $billing_schedule->getPluginConfiguration());
+    $this->assertEquals('rolling', $billing_schedule->getPluginId());
+    $this->assertEquals(['number' => '1', 'unit' => 'month'], $billing_schedule->getPluginConfiguration());
+    $billing_schedule->setPluginConfiguration(['number' => '2', 'unit' => 'year']);
+    $this->assertEquals(['number' => '2', 'unit' => 'year'], $billing_schedule->getPluginConfiguration());
 
     $plugin = $billing_schedule->getPlugin();
-    $this->assertInstanceOf(TestPlugin::class, $plugin);
+    $this->assertInstanceOf(Rolling::class, $plugin);
     $this->assertEquals($billing_schedule->getPluginId(), $plugin->getPluginId());
     $this->assertEquals($billing_schedule->getPluginConfiguration(), $plugin->getConfiguration());
   }

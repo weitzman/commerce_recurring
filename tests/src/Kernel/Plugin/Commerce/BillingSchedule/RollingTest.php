@@ -17,11 +17,15 @@ class RollingTest extends KernelTestBase {
   /**
    * {@inheritdoc}
    */
-  public static $modules = ['commerce_recurring'];
+  public static $modules = [
+    'commerce',
+    'commerce_price',
+    'commerce_recurring',
+  ];
 
   /**
-   * @covers ::generateFirstBillingCycle
-   * @covers ::generateNextBillingCycle
+   * @covers ::generateFirstBillingPeriod
+   * @covers ::generateNextBillingPeriod
    */
   public function testGenerate() {
     $plugin = new Rolling([
@@ -29,36 +33,36 @@ class RollingTest extends KernelTestBase {
       'unit' => 'hour',
     ], '', []);
     $start_date = new DrupalDateTime('2017-03-16 10:22:30');
-    $billing_cycle = $plugin->generateFirstBillingCycle($start_date);
-    $this->assertEquals(new DrupalDateTime('2017-03-16 10:22:30'), $billing_cycle->getStartDate());
-    $this->assertEquals(new DrupalDateTime('2017-03-16 12:22:30'), $billing_cycle->getEndDate());
-    $next_billing_cycle = $plugin->generateNextBillingCycle($start_date, $billing_cycle);
-    $this->assertEquals(new DrupalDateTime('2017-03-16 12:22:30'), $next_billing_cycle->getStartDate());
-    $this->assertEquals(new DrupalDateTime('2017-03-16 14:22:30'), $next_billing_cycle->getEndDate());
+    $billing_period = $plugin->generateFirstBillingPeriod($start_date);
+    $this->assertEquals(new DrupalDateTime('2017-03-16 10:22:30'), $billing_period->getStartDate());
+    $this->assertEquals(new DrupalDateTime('2017-03-16 12:22:30'), $billing_period->getEndDate());
+    $next_billing_period = $plugin->generateNextBillingPeriod($start_date, $billing_period);
+    $this->assertEquals(new DrupalDateTime('2017-03-16 12:22:30'), $next_billing_period->getStartDate());
+    $this->assertEquals(new DrupalDateTime('2017-03-16 14:22:30'), $next_billing_period->getEndDate());
 
     $plugin = new Rolling([
       'number' => '1',
       'unit' => 'month',
     ], '', []);
     $start_date = new DrupalDateTime('2017-01-30 10:22:30');
-    $billing_cycle = $plugin->generateFirstBillingCycle($start_date);
-    $this->assertEquals(new DrupalDateTime('2017-01-30 10:22:30'), $billing_cycle->getStartDate());
-    $this->assertEquals(new DrupalDateTime('2017-02-28 10:22:30'), $billing_cycle->getEndDate());
-    $next_billing_cycle = $plugin->generateNextBillingCycle($start_date, $billing_cycle);
-    $this->assertEquals(new DrupalDateTime('2017-02-28 10:22:30'), $next_billing_cycle->getStartDate());
-    $this->assertEquals(new DrupalDateTime('2017-03-30 10:22:30'), $next_billing_cycle->getEndDate());
+    $billing_period = $plugin->generateFirstBillingPeriod($start_date);
+    $this->assertEquals(new DrupalDateTime('2017-01-30 10:22:30'), $billing_period->getStartDate());
+    $this->assertEquals(new DrupalDateTime('2017-02-28 10:22:30'), $billing_period->getEndDate());
+    $next_billing_period = $plugin->generateNextBillingPeriod($start_date, $billing_period);
+    $this->assertEquals(new DrupalDateTime('2017-02-28 10:22:30'), $next_billing_period->getStartDate());
+    $this->assertEquals(new DrupalDateTime('2017-03-30 10:22:30'), $next_billing_period->getEndDate());
 
     $plugin = new Rolling([
       'number' => '1',
       'unit' => 'year',
     ], '', []);
     $start_date = new DrupalDateTime('2017-03-16 10:22:30');
-    $billing_cycle = $plugin->generateFirstBillingCycle($start_date);
-    $this->assertEquals(new DrupalDateTime('2017-03-16 10:22:30'), $billing_cycle->getStartDate());
-    $this->assertEquals(new DrupalDateTime('2018-03-16 10:22:30'), $billing_cycle->getEndDate());
-    $next_billing_cycle = $plugin->generateNextBillingCycle($start_date, $billing_cycle);
-    $this->assertEquals(new DrupalDateTime('2018-03-16 10:22:30'), $next_billing_cycle->getStartDate());
-    $this->assertEquals(new DrupalDateTime('2019-03-16 10:22:30'), $next_billing_cycle->getEndDate());
+    $billing_period = $plugin->generateFirstBillingPeriod($start_date);
+    $this->assertEquals(new DrupalDateTime('2017-03-16 10:22:30'), $billing_period->getStartDate());
+    $this->assertEquals(new DrupalDateTime('2018-03-16 10:22:30'), $billing_period->getEndDate());
+    $next_billing_period = $plugin->generateNextBillingPeriod($start_date, $billing_period);
+    $this->assertEquals(new DrupalDateTime('2018-03-16 10:22:30'), $next_billing_period->getStartDate());
+    $this->assertEquals(new DrupalDateTime('2019-03-16 10:22:30'), $next_billing_period->getEndDate());
   }
 
 }
