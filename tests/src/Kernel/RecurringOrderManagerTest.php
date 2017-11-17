@@ -62,6 +62,7 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
     $billing_period_item = $order->get('billing_period')->first();
     $billing_period = $billing_period_item->toBillingPeriod();
 
+    $this->assertTrue($this->subscription->hasOrder($order));
     $this->assertEmpty($this->subscription->getRenewedTime());
     $this->assertEquals('recurring', $order->bundle());
     $this->assertEquals($this->subscription->getStoreId(), $order->getStoreId());
@@ -134,6 +135,8 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
     $next_billing_period = $next_billing_period_item->toBillingPeriod();
 
     $this->subscription = $this->reloadEntity($this->subscription);
+    $this->assertTrue($this->subscription->hasOrder($order));
+    $this->assertTrue($this->subscription->hasOrder($next_order));
     $this->assertNotEmpty($this->subscription->getRenewedTime());
 
     $this->assertEquals($billing_period->getEndDate(), $next_billing_period->getStartDate());

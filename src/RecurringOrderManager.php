@@ -74,6 +74,7 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
     // Allow the subscription type to modify the order before it is saved.
     $subscription->getType()->onSubscriptionActivate($subscription, $order);
     $order->save();
+    $subscription->addOrder($order);
 
     return $order;
   }
@@ -147,7 +148,8 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
     // Allow the subscription type to modify the order before it is saved.
     $subscription->getType()->onSubscriptionRenew($subscription, $order, $next_order);
     $next_order->save();
-    // Update the subscription with the new renewal timestamp.
+    // Update the subscription with the new order and renewal timestamp.
+    $subscription->addOrder($next_order);
     $subscription->setRenewedTime($this->time->getCurrentTime());
     $subscription->save();
 
