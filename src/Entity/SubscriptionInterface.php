@@ -3,6 +3,7 @@
 namespace Drupal\commerce_recurring\Entity;
 
 use Drupal\commerce\PurchasableEntityInterface;
+use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_payment\Entity\PaymentMethodInterface;
 use Drupal\commerce_price\Price;
 use Drupal\Core\Entity\ContentEntityInterface;
@@ -222,6 +223,63 @@ interface SubscriptionInterface extends ContentEntityInterface {
    *   The subscription state.
    */
   public function getState();
+
+  /**
+   * Gets the recurring order IDs.
+   *
+   * @return int[]
+   *   The recurring order IDs.
+   */
+  public function getOrderIds();
+
+  /**
+   * Gets the recurring orders.
+   *
+   * @return \Drupal\commerce_order\Entity\OrderInterface[]
+   *   The recurring orders.
+   */
+  public function getOrders();
+
+  /**
+   * Sets the recurring orders.
+   *
+   * @param \Drupal\commerce_order\Entity\OrderInterface[] $orders
+   *   The recurring orders.
+   *
+   * @return $this
+   */
+  public function setOrders(array $orders);
+
+  /**
+   * Adds a recurring order.
+   *
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The recurring order.
+   *
+   * @return $this
+   */
+  public function addOrder(OrderInterface $order);
+
+  /**
+   * Removes a recurring order.
+   *
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The recurring order.
+   *
+   * @return $this
+   */
+  public function removeOrder(OrderInterface $order);
+
+  /**
+   * Checks whether the order has a given recurring order.
+   *
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The recurring order.
+   *
+   * @return bool
+   *   TRUE if the recurring order was found, FALSE otherwise.
+   */
+  public function hasOrder(OrderInterface $order);
 
   /**
    * Gets the created timestamp.

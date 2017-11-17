@@ -3,6 +3,7 @@
 namespace Drupal\commerce_recurring\Entity;
 
 use Drupal\commerce\PurchasableEntityInterface;
+use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_payment\Entity\PaymentMethodInterface;
 use Drupal\commerce_price\Price;
 use Drupal\Core\Entity\ContentEntityBase;
@@ -243,6 +244,78 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
   /**
    * {@inheritdoc}
    */
+  public function getOrderIds() {
+    $order_ids = [];
+    foreach ($this->get('orders') as $field_item) {
+      $order_ids[] = $field_item->target_id;
+    }
+    return $order_ids;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getOrders() {
+    return $this->get('orders')->referencedEntities();
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setOrders(array $orders) {
+    $this->set('orders', $orders);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function addOrder(OrderInterface $order) {
+    if (!$this->hasOrder($order)) {
+      $this->get('orders')->appendItem($order);
+    }
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function removeOrder(OrderInterface $order) {
+    $index = $this->getOrderIndex($order);
+    if ($index !== FALSE) {
+      $this->get('orders')->offsetUnset($index);
+    }
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function hasOrder(OrderInterface $order) {
+    return $this->getOrderIndex($order) !== FALSE;
+  }
+
+  /**
+   * Gets the index of the given recurring order.
+   *
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The recurring order.
+   *
+   * @return int|bool
+   *   The index of the given recurring order, or FALSE if not found.
+   */
+  protected function getOrderIndex(OrderInterface $order) {
+    $values = $this->get('orders')->getValue();
+    $order_ids = array_map(function ($value) {
+      return $value['target_id'];
+    }, $values);
+
+    return array_search($order->id(), $order_ids);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getCreatedTime() {
     return $this->get('created')->value;
   }
@@ -448,6 +521,13 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
         'weight' => 0,
       ])
       ->setDisplayConfigurable('view', TRUE);
+
+    $fields['orders'] = BaseFieldDefinition::create('entity_reference')
+      ->setLabel(t('Orders'))
+      ->setDescription(t('The recurring orders.'))
+      ->setCardinality(BaseFieldDefinition::CARDINALITY_UNLIMITED)
+      ->setSetting('target_type', 'commerce_order')
+      ->setSetting('handler', 'default');
 
     $fields['created'] = BaseFieldDefinition::create('created')
       ->setLabel(t('Created'))
