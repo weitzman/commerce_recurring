@@ -17,6 +17,9 @@ class CronTest extends RecurringKernelTestBase {
    * @covers ::run
    */
   public function testRun() {
+    // Ensure that the customer has an email (for dunning emails).
+    $this->user->setEmail($this->randomMachineName() . '@example.com');
+
     $first_subscription = Subscription::create([
       'type' => 'product_variation',
       'store_id' => $this->store->id(),
@@ -63,6 +66,10 @@ class CronTest extends RecurringKernelTestBase {
     $this->assertEquals('commerce_recurring_order_close', $job1->getType());
     $this->assertArraySubset(['order_id' => '1'], $job2->getPayload());
     $this->assertEquals('commerce_recurring_order_renew', $job2->getType());
+
+    /** @var \Drupal\advancedqueue\ProcessorInterface $processor */
+    $processor = \Drupal::service('advancedqueue.processor');
+    $result = $processor->processJob($job1, $queue);
   }
 
 }

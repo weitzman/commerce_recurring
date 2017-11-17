@@ -101,6 +101,8 @@ class RecurringKernelTestBase extends CommerceKernelTestBase {
       'configuration' => [
         'key' => 'value',
       ],
+      'dunningSchedule' => [0, 3, 7, 11],
+      'dunningDisposition' => 'cancel',
     ]);
     $billing_schedule->save();
     $this->billingSchedule = $this->reloadEntity($billing_schedule);

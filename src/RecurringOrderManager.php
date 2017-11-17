@@ -57,6 +57,7 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
       'type' => 'recurring',
       'store_id' => $subscription->getStoreId(),
       'uid' => $subscription->getCustomerId(),
+      'mail' => $subscription->getCustomer()->getEmail(),
       'billing_cycle' => $billing_cycle,
       'billing_schedule' => $billing_schedule,
     ]);

@@ -123,9 +123,9 @@ class DunningSubscriber implements EventSubscriberInterface {
     $build = [
       '#theme' => 'commerce_recurring_payment_declined',
       '#order_entity' => $order,
-      '#retry_num' => $event->getJob()->getNumAttempts(),
+      '#retry_num' => $event->getJob()->getNumRetries(),
       '#retry_date' => strtotime("+$retry_days days"),
-      '#payment_method_link' => Url::fromRoute('entity.commerce_payment_method.collection', ['user' => $order->getCustomerId()]),
+      '#payment_method_link' => Url::fromRoute('entity.commerce_payment_method.collection', ['user' => $order->getCustomerId()], ['absolute' => true])->toString(),
       '#totals' => $this->orderTotalSummary->buildTotals($order),
     ];
     if ($billing_profile = $order->getBillingProfile()) {

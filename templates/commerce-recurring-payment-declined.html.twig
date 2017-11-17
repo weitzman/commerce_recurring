@@ -49,15 +49,15 @@
             {% if num_retries == 0 %}
               {{ 'We regret to inform you that the most recent charge attempt on your card failed. Please <a href="@href">update your payment method</a>.'|t({'@href': payment_method_link}) }}
 
-              {{ 'Our next charge attempt will be on: @date'|t({'@date': retry_date}) }}
+              {{ 'Our next charge attempt will be on: @date.'|t({'@date': retry_date|date('F d')}) }}
             {%  elseif retry_num == 1  %}
               {{  'Our attempt to charge your card has failed again. Please <a href="@href">update your payment method</a>.'|t({'@href': payment_method_link}) }}
 
-              {{ 'Our next charge attempt will be on: @date'|t({'@date': retry_date}) }}
+              {{ 'Our next charge attempt will be on: @date.'|t({'@date': retry_date|date('F d')}) }}
             {%  elseif retry_num == 2  %}
               {{  'This is to inform you that our last 3 attempts to charge your card has failed. Please <a href="@href">update your payment method</a>.'|t({'@href': payment_method_link}) }}
 
-              {{ 'Our final charge attempt will be on: @date'|t({'@date': retry_date}) }}
+              {{ 'Our final charge attempt will be on: @date.'|t({'@date': retry_date|date('F d')}) }}
             {%  elseif retry_num == 3  %}
               {{  'We regret to inform you that our last attempt to charge your card has failed. Please <a href="@href">update your payment method</a>. and contact us'|t({'@href': payment_method_link}) }}
             {%  endif %}
