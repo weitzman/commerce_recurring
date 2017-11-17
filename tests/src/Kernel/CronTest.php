@@ -6,8 +6,6 @@ use Drupal\advancedqueue\Entity\Queue;
 use Drupal\advancedqueue\Job;
 use Drupal\commerce_price\Price;
 use Drupal\commerce_recurring\Entity\Subscription;
-use Drupal\Core\Test\AssertMailTrait;
-use Drupal\Core\Url;
 
 /**
  * @coversDefaultClass \Drupal\commerce_recurring\Cron
@@ -19,7 +17,6 @@ class CronTest extends RecurringKernelTestBase {
    * @covers ::run
    */
   public function testRun() {
-
     $first_subscription = Subscription::create([
       'type' => 'product_variation',
       'store_id' => $this->store->id(),
