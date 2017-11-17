@@ -100,6 +100,9 @@ class DunningSubscriber implements EventSubscriberInterface {
     $order_type = $this->orderTypeStorage->load($order->bundle());
 
     $retry_days = $event->getRetrydays();
+    $schedule = $order->get('billing_schedule')->entity->getDunningSchedule();
+    $num_retries = $event->getJob()->getNumRetries();
+    $retry_is_final = $num_retries+1 >= count($schedule);
 
     $to = $order->getEmail();
     if (!$to) {
@@ -113,7 +116,9 @@ class DunningSubscriber implements EventSubscriberInterface {
         'Content-Transfer-Encoding' => '8Bit',
       ],
       'from' => $order->getStore()->getEmail(),
-      'subject' => $this->t('Payment declined - Order #@number.', ['@number' => $order->getOrderNumber()]),
+      // @todo An order number is only available after successful payment so we use id() for now.
+      // If this changes, make same change in templates/commerce-recurring-payment-declined.html.twig.
+      'subject' => $this->t('Payment declined - Order #@number.', ['@number' => $order->id()]),
       'order' => $order,
     ];
     if ($receipt_bcc = $order_type->getReceiptBcc()) {
@@ -123,8 +128,9 @@ class DunningSubscriber implements EventSubscriberInterface {
     $build = [
       '#theme' => 'commerce_recurring_payment_declined',
       '#order_entity' => $order,
-      '#retry_num' => $event->getJob()->getNumRetries(),
-      '#retry_date' => strtotime("+$retry_days days"),
+      '#retry_num' => $num_retries,
+      '#retry_days' => "+$retry_days days",
+      '#retry_schedule' => $schedule,
       '#payment_method_link' => Url::fromRoute('entity.commerce_payment_method.collection', ['user' => $order->getCustomerId()], ['absolute' => true])->toString(),
       '#totals' => $this->orderTotalSummary->buildTotals($order),
     ];
@@ -144,6 +150,15 @@ class DunningSubscriber implements EventSubscriberInterface {
     }
 
     $this->mailManager->mail('commerce_recurring', 'payment-declined', $to, $langcode, $params);
+
+    if ($retry_is_final) {
+      /**
+       * @todo
+       *   - Get subscription
+       *   - Perform the transition per the billing schedule's disposition.
+       */
+      $disposition = $order->get('billing_schedule')->entity->getDunningDisposition();
+    }
   }
 
   /**

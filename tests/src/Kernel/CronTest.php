@@ -6,12 +6,16 @@ use Drupal\advancedqueue\Entity\Queue;
 use Drupal\advancedqueue\Job;
 use Drupal\commerce_price\Price;
 use Drupal\commerce_recurring\Entity\Subscription;
+use Drupal\Core\Test\AssertMailTrait;
+use Drupal\Core\Url;
 
 /**
  * @coversDefaultClass \Drupal\commerce_recurring\Cron
  * @group commerce_recurring
  */
 class CronTest extends RecurringKernelTestBase {
+
+  use AssertMailTrait;
 
   /**
    * @covers ::run
@@ -52,7 +56,8 @@ class CronTest extends RecurringKernelTestBase {
 
     // Rewind time to the end of the first subscription.
     // Confirm that only the first subscription's order was queued.
-    $this->rewindTime($first_subscription->get('starts')->value + 100);
+    $new_time = $first_subscription->get('starts')->value + 100;
+    $this->rewindTime($new_time);
     $this->container->get('commerce_recurring.cron')->run();
 
     /** @var \Drupal\advancedqueue\Entity\QueueInterface $queue */
@@ -69,7 +74,28 @@ class CronTest extends RecurringKernelTestBase {
 
     /** @var \Drupal\advancedqueue\ProcessorInterface $processor */
     $processor = \Drupal::service('advancedqueue.processor');
-    $result = $processor->processJob($job1, $queue);
+    $processor->processJob($job1, $queue);
+
+    $mails = $this->getMails();
+    $this->assertEquals(1, count($mails));
+
+    $the_email = reset($mails);
+    $this->assertEquals('text/html; charset=UTF-8;', $the_email['headers']['Content-Type']);
+    $this->assertEquals('Payment declined - Order #1.', $the_email['subject']);
+    $this->assertEmpty(isset($the_email['headers']['Bcc']));
+    $this->assertMailString('body', 'We regret to inform you that the most recent charge attempt on your card failed.', 1);
+    $this->assertMailString('body', Url::fromRoute('entity.commerce_payment_method.collection', ['user' => 1], ['absolute' => true])->toString(), 1);
+    // $this->verboseEmail();
+    $next_retry_time = strtotime("+3 days", $new_time);
+    $this->assertMailString('body', 'Our next charge attempt will be on: ' . date('F d', $next_retry_time), 1);
+
+    // @todo Second retry. Not working yet
+    $this->rewindTime($next_retry_time + 100);
+    $this->container->get('commerce_recurring.cron')->run();
+    $job1 = $queue->getBackend()->claimJob();
+    $processor->processJob($job1, $queue);
+
+
   }
 
 }

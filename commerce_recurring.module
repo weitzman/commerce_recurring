@@ -57,6 +57,7 @@ function commerce_recurring_theme($existing, $type, $theme, $path) {
         'payment_method_link' => NULL,
         'retry_num' => NULL,
         'retry_days' => NULL,
+        'retry_schedule' => NULL,
         'totals' => NULL,
       ],
     ],

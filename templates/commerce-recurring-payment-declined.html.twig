@@ -6,7 +6,8 @@
  * Available variables:
  * - order_entity: The order entity.
  * - retry_num: The number of times this payment has tried in the past.
- * - retry_date: The date of the next retry.
+ * - retry_days: The number of days until the next retry.
+ * - retry_schedule: The dunning durations from the billing schedule.
  * - payment_method_link: A link to the user's payment methods page.
  * - billing_information: The rendered billing information.
  * - shipping_information: The rendered shipping information.
@@ -23,9 +24,6 @@
  * @ingroup themeable
  */
 #}
-
-{{ retry_date = retry_date|date('m dd') }}
-
 <table style="margin: 15px auto 0 auto; max-width: 768px; font-family: arial,sans-serif">
   <tbody>
   <tr>
@@ -46,26 +44,21 @@
         </tr>
         <tr>
           <td style="font-weight: bold; padding-top:15px; padding-bottom: 15px; text-align: left; border-top: 1px solid #cccccc; border-bottom: 1px solid #cccccc">
-            {% if num_retries == 0 %}
-              {{ 'We regret to inform you that the most recent charge attempt on your card failed. Please <a href="@href">update your payment method</a>.'|t({'@href': payment_method_link}) }}
+            {{ 'We regret to inform you that the most recent charge attempt on your card failed. Please <a href="@href">update your payment method</a>.'|t({'@href': payment_method_link}) }}
 
-              {{ 'Our next charge attempt will be on: @date.'|t({'@date': retry_date|date('F d')}) }}
-            {%  elseif retry_num == 1  %}
-              {{  'Our attempt to charge your card has failed again. Please <a href="@href">update your payment method</a>.'|t({'@href': payment_method_link}) }}
+            {% if retry_schedule|length - retry_num >= 2  %}
+              {{ 'Our next charge attempt will be on: @date.'|t({'@date': retry_days|date('F d')}) }}
 
-              {{ 'Our next charge attempt will be on: @date.'|t({'@date': retry_date|date('F d')}) }}
-            {%  elseif retry_num == 2  %}
-              {{  'This is to inform you that our last 3 attempts to charge your card has failed. Please <a href="@href">update your payment method</a>.'|t({'@href': payment_method_link}) }}
-
-              {{ 'Our final charge attempt will be on: @date.'|t({'@date': retry_date|date('F d')}) }}
-            {%  elseif retry_num == 3  %}
-              {{  'We regret to inform you that our last attempt to charge your card has failed. Please <a href="@href">update your payment method</a>. and contact us'|t({'@href': payment_method_link}) }}
+            {%  elseif retry_schedule|length - retry_num == 1  %}
+              {{ 'Our final charge attempt will be on: @date.'|t({'@date': retry_days|date('F d')}) }}
+            {%  else  %}
+              {{  'Our final charge attempt has failed. Please <a href="@href">update your payment method</a> and then contact us to restore your service.'|t({'@href': payment_method_link}) }}
             {%  endif %}
           </td>
         </tr>
         <tr>
           <td style="font-weight: bold; padding-top:15px; padding-bottom: 15px; text-align: left; border-top: 1px solid #cccccc; border-bottom: 1px solid #cccccc">
-            {{ 'Order #@number details:'|t({'@number': order_entity.getOrderNumber}) }}
+            {{ 'Order #@number details:'|t({'@number': order_entity.id}) }}
           </td>
         </tr>
         <tr>

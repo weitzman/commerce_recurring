@@ -149,7 +149,8 @@ class BillingScheduleForm extends CommercePluginEntityFormBase {
         '#type' => 'number',
         '#title' => $this->t('Wait duration - @nth payment decline email', ['@nth' => $this->nth($i)]),
         '#size' => 2,
-        '#description' => $i == 0 ? $this->t('The number of days to wait since payment is soft declined. Hard declines are always notified immediately.') : $this->t('The number of days to wait since @nth email.', ['@nth' => $this->nth($i-1)]),
+        '#disabled' => $i == 0,
+        '#description' => $i == 0 ? $this->t('An initial notification is always sent immediately after a decline.') : $this->t('The number of days to wait since @nth email.', ['@nth' => $this->nth($i-1)]),
         '#default_value' => $this->getDefaultNotification($i, $form_state),
       ];
     }
@@ -180,7 +181,7 @@ class BillingScheduleForm extends CommercePluginEntityFormBase {
     }
     $form['schedule_fieldset']['disposition'] = [
       '#type' => 'radios',
-      '#title' => $this->t('After final dunning email'),
+      '#title' => $this->t('After final charge attempt'),
       '#weight' => 1000,
       '#options' => [
         'suspend' => $this->t('Suspend the subscription'),
@@ -201,7 +202,7 @@ class BillingScheduleForm extends CommercePluginEntityFormBase {
       return $schedule[$n];
     }
 
-    // A new billing schedule. Return same defaults.
+    // A new billing schedule. Return sane defaults.
     return $n == 0 ? 0 : 3;
   }
 

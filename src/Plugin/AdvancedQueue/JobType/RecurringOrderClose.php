@@ -88,10 +88,10 @@ class RecurringOrderClose extends JobTypeBase implements ContainerFactoryPluginI
     catch (DeclineException $e) {
       // Send dunning email if needed.
       if ($schedule = $order->get('billing_schedule')->entity->getDunningSchedule()) {
-        $days_until_next_try = $schedule[$job->getNumRetries()];
+        $days_until_next_try = $schedule[$job->getNumRetries()+1];
         $dispatcher = \Drupal::service('event_dispatcher');
         $dispatcher->dispatch(RecurringEvents::PAYMENT_DECLINED, new PaymentDeclinedEvent($order, $days_until_next_try, $job));
-        return JobResult::failure($e->getMessage(), $job->getNumRetries(), 86400*$days_until_next_try);
+        return JobResult::failure($e->getMessage(), count($schedule), 86400*$days_until_next_try);
       }
     }
 
