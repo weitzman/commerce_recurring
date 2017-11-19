@@ -29,7 +29,7 @@ Future use cases: Physical products (Dollar Shave Club, etc)
 
 ## Setup
 
-1) Go to /admin/commerce/config/billing-schedule/ and create a billing schedule.
+1) Go to /admin/commerce/config/billing-schedules/ and create a billing schedule.
 2) Edit your product variation type and enable the "Allow subscriptions" trait.
 3) Create a product variation with a "Subscription type" and a "Billing schedule" selected.
 
