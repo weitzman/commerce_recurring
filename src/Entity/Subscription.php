@@ -29,6 +29,7 @@ use Drupal\user\UserInterface;
  *   bundle_label = @Translation("Subscription type"),
  *   bundle_plugin_type = "commerce_subscription_type",
  *   handlers = {
+ *     "event" = "Drupal\commerce_recurring\Event\SubscriptionEvent",
  *     "list_builder" = "Drupal\commerce_recurring\SubscriptionListBuilder",
  *     "storage" = "\Drupal\commerce_recurring\SubscriptionStorage",
  *     "form" = {
