@@ -26,3 +26,13 @@ Prepaid billing for a product variation (no license), or an order item without a
 Customers can usually select between multiple billing schedules (monthly/yearly, etc).
 
 Future use cases: Physical products (Dollar Shave Club, etc)
+
+## Setup
+
+1) Go to /admin/commerce/config/billing-schedule/ and create a billing schedule.
+2) Edit your product variation type and enable the "Allow subscriptions" trait.
+3) Create a product variation with a "Subscription type" and a "Billing schedule" selected.
+
+That's it! Each time your product variation is purchased, a subscription will be created for it.
+By default, subscriptions are renewed on cron. This can be changed to a Drush/Drupal Console
+daemon by editing the queue at /admin/config/system/queues/manage/commerce_recurring.
