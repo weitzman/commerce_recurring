@@ -60,7 +60,9 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
   /**
    * {@inheritdoc}
    */
-  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {}
+  public function buildConfigurationForm(array $form, FormStateInterface $form_state) {
+    return $form;
+  }
 
   /**
    * {@inheritdoc}
@@ -71,6 +73,18 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
    * {@inheritdoc}
    */
   public function submitConfigurationForm(array &$form, FormStateInterface $form_state) {}
+
+  /**
+   * Gets the plugin configuration.
+   *
+   * Implemented as a workaround for #2886812, remove once Commerce 8.x-2.2
+   * is released
+   *
+   * @return array
+   */
+  public function getConfiguration() {
+    return [];
+  }
 
   /**
    * {@inheritdoc}
