@@ -7,8 +7,6 @@ subscription_default:
       label: Pending
     active:
       label: Active
-    suspended:
-      label: Suspended
     expired:
       label: Expired
     canceled:
@@ -18,19 +16,11 @@ subscription_default:
       label: Activate
       from: [pending]
       to: active
-    suspend:
-      label: Suspend
-      from: [active]
-      to: suspended
-    reactivate:
-      label: Reactivate
-      from: [suspended, expired]
-      to: active
     expire:
       label: Expire
-      from: [active, suspended]
+      from: [active]
       to: expired
     cancel:
       label: Cancel
-      from: [active, suspended]
+      from: [active]
       to: canceled
