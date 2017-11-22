@@ -11,9 +11,9 @@ use Drupal\Core\Config\Entity\ConfigEntityBase;
  * @ConfigEntityType(
  *   id = "commerce_billing_schedule",
  *   label = @Translation("Billing schedule"),
- *   label_collection = @Translation("Billing schedule"),
+ *   label_collection = @Translation("Billing schedules"),
  *   label_singular = @Translation("billing schedule"),
- *   label_plural = @Translation("billing schedule"),
+ *   label_plural = @Translation("billing schedules"),
  *   label_count = @PluralTranslation(
  *     singular = "@count billing schedule",
  *     plural = "@count billing schedules",
