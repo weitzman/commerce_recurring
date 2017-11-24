@@ -86,6 +86,7 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
     $this->assertEquals(new DrupalDateTime('2017-02-24 17:30:00'), $order_item_billing_period->getStartDate());
     $this->assertEquals($billing_period->getEndDate(), $order_item_billing_period->getEndDate());
     $this->assertEquals(3600, $billing_period->getDuration());
+    $this->assertEquals($this->subscription->id(), $order_item->get('subscription')->target_id);
   }
 
   /**
@@ -156,6 +157,7 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
     $this->assertEquals($this->variation, $order_item->getPurchasedEntity());
     $this->assertEquals($next_billing_period, $order_item->get('billing_period')->first()->toBillingPeriod());
     $this->assertEquals(3600, $next_billing_period->getDuration());
+    $this->assertEquals($this->subscription->id(), $order_item->get('subscription')->target_id);
   }
 
 }

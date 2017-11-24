@@ -14,6 +14,22 @@ use Drupal\commerce_recurring\Entity\Subscription;
 class CronTest extends RecurringKernelTestBase {
 
   /**
+   * The recurring order manager.
+   *
+   * @var \Drupal\commerce_recurring\RecurringOrderManagerInterface
+   */
+  protected $recurringOrderManager;
+
+  /**
+   * {@inheritdoc}
+   */
+  protected function setUp() {
+    parent::setUp();
+
+    $this->recurringOrderManager = $this->container->get('commerce_recurring.order_manager');
+  }
+
+  /**
    * @covers ::run
    */
   public function testRun() {
@@ -30,6 +46,7 @@ class CronTest extends RecurringKernelTestBase {
       'starts' => strtotime('2017-02-24 17:00'),
     ]);
     $first_subscription->save();
+    $this->recurringOrderManager->ensureOrder($first_subscription);
 
     $second_subscription = Subscription::create([
       'type' => 'product_variation',
@@ -44,6 +61,7 @@ class CronTest extends RecurringKernelTestBase {
       'starts' => strtotime('2017-02-25 17:00:00'),
     ]);
     $second_subscription->save();
+    $this->recurringOrderManager->ensureOrder($second_subscription);
 
     // Rewind time to the end of the first subscription.
     // Confirm that only the first subscription's order was queued.

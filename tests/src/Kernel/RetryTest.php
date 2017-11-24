@@ -13,6 +13,13 @@ use Drupal\commerce_recurring\Entity\Subscription;
 class RetryTest extends RecurringKernelTestBase {
 
   /**
+   * The recurring order manager.
+   *
+   * @var \Drupal\commerce_recurring\RecurringOrderManagerInterface
+   */
+  protected $recurringOrderManager;
+
+  /**
    * The used queue.
    *
    * @var \Drupal\advancedqueue\Entity\QueueInterface
@@ -25,6 +32,7 @@ class RetryTest extends RecurringKernelTestBase {
   protected function setUp() {
     parent::setUp();
 
+    $this->recurringOrderManager = $this->container->get('commerce_recurring.order_manager');
     /** @var \Drupal\Core\Entity\EntityStorageInterface $queue_storage */
     $queue_storage = $this->container->get('entity_type.manager')->getStorage('advancedqueue_queue');
     $this->queue = $queue_storage->load('commerce_recurring');
@@ -46,15 +54,11 @@ class RetryTest extends RecurringKernelTestBase {
       'purchased_entity' => $this->variation,
       'title' => $this->variation->getOrderItemTitle(),
       'unit_price' => new Price('2', 'USD'),
-      'state' => 'pending',
+      'state' => 'active',
       'starts' => strtotime('2017-02-24 17:00'),
     ]);
     $subscription->save();
-    // @todo Create the subscription as active once #2925552 is fixed.
-    $subscription->setState('active');
-    $subscription->save();
-    $orders = $subscription->getOrders();
-    $order = reset($orders);
+    $order = $this->recurringOrderManager->ensureOrder($subscription);
 
     // Rewind time to the end of the first subscription.
     $this->rewindTime(strtotime('2017-02-24 19:00'));

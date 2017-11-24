@@ -2,6 +2,7 @@
 
 namespace Drupal\commerce_recurring\EventSubscriber;
 
+use Drupal\commerce_recurring\RecurringOrderManagerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\state_machine\Event\WorkflowTransitionEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -16,13 +17,23 @@ class OrderSubscriber implements EventSubscriberInterface {
   protected $entityTypeManager;
 
   /**
+   * The recurring order manager.
+   *
+   * @var \Drupal\commerce_recurring\RecurringOrderManagerInterface
+   */
+  protected $recurringOrderManager;
+
+  /**
    * Constructs a new OrderSubscriber object.
    *
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   The entity type manager.
+   * @param \Drupal\commerce_recurring\RecurringOrderManagerInterface $recurring_order_manager
+   *   The recurring order manager.
    */
-  public function __construct(EntityTypeManagerInterface $entity_type_manager) {
+  public function __construct(EntityTypeManagerInterface $entity_type_manager, RecurringOrderManagerInterface $recurring_order_manager) {
     $this->entityTypeManager = $entity_type_manager;
+    $this->recurringOrderManager = $recurring_order_manager;
   }
 
   /**
@@ -67,6 +78,7 @@ class OrderSubscriber implements EventSubscriberInterface {
         'state' => 'active',
       ]);
       $subscription->save();
+      $this->recurringOrderManager->ensureOrder($subscription);
     }
   }
 

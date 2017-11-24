@@ -63,6 +63,11 @@ class SubscriptionLifecycleTest extends RecurringKernelTestBase {
     /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
     $order = $order_storage->load(reset($result));
     $this->assertNotEmpty($order);
+    // Confirm that the recurring order has an order item for the subscription.
+    $order_items = $order->getItems();
+    $this->assertCount(1, $order_items);
+    $order_item = reset($order_items);
+    $this->assertEquals($subscription->id(), $order_item->get('subscription')->target_id);
   }
 
 }

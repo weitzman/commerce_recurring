@@ -71,10 +71,11 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
       'billing_schedule' => $billing_schedule,
     ]);
     $this->applyCharges($order, $subscription, $billing_period);
-    // Allow the subscription type to modify the order before it is saved.
+    // Allow the type to modify the subscription and order before they're saved.
     $subscription->getType()->onSubscriptionActivate($subscription, $order);
     $order->save();
     $subscription->addOrder($order);
+    $subscription->save();
 
     return $order;
   }
