@@ -44,3 +44,17 @@ function commerce_recurring_field_widget_form_alter(&$element, FormStateInterfac
     unset($element['target_plugin_id']['#options']['standalone']);
   }
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter() for 'commerce_order_item_type_form'.
+ */
+function commerce_recurring_form_commerce_order_item_type_form_alter(array &$form, FormStateInterface $form_state) {
+  /** @var \Drupal\commerce_order\Entity\OrderTypeInterface $order_item_type */
+  $order_item_type = $form_state->getFormObject()->getEntity();
+  if (strpos($order_item_type->id(), 'recurring_') !== 0) {
+    // Hide the recurring order type from the dropdown, to avoid confusing
+    // merchants who are configuring non-recurring order item types.
+    unset($form['orderType']['#options']['recurring']);
+  }
+}
+
