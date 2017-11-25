@@ -131,6 +131,9 @@ class RecurringOrderClose extends JobTypeBase implements ContainerFactoryPluginI
     else {
       $retry_days = 0;
       $result = JobResult::success('Dunning complete, recurring order not paid.');
+
+      $transition = $order->getState()->getWorkflow()->getTransition('mark_failed');
+      $order->getState()->applyTransition($transition);
       if ($billing_schedule->getUnpaidSubscriptionState() != 'active') {
         $this->updateSubscriptions($order, $billing_schedule->getUnpaidSubscriptionState());
       }
@@ -138,6 +141,7 @@ class RecurringOrderClose extends JobTypeBase implements ContainerFactoryPluginI
     // Subscribers can choose to send a dunning email.
     $event = new PaymentDeclinedEvent($order, $retry_days, $num_retries, $max_retries);
     $this->eventDispatcher->dispatch(RecurringEvents::PAYMENT_DECLINED, $event);
+    $order->save();
 
     return $result;
   }

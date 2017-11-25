@@ -97,6 +97,12 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
    * {@inheritdoc}
    */
   public function closeOrder(OrderInterface $order) {
+    if ($order->getState()->value == 'draft') {
+      $transition = $order->getState()->getWorkflow()->getTransition('place');
+      $order->getState()->applyTransition($transition);
+      $order->save();
+    }
+
     $payment_method = $this->selectPaymentMethod($order);
     if (!$payment_method) {
       throw new HardDeclineException('Payment method not found.');
@@ -117,7 +123,7 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
     // supposed to be handled by the caller, to allow for dunning.
     $payment_gateway_plugin->createPayment($payment);
 
-    $transition = $order->getState()->getWorkflow()->getTransition('place');
+    $transition = $order->getState()->getWorkflow()->getTransition('mark_paid');
     $order->getState()->applyTransition($transition);
     $order->save();
   }

@@ -46,6 +46,18 @@ function commerce_recurring_field_widget_form_alter(&$element, FormStateInterfac
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter() for 'commerce_order_type_form'.
+ */
+function commerce_recurring_form_commerce_order_type_form_alter(array &$form, FormStateInterface $form_state) {
+  /** @var \Drupal\commerce_order\Entity\OrderTypeInterface $order_type */
+  $order_type = $form_state->getFormObject()->getEntity();
+  if ($order_type->id() != 'recurring') {
+    // The recurring workflow is only meant for the recurring order type.
+    unset($form['workflow']['#options']['Order']['order_recurring']);
+  }
+}
+
+/**
  * Implements hook_form_FORM_ID_alter() for 'commerce_order_item_type_form'.
  */
 function commerce_recurring_form_commerce_order_item_type_form_alter(array &$form, FormStateInterface $form_state) {
@@ -65,7 +77,6 @@ function commerce_recurring_form_commerce_product_variation_type_form_alter(arra
   if (!isset($form['orderItemType'])) {
     return;
   }
-
   // Recurring order item types are used by the module, they should never
   // be selected by the merchant for a product variation type.
   foreach ($form['orderItemType']['#options'] as $id => $label) {

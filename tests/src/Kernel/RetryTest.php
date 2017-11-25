@@ -72,6 +72,10 @@ class RetryTest extends RecurringKernelTestBase {
     $processor = \Drupal::service('advancedqueue.processor');
     $result = $processor->processJob($job, $this->queue);
 
+    // Confirm that the order was placed.
+    $order = $this->reloadEntity($order);
+    $this->assertEquals('needs_payment', $order->getState()->value);
+    // Confirm that the job result is correct.
     $this->assertEquals(Job::STATE_FAILURE, $result->getState());
     $this->assertEquals('Payment method not found.', $result->getMessage());
     $this->assertEquals(3, $result->getMaxRetries());
@@ -114,6 +118,10 @@ class RetryTest extends RecurringKernelTestBase {
     $job = $this->queue->getBackend()->claimJob();
     $result = $processor->processJob($job, $this->queue);
 
+    // Confirm that the order was marked as failed.
+    $order = $this->reloadEntity($order);
+    $this->assertEquals('failed', $order->getState()->value);
+    // Confirm that the job result is correct.
     $this->assertEquals(Job::STATE_SUCCESS, $result->getState());
     $this->assertEquals('Dunning complete, recurring order not paid.', $result->getMessage());
     // Confirm that the job was not requeued.

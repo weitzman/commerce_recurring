@@ -5,7 +5,7 @@ id: recurring
 dependencies:
   module:
     - commerce_recurring
-workflow: order_default
+workflow: order_recurring
 traits: {  }
 refresh_mode: customer
 refresh_frequency: 300
