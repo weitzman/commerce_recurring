@@ -2,6 +2,7 @@
 
 namespace Drupal\Tests\commerce_recurring\Kernel;
 
+use Drupal\commerce_order\Entity\OrderInterface;
 use Drupal\commerce_payment\Exception\HardDeclineException;
 use Drupal\commerce_price\Price;
 use Drupal\commerce_recurring\Entity\Subscription;
@@ -64,12 +65,7 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
 
     $this->assertTrue($this->subscription->hasOrder($order));
     $this->assertEmpty($this->subscription->getRenewedTime());
-    $this->assertEquals('recurring', $order->bundle());
-    $this->assertEquals($this->subscription->getStoreId(), $order->getStoreId());
-    $this->assertEquals($this->user->id(), $order->getCustomerId());
-    $this->assertEquals($this->billingSchedule->id(), $order->get('billing_schedule')->target_id);
-    $this->assertEquals('draft', $order->getState()->value);
-
+    $this->assertOrder($order);
     $this->assertTrue($order->hasItems());
     $order_items = $order->getItems();
     $order_item = reset($order_items);
@@ -139,13 +135,8 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
     $this->assertTrue($this->subscription->hasOrder($order));
     $this->assertTrue($this->subscription->hasOrder($next_order));
     $this->assertNotEmpty($this->subscription->getRenewedTime());
-
+    $this->assertOrder($order);
     $this->assertEquals($billing_period->getEndDate(), $next_billing_period->getStartDate());
-    $this->assertEquals($order->bundle(), $next_order->bundle());
-    $this->assertEquals($order->getStoreId(), $next_order->getStoreId());
-    $this->assertEquals($order->getCustomerId(), $next_order->getCustomerId());
-    $this->assertEquals($order->get('billing_schedule')->target_id, $next_order->get('billing_schedule')->target_id);
-    $this->assertEquals('draft', $next_order->getState()->value);
 
     $this->assertTrue($next_order->hasItems());
     $order_items = $next_order->getItems();
@@ -158,6 +149,23 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
     $this->assertEquals($next_billing_period, $order_item->get('billing_period')->first()->toBillingPeriod());
     $this->assertEquals(3600, $next_billing_period->getDuration());
     $this->assertEquals($this->subscription->id(), $order_item->get('subscription')->target_id);
+  }
+
+  /**
+   * Asserts that the recurring order fields have the expected values.
+   *
+   * @param \Drupal\commerce_order\Entity\OrderInterface $order
+   *   The recurring order.
+   */
+  protected function assertOrder(OrderInterface $order) {
+    $this->assertEquals('recurring', $order->bundle());
+    $this->assertEquals($this->subscription->getStoreId(), $order->getStoreId());
+    $this->assertEquals($this->user->id(), $order->getCustomerId());
+    $this->assertEquals($this->paymentMethod->getBillingProfile(), $order->getBillingProfile());
+    $this->assertEquals($this->billingSchedule->id(), $order->get('billing_schedule')->target_id);
+    $this->assertEquals($this->paymentMethod->id(), $order->get('payment_method')->target_id);
+    $this->assertEquals($this->paymentGateway->id(), $order->get('payment_gateway')->target_id);
+    $this->assertEquals('draft', $order->getState()->value);
   }
 
 }
