@@ -57,24 +57,21 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
    * {@inheritdoc}
    */
   public function ensureOrder(SubscriptionInterface $subscription) {
-    $order_storage = $this->entityTypeManager->getStorage('commerce_order');
-
     $start_date = DrupalDateTime::createFromTimestamp($subscription->getStartTime());
     $billing_schedule = $subscription->getBillingSchedule();
     $billing_period = $billing_schedule->getPlugin()->generateFirstBillingPeriod($start_date);
-    /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
-    $order = $order_storage->create([
-      'type' => 'recurring',
-      'store_id' => $subscription->getStoreId(),
-      'uid' => $subscription->getCustomerId(),
-      'billing_period' => $billing_period,
-      'billing_schedule' => $billing_schedule,
-    ]);
+    $order = $this->createOrder($subscription, $billing_period);
     $this->applyCharges($order, $subscription, $billing_period);
-    // Allow the subscription type to modify the order before it is saved.
+    // Allow the type to modify the subscription and order before they're saved.
     $subscription->getType()->onSubscriptionActivate($subscription, $order);
+
+    // @todo The order should save its own unsaved order items.
+    foreach ($order->getItems() as $order_item) {
+      $order_item->save();
+    }
     $order->save();
     $subscription->addOrder($order);
+    $subscription->save();
 
     return $order;
   }
@@ -87,8 +84,21 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
     $billing_period_item = $order->get('billing_period')->first();
     $billing_period = $billing_period_item->toBillingPeriod();
     $subscriptions = $this->collectSubscriptions($order);
+    $payment_method = $this->selectPaymentMethod($subscriptions);
+    $billing_profile = $payment_method ? $payment_method->getBillingProfile() : NULL;
+    $payment_gateway_id = $payment_method ? $payment_method->getPaymentGatewayId() : NULL;
+
+    $order->set('billing_profile', $billing_profile);
+    $order->set('payment_method', $payment_method);
+    $order->set('payment_gateway', $payment_gateway_id);
     foreach ($subscriptions as $subscription) {
       $this->applyCharges($order, $subscription, $billing_period);
+    }
+    // The same workaround that \Drupal\commerce_order\OrderRefresh does.
+    foreach ($order->getItems() as $order_item) {
+      if ($order_item->isNew()) {
+        $order_item->order_id->entity = $order;
+      }
     }
   }
 
@@ -96,7 +106,14 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
    * {@inheritdoc}
    */
   public function closeOrder(OrderInterface $order) {
-    $payment_method = $this->selectPaymentMethod($order);
+    if ($order->getState()->value == 'draft') {
+      $transition = $order->getState()->getWorkflow()->getTransition('place');
+      $order->getState()->applyTransition($transition);
+      $order->save();
+    }
+
+    $subscriptions = $this->collectSubscriptions($order);
+    $payment_method = $this->selectPaymentMethod($subscriptions);
     if (!$payment_method) {
       throw new HardDeclineException('Payment method not found.');
     }
@@ -116,7 +133,7 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
     // supposed to be handled by the caller, to allow for dunning.
     $payment_gateway_plugin->createPayment($payment);
 
-    $transition = $order->getState()->getWorkflow()->getTransition('place');
+    $transition = $order->getState()->getWorkflow()->getTransition('mark_paid');
     $order->getState()->applyTransition($transition);
     $order->save();
   }
@@ -135,18 +152,15 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
     $current_billing_period = $billing_period_item->toBillingPeriod();
     $next_billing_period = $billing_schedule->getPlugin()->generateNextBillingPeriod($start_date, $current_billing_period);
 
-    /** @var \Drupal\commerce_order\Entity\OrderInterface $next_order */
-    $order_storage = $this->entityTypeManager->getStorage('commerce_order');
-    $next_order = $order_storage->create([
-      'type' => 'recurring',
-      'store_id' => $subscription->getStoreId(),
-      'uid' => $subscription->getCustomerId(),
-      'billing_period' => $next_billing_period,
-      'billing_schedule' => $billing_schedule,
-    ]);
+    $next_order = $this->createOrder($subscription, $next_billing_period);
     $this->applyCharges($next_order, $subscription, $next_billing_period);
     // Allow the subscription type to modify the order before it is saved.
     $subscription->getType()->onSubscriptionRenew($subscription, $order, $next_order);
+
+    // @todo The order should save its own unsaved order items.
+    foreach ($next_order->getItems() as $order_item) {
+      $order_item->save();
+    }
     $next_order->save();
     // Update the subscription with the new order and renewal timestamp.
     $subscription->addOrder($next_order);
@@ -175,7 +189,37 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
   }
 
   /**
+   * Creates a recurring order for the given subscription.
+   *
+   * @param \Drupal\commerce_recurring\Entity\SubscriptionInterface $subscription
+   *   The subscription.
+   * @param \Drupal\commerce_recurring\BillingPeriod $billing_period
+   *   The billing period.
+   *
+   * @return \Drupal\commerce_order\Entity\OrderInterface
+   *   The created recurring order, unsaved.
+   */
+  protected function createOrder(SubscriptionInterface $subscription, BillingPeriod $billing_period) {
+    $payment_method = $subscription->getPaymentMethod();
+    /** @var \Drupal\commerce_order\Entity\OrderInterface $order */
+    $order = $this->entityTypeManager->getStorage('commerce_order')->create([
+      'type' => 'recurring',
+      'store_id' => $subscription->getStoreId(),
+      'uid' => $subscription->getCustomerId(),
+      'billing_profile' => $payment_method ? $payment_method->getBillingProfile() : NULL,
+      'payment_method' => $payment_method,
+      'payment_gateway' => $payment_method ? $payment_method->getPaymentGatewayId() : NULL,
+      'billing_period' => $billing_period,
+      'billing_schedule' => $subscription->getBillingSchedule(),
+    ]);
+
+    return $order;
+  }
+
+  /**
    * Applies subscription charges to the given recurring order.
+   *
+   * Note: The order items are not saved.
    *
    * @param \Drupal\commerce_order\Entity\OrderInterface $order
    *   The recurring order.
@@ -215,7 +259,6 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
       $order_item->setUnitPrice($charge->getUnitPrice());
       $prorated_unit_price = $this->orderItemProrater->prorateRecurring($order_item, $billing_period);
       $order_item->setUnitPrice($prorated_unit_price, TRUE);
-      $order_item->save();
 
       $order_items[] = $order_item;
     }
@@ -228,21 +271,20 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
   }
 
   /**
-   * Selects the payment method for the given recurring order.
+   * Selects the payment method for the given subscriptions.
    *
    * It is assumed that even if the billing schedule allows multiple
    * subscriptions per recurring order, there will still be a single enforced
    * payment method per customer. In case multiple payment methods are found,
    * the more recent one will be used.
    *
-   * @param \Drupal\commerce_order\Entity\OrderInterface $order
-   *   The recurring order.
+   * @param \Drupal\commerce_recurring\Entity\SubscriptionInterface[] $subscriptions
+   *   The subscriptions.
    *
    * @return \Drupal\commerce_payment\Entity\PaymentMethodInterface|null
    *   The payment method, or NULL if none were found.
    */
-  protected function selectPaymentMethod(OrderInterface $order) {
-    $subscriptions = $this->collectSubscriptions($order);
+  protected function selectPaymentMethod(array $subscriptions) {
     $payment_methods = [];
     foreach ($subscriptions as $subscription) {
       if ($payment_method = $subscription->getPaymentMethod()) {

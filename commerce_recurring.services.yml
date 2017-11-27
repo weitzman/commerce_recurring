@@ -6,7 +6,7 @@ services:
 
   commerce_recurring.event_subscriber.order_subscriber:
     class: \Drupal\commerce_recurring\EventSubscriber\OrderSubscriber
-    arguments: ['@entity_type.manager']
+    arguments: ['@entity_type.manager', '@commerce_recurring.order_manager']
     tags:
       - { name: event_subscriber }
 
@@ -25,6 +25,12 @@ services:
     arguments: ['@commerce_recurring.order_item_prorater']
     tags:
       - { name: commerce_order.order_processor, priority: 40 }
+
+  commerce_recurring.recurring_order_processor:
+    class: Drupal\commerce_recurring\RecurringOrderProcessor
+    arguments: ['@commerce_recurring.order_manager']
+    tags:
+      - { name: commerce_order.order_processor, priority: 300 }
 
   commerce_recurring.cron:
     class: \Drupal\commerce_recurring\Cron

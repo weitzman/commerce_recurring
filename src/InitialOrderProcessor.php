@@ -40,12 +40,12 @@ class InitialOrderProcessor implements OrderProcessorInterface {
     foreach ($order->getItems() as $order_item) {
       $purchased_entity = $order_item->getPurchasedEntity();
       if (!$purchased_entity || !$purchased_entity->hasField('billing_schedule')) {
-        return;
+        continue;
       }
       /** @var \Drupal\commerce_recurring\Entity\BillingScheduleInterface $billing_schedule */
       $billing_schedule = $purchased_entity->get('billing_schedule')->entity;
       if (!$billing_schedule) {
-        return;
+        continue;
       }
 
       // Price differences are added as adjustments, to preserve the original

@@ -17,6 +17,13 @@ class RetryTest extends RecurringKernelTestBase {
   use AssertMailTrait;
 
   /**
+   * The recurring order manager.
+   *
+   * @var \Drupal\commerce_recurring\RecurringOrderManagerInterface
+   */
+  protected $recurringOrderManager;
+
+  /**
    * The used queue.
    *
    * @var \Drupal\advancedqueue\Entity\QueueInterface
@@ -29,6 +36,7 @@ class RetryTest extends RecurringKernelTestBase {
   protected function setUp() {
     parent::setUp();
 
+    $this->recurringOrderManager = $this->container->get('commerce_recurring.order_manager');
     /** @var \Drupal\Core\Entity\EntityStorageInterface $queue_storage */
     $queue_storage = $this->container->get('entity_type.manager')->getStorage('advancedqueue_queue');
     $this->queue = $queue_storage->load('commerce_recurring');
@@ -53,15 +61,11 @@ class RetryTest extends RecurringKernelTestBase {
       'purchased_entity' => $this->variation,
       'title' => $this->variation->getOrderItemTitle(),
       'unit_price' => new Price('2', 'USD'),
-      'state' => 'pending',
+      'state' => 'active',
       'starts' => strtotime('2017-02-24 17:00'),
     ]);
     $subscription->save();
-    // @todo Create the subscription as active once #2925552 is fixed.
-    $subscription->setState('active');
-    $subscription->save();
-    $orders = $subscription->getOrders();
-    $order = reset($orders);
+    $order = $this->recurringOrderManager->ensureOrder($subscription);
 
     // Rewind time to the end of the first subscription.
     $new_time = strtotime('2017-02-24 19:00');
@@ -76,6 +80,10 @@ class RetryTest extends RecurringKernelTestBase {
     $processor = \Drupal::service('advancedqueue.processor');
     $result = $processor->processJob($job, $this->queue);
 
+    // Confirm that the order was placed.
+    $order = $this->reloadEntity($order);
+    $this->assertEquals('needs_payment', $order->getState()->value);
+    // Confirm that the job result is correct.
     $this->assertEquals(Job::STATE_FAILURE, $result->getState());
     $this->assertEquals('Payment method not found.', $result->getMessage());
     $this->assertEquals(3, $result->getMaxRetries());
@@ -134,6 +142,10 @@ class RetryTest extends RecurringKernelTestBase {
     $job = $this->queue->getBackend()->claimJob();
     $result = $processor->processJob($job, $this->queue);
 
+    // Confirm that the order was marked as failed.
+    $order = $this->reloadEntity($order);
+    $this->assertEquals('failed', $order->getState()->value);
+    // Confirm that the job result is correct.
     $this->assertEquals(Job::STATE_SUCCESS, $result->getState());
     $this->assertEquals('Dunning complete, recurring order not paid.', $result->getMessage());
     // Confirm that the job was not requeued.

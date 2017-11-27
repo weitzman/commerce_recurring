@@ -5,7 +5,6 @@ namespace Drupal\Tests\commerce_recurring\Kernel;
 use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderItem;
 use Drupal\commerce_recurring\Entity\BillingSchedule;
-use Drupal\commerce_recurring\Plugin\Commerce\BillingSchedule\BillingScheduleInterface;
 
 /**
  * @coversDefaultClass \Drupal\commerce_recurring\InitialOrderProcessor

@@ -48,4 +48,17 @@ class SubscriptionTypeManager extends DefaultPluginManager {
     }
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  protected function findDefinitions() {
+    $definitions = parent::findDefinitions();
+    // The module ships a subscription type dependent on commerce_product
+    // but doesn't depend on commerce_product.
+    if (!$this->moduleHandler->moduleExists('commerce_product')) {
+      unset($definitions['product_variation']);
+    }
+    return $definitions;
+  }
+
 }

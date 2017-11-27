@@ -92,4 +92,24 @@ interface SubscriptionTypeInterface extends BundlePluginInterface, PluginFormInt
    */
   public function onSubscriptionRenew(SubscriptionInterface $subscription, OrderInterface $order, OrderInterface $next_order);
 
+  /**
+   * Acts on a subscription after it has expired.
+   *
+   * Called before the subscription is saved.
+   *
+   * @param \Drupal\commerce_recurring\Entity\SubscriptionInterface $subscription
+   *   The subscription.
+   */
+  public function onSubscriptionExpire(SubscriptionInterface $subscription);
+
+  /**
+   * Acts on a subscription after it has been canceled.
+   *
+   * Called before the subscription is saved.
+   *
+   * @param \Drupal\commerce_recurring\Entity\SubscriptionInterface $subscription
+   *   The subscription.
+   */
+  public function onSubscriptionCancel(SubscriptionInterface $subscription);
+
 }

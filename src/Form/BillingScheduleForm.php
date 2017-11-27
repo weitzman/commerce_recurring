@@ -198,7 +198,6 @@ class BillingScheduleForm extends CommercePluginEntityFormBase {
     $billing_schedule->setPluginConfiguration($values['configuration']);
     $billing_schedule->setRetrySchedule($values['dunning']['retry']);
     $billing_schedule->setUnpaidSubscriptionState($values['dunning']['unpaid_subscription_state']);
-    $billing_schedule->save();
   }
 
   /**

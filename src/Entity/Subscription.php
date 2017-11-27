@@ -400,9 +400,12 @@ class Subscription extends ContentEntityBase implements SubscriptionInterface {
       if (empty($this->getStartTime())) {
         $this->setStartTime(\Drupal::time()->getRequestTime());
       }
-      /** @var \Drupal\commerce_recurring\RecurringOrderManagerInterface $recurring_order_manager */
-      $recurring_order_manager = \Drupal::service('commerce_recurring.order_manager');
-      $recurring_order_manager->ensureOrder($this);
+    }
+    elseif ($state == 'expired' && $original_state != 'expired') {
+      $this->getType()->onSubscriptionExpire($this);
+    }
+    elseif ($state == 'canceled' && $original_state != 'canceled') {
+      $this->getType()->onSubscriptionCancel($this);
     }
   }
 

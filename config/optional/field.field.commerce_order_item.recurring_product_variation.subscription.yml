@@ -5,6 +5,7 @@ dependencies:
     - commerce_order.commerce_order_item_type.recurring_product_variation
     - field.storage.commerce_order_item.subscription
   module:
+    - commerce_product
     - commerce_recurring
 id: commerce_order_item.recurring_product_variation.subscription
 field_name: subscription

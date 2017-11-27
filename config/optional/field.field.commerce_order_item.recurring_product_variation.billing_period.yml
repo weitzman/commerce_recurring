@@ -5,6 +5,7 @@ dependencies:
     - commerce_order.commerce_order_type.recurring
     - field.storage.commerce_order_item.billing_period
   module:
+    - commerce_product
     - commerce_recurring
 id: commerce_order_item.recurring_product_variation.billing_period
 field_name: billing_period

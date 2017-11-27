@@ -159,4 +159,14 @@ abstract class SubscriptionTypeBase extends PluginBase implements SubscriptionTy
    */
   public function onSubscriptionRenew(SubscriptionInterface $subscription, OrderInterface $order, OrderInterface $next_order) {}
 
+  /**
+   * {@inheritdoc}
+   */
+  public function onSubscriptionExpire(SubscriptionInterface $subscription) {}
+
+  /**
+   * {@inheritdoc}
+   */
+  public function onSubscriptionCancel(SubscriptionInterface $subscription) {}
+
 }
