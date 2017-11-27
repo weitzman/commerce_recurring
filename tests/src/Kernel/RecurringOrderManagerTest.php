@@ -86,6 +86,30 @@ class RecurringOrderManagerTest extends RecurringKernelTestBase {
   }
 
   /**
+   * @covers ::refreshOrder
+   */
+  public function testRefreshOrder() {
+    $order = $this->recurringOrderManager->ensureOrder($this->subscription);
+    $this->assertOrder($order);
+    $order_items = $order->getItems();
+    $order_item = reset($order_items);
+    $previous_order_item_id = $order_item->id();
+
+    $this->subscription->set('payment_method', NULL);
+    $this->subscription->setUnitPrice(new Price('3', 'USD'));
+    $this->subscription->save();
+    $this->recurringOrderManager->refreshOrder($order);
+
+    $this->assertEmpty($order->get('billing_profile')->target_id);
+    $this->assertEmpty($order->get('payment_method')->target_id);
+    $this->assertEmpty($order->get('payment_gateway')->target_id);
+    $order_items = $order->getItems();
+    $order_item = reset($order_items);
+    $this->assertEquals($previous_order_item_id, $order_item->id());
+    $this->assertEquals($this->subscription->getUnitPrice()->divide('2'), $order_item->getUnitPrice());
+  }
+
+  /**
    * @covers ::renewOrder
    */
   public function testCloseOrderWithoutPaymentMethod() {

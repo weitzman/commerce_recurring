@@ -64,6 +64,11 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
     $this->applyCharges($order, $subscription, $billing_period);
     // Allow the type to modify the subscription and order before they're saved.
     $subscription->getType()->onSubscriptionActivate($subscription, $order);
+
+    // @todo The order should save its own unsaved order items.
+    foreach ($order->getItems() as $order_item) {
+      $order_item->save();
+    }
     $order->save();
     $subscription->addOrder($order);
     $subscription->save();
@@ -79,8 +84,21 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
     $billing_period_item = $order->get('billing_period')->first();
     $billing_period = $billing_period_item->toBillingPeriod();
     $subscriptions = $this->collectSubscriptions($order);
+    $payment_method = $this->selectPaymentMethod($subscriptions);
+    $billing_profile = $payment_method ? $payment_method->getBillingProfile() : NULL;
+    $payment_gateway_id = $payment_method ? $payment_method->getPaymentGatewayId() : NULL;
+
+    $order->set('billing_profile', $billing_profile);
+    $order->set('payment_method', $payment_method);
+    $order->set('payment_gateway', $payment_gateway_id);
     foreach ($subscriptions as $subscription) {
       $this->applyCharges($order, $subscription, $billing_period);
+    }
+    // The same workaround that \Drupal\commerce_order\OrderRefresh does.
+    foreach ($order->getItems() as $order_item) {
+      if ($order_item->isNew()) {
+        $order_item->order_id->entity = $order;
+      }
     }
   }
 
@@ -94,7 +112,8 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
       $order->save();
     }
 
-    $payment_method = $this->selectPaymentMethod($order);
+    $subscriptions = $this->collectSubscriptions($order);
+    $payment_method = $this->selectPaymentMethod($subscriptions);
     if (!$payment_method) {
       throw new HardDeclineException('Payment method not found.');
     }
@@ -137,6 +156,11 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
     $this->applyCharges($next_order, $subscription, $next_billing_period);
     // Allow the subscription type to modify the order before it is saved.
     $subscription->getType()->onSubscriptionRenew($subscription, $order, $next_order);
+
+    // @todo The order should save its own unsaved order items.
+    foreach ($next_order->getItems() as $order_item) {
+      $order_item->save();
+    }
     $next_order->save();
     // Update the subscription with the new order and renewal timestamp.
     $subscription->addOrder($next_order);
@@ -195,6 +219,8 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
   /**
    * Applies subscription charges to the given recurring order.
    *
+   * Note: The order items are not saved.
+   *
    * @param \Drupal\commerce_order\Entity\OrderInterface $order
    *   The recurring order.
    * @param \Drupal\commerce_recurring\Entity\SubscriptionInterface $subscription
@@ -233,7 +259,6 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
       $order_item->setUnitPrice($charge->getUnitPrice());
       $prorated_unit_price = $this->orderItemProrater->prorateRecurring($order_item, $billing_period);
       $order_item->setUnitPrice($prorated_unit_price, TRUE);
-      $order_item->save();
 
       $order_items[] = $order_item;
     }
@@ -246,21 +271,20 @@ class RecurringOrderManager implements RecurringOrderManagerInterface {
   }
 
   /**
-   * Selects the payment method for the given recurring order.
+   * Selects the payment method for the given subscriptions.
    *
    * It is assumed that even if the billing schedule allows multiple
    * subscriptions per recurring order, there will still be a single enforced
    * payment method per customer. In case multiple payment methods are found,
    * the more recent one will be used.
    *
-   * @param \Drupal\commerce_order\Entity\OrderInterface $order
-   *   The recurring order.
+   * @param \Drupal\commerce_recurring\Entity\SubscriptionInterface[] $subscriptions
+   *   The subscriptions.
    *
    * @return \Drupal\commerce_payment\Entity\PaymentMethodInterface|null
    *   The payment method, or NULL if none were found.
    */
-  protected function selectPaymentMethod(OrderInterface $order) {
-    $subscriptions = $this->collectSubscriptions($order);
+  protected function selectPaymentMethod(array $subscriptions) {
     $payment_methods = [];
     foreach ($subscriptions as $subscription) {
       if ($payment_method = $subscription->getPaymentMethod()) {
