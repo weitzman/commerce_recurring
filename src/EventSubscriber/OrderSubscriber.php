@@ -63,12 +63,12 @@ class OrderSubscriber implements EventSubscriberInterface {
     foreach ($order->getItems() as $order_item) {
       $purchased_entity = $order_item->getPurchasedEntity();
       if (!$purchased_entity || !$purchased_entity->hasField('subscription_type')) {
-        return;
+        continue;
       }
       $subscription_type_item = $purchased_entity->get('subscription_type');
       $billing_schedule_item = $purchased_entity->get('billing_schedule');
       if ($subscription_type_item->isEmpty() || $billing_schedule_item->isEmpty()) {
-        return;
+        continue;
       }
 
       $subscription = $subscription_storage->createFromOrderItem($order_item, [

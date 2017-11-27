@@ -4,6 +4,7 @@ namespace Drupal\Tests\commerce_recurring\Kernel;
 
 use Drupal\commerce_order\Entity\Order;
 use Drupal\commerce_order\Entity\OrderItem;
+use Drupal\commerce_order\Entity\OrderItemType;
 use Drupal\commerce_recurring\Entity\Subscription;
 
 /**
@@ -12,21 +13,49 @@ use Drupal\commerce_recurring\Entity\Subscription;
 class SubscriptionLifecycleTest extends RecurringKernelTestBase {
 
   /**
+   * {@inheritdoc}
+   */
+  protected function setUp() {
+    parent::setUp();
+
+    // An order item type that doesn't need a purchasable entity.
+    OrderItemType::create([
+      'id' => 'test',
+      'label' => 'Test',
+      'orderType' => 'default',
+    ])->save();
+  }
+
+  /**
    * Tests the creation of subscriptions when the order is placed.
    */
   public function testCreation() {
-    $order_item = OrderItem::create([
+    $first_order_item = OrderItem::create([
+      'type' => 'test',
+      'title' => 'I promise not to start a subscription',
+      'unit_price' => [
+        'number' => '10.00',
+        'currency_code' => 'USD',
+      ],
+      'quantity' => 1,
+    ]);
+    $first_order_item->save();
+    $second_order_item = OrderItem::create([
       'type' => 'default',
       'purchased_entity' => $this->variation,
+      'unit_price' => [
+        'number' => '2.00',
+        'currency_code' => 'USD',
+      ],
       'quantity' => '3',
     ]);
-    $order_item->save();
+    $second_order_item->save();
 
     $order = Order::create([
       'type' => 'default',
       'store_id' => $this->store,
       'uid' => $this->user,
-      'order_items' => [$order_item],
+      'order_items' => [$first_order_item, $second_order_item],
       'state' => 'draft',
       'payment_method' => $this->paymentMethod,
     ]);
