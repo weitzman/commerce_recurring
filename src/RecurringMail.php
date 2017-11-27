@@ -1,4 +1,5 @@
 <?php
+
 namespace Drupal\commerce_recurring;
 
 use Drupal\commerce_order\Entity\OrderInterface;
@@ -14,7 +15,7 @@ use Drupal\Core\StringTranslation\StringTranslationTrait;
 use Drupal\Core\Url;
 
 /**
- * Class RecurringMail
+ * Class RecurringMail.
  *
  * @package Drupal\commerce_recurring
  */
@@ -72,7 +73,9 @@ class RecurringMail {
   protected $renderer;
 
   /**
-   * @var TimeInterface $time
+   * Time service.
+   *
+   * @var \Drupal\Component\Datetime\TimeInterface
    */
   protected $time;
 
@@ -109,9 +112,13 @@ class RecurringMail {
    * Sends a payment declined email.
    *
    * @param \Drupal\commerce_order\Entity\OrderInterface $order
-   * @param $retry_days
-   * @param $num_retries
-   * @param $max_retries
+   *   An order.
+   * @param int $retry_days
+   *   Days until next retry.
+   * @param int $num_retries
+   *   Number of past attempts.
+   * @param int $max_retries
+   *   Maximum number of retries allowed.
    */
   public function sendPaymentDeclined(OrderInterface $order, $retry_days, $num_retries, $max_retries) {
 
@@ -131,7 +138,7 @@ class RecurringMail {
       ],
       'from' => $order->getStore()->getEmail(),
       // @todo An order number is only available after successful payment so we use id() for now.
-      // If this changes, make same change in templates/commerce-recurring-payment-declined.html.twig.
+      // @todo If this changes, also edit templates/commerce-recurring-payment-declined.html.twig.
       'subject' => $this->t('Payment declined - Order #@number.', ['@number' => $order->id()]),
       'order' => $order,
       'format' => 'text/html',
@@ -147,7 +154,7 @@ class RecurringMail {
       '#retry_days' => "+$retry_days days",
       '#max_retries' => $max_retries,
       '#now' => $this->time->getCurrentTime(),
-      '#payment_method_link' => Url::fromRoute('entity.commerce_payment_method.collection', ['user' => $order->getCustomerId()], ['absolute' => true])->toString(),
+      '#payment_method_link' => Url::fromRoute('entity.commerce_payment_method.collection', ['user' => $order->getCustomerId()], ['absolute' => TRUE])->toString(),
       '#totals' => $this->orderTotalSummary->buildTotals($order),
     ];
     if ($billing_profile = $order->getBillingProfile()) {
@@ -175,4 +182,5 @@ class RecurringMail {
     $events = [RecurringEvents::PAYMENT_DECLINED => ['sendPaymentDeclined', -100]];
     return $events;
   }
+
 }

@@ -2,18 +2,9 @@
 
 namespace Drupal\commerce_recurring\EventSubscriber;
 
-use Drupal\commerce_order\OrderTotalSummaryInterface;
 use Drupal\commerce_recurring\Event\PaymentDeclinedEvent;
 use Drupal\commerce_recurring\Event\RecurringEvents;
 use Drupal\commerce_recurring\RecurringMail;
-use Drupal\commerce_recurring\RecurringOrderManagerInterface;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
-use Drupal\Core\Language\LanguageManagerInterface;
-use Drupal\Core\Mail\MailManagerInterface;
-use Drupal\Core\Render\RenderContext;
-use Drupal\Core\Render\Renderer;
-use Drupal\Core\StringTranslation\StringTranslationTrait;
-use Drupal\Core\Url;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -25,8 +16,6 @@ class DunningSubscriber implements EventSubscriberInterface {
 
   /**
    * Constructs a new DunningSubscriber object.
-   *
-   *
    */
   public function __construct(RecurringMail $recurring_mail) {
     $this->recurringMail = $recurring_mail;
@@ -35,7 +24,7 @@ class DunningSubscriber implements EventSubscriberInterface {
   /**
    * Sends a payment declined email.
    *
-   * @param  $event
+   * @param \Drupal\commerce_recurring\Event\PaymentDeclinedEvent $event
    *   The event we subscribed to.
    */
   public function sendPaymentDeclined(PaymentDeclinedEvent $event) {

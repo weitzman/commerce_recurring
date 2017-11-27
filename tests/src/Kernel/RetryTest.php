@@ -95,10 +95,9 @@ class RetryTest extends RecurringKernelTestBase {
     // Confirm dunning email.
     $this->assertMailString('subject', 'Payment declined - Order #1.', 1);
     $this->assertMailString('body', 'We regret to inform you that the most recent charge attempt on your card failed.', 1);
-    $this->assertMailString('body', Url::fromRoute('entity.commerce_payment_method.collection', ['user' => 1], ['absolute' => true])->toString(), 1);
+    $this->assertMailString('body', Url::fromRoute('entity.commerce_payment_method.collection', ['user' => 1], ['absolute' => TRUE])->toString(), 1);
     $next_retry_time = strtotime('+1 day', $new_time);
     $this->assertMailString('body', 'Our next charge attempt will be on: ' . date('F d', $next_retry_time), 1);
-
 
     // Run the first retry.
     $new_time = strtotime('2017-02-25 19:00');
@@ -169,6 +168,11 @@ class RetryTest extends RecurringKernelTestBase {
     $queue_storage = $this->container->get('entity_type.manager')->getStorage('advancedqueue_queue');
     $queue_storage->resetCache(['commerce_recurring']);
     $this->queue = $queue_storage->load('commerce_recurring');
+
+    // Reset service so that new time gets injected.
+    $this->container = \Drupal::getContainer();
+    // $rm = \Drupal::service('commerce_recurring.recurring_mail');
+    // $this->container->set('commerce_recurring.recurring_mail', NULL);
   }
 
 }
