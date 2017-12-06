@@ -169,10 +169,15 @@ class RetryTest extends RecurringKernelTestBase {
     $queue_storage->resetCache(['commerce_recurring']);
     $this->queue = $queue_storage->load('commerce_recurring');
 
-    // Reset service so that new time gets injected.
+    // Reset services so that new time gets injected.
+    $new_time_c = date('c', $new_time);
+    $rm = \Drupal::service('commerce_recurring.recurring_mail');
+    $time = date('c', $rm->time->getCurrentTime());
     $this->container = \Drupal::getContainer();
-    // $rm = \Drupal::service('commerce_recurring.recurring_mail');
-    // $this->container->set('commerce_recurring.recurring_mail', NULL);
+    $this->container->set('commerce_recurring.recurring_mail', NULL);
+    $this->container->set('commerce_recurring.event_subscriber.dunning_subscriber', NULL);
+    $rm = \Drupal::service('commerce_recurring.recurring_mail');
+    $time = date('c', $rm->time->getCurrentTime());
   }
 
 }
