@@ -133,7 +133,7 @@ class RetryTest extends RecurringKernelTestBase {
     $this->assertEquals(strtotime('2017-03-05 19:00'), $job->getAvailableTime());
     // Confirm dunning email.
     $next_retry_time = strtotime('+5 days', $new_time);
-    $this->assertMailString('body', 'Our next charge attempt will be on: ' . date('F d', $next_retry_time), 1);
+    $this->assertMailString('body', 'Our final charge attempt will be on: ' . date('F d', $next_retry_time), 1);
 
     // Run the last retry.
     $new_time = strtotime('2017-03-05 19:00');
@@ -170,14 +170,9 @@ class RetryTest extends RecurringKernelTestBase {
     $this->queue = $queue_storage->load('commerce_recurring');
 
     // Reset services so that new time gets injected.
-    $new_time_c = date('c', $new_time);
-    $rm = \Drupal::service('commerce_recurring.recurring_mail');
-    $time = date('c', $rm->time->getCurrentTime());
-    $this->container = \Drupal::getContainer();
     $this->container->set('commerce_recurring.recurring_mail', NULL);
     $this->container->set('commerce_recurring.event_subscriber.dunning_subscriber', NULL);
-    $rm = \Drupal::service('commerce_recurring.recurring_mail');
-    $time = date('c', $rm->time->getCurrentTime());
+    $this->container->set('event_dispatcher', NULL);
   }
 
 }
