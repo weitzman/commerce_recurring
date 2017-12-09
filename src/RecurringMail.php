@@ -77,7 +77,7 @@ class RecurringMail {
    *
    * @var \Drupal\Component\Datetime\TimeInterface
    */
-  public $time;
+  protected $time;
 
   /**
    * Constructs a new OrderReceiptSubscriber object.
